@@ -70,16 +70,20 @@ test('eleve difficulte trouve les services d’appui', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('Scolago ne montre plus les procédures propres à l’école', async ({ page }) => {
+test('Scolago garde seulement la connexion et le guide utiles', async ({ page }) => {
   const errors = await openPortal(page);
   await expect(page.locator('#scolago')).toHaveCount(1);
   await expect(page.locator('#scolago-absence-personnel')).toHaveCount(0);
+
   const scolago = page.locator('#scolago');
-  await expect(scolago).toContainText('Connexion, guide d’utilisateur et politiques');
   await expect(scolago.locator('a[href="https://scolago.com/fr-CA/Account/Login"]')).toHaveCount(1);
+  await expect(scolago.locator('a[href*="connexion-s%C3%A9curis%C3%A9e-sso"]')).toHaveCount(1);
   await expect(scolago.locator('a[href*="1YrR-0R-9Y6L22aKgriBD7U95E4MdC7r1"]')).toHaveCount(1);
-  await expect(scolago.locator('a[href*="PolitiqueDeConfidentialite.html"]')).toHaveCount(1);
-  await expect(scolago.locator('a[href*="ConditionsDUtilisation.html"]')).toHaveCount(1);
+  await expect(scolago.locator('a')).toHaveCount(3);
+
+  await expect(scolago).not.toContainText(/Centre d’aide/i);
+  await expect(scolago).not.toContainText(/confidentialité/i);
+  await expect(scolago).not.toContainText(/conditions d’utilisation/i);
   await expect(scolago).not.toContainText('Procédurier — absences du personnel enseignant');
   await expect(scolago).not.toContainText('Note de service — Scolago');
   expect(errors).toEqual([]);
