@@ -299,6 +299,7 @@
   animation:cardiSearchGlow 2.65s cubic-bezier(.22,.72,.24,1) both!important;
   position:relative;
   z-index:4;
+  border-radius:12px!important;
   will-change:box-shadow,background-color,border-color;
 }
 @keyframes cardiSearchGlow{
