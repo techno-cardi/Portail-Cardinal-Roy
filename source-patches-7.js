@@ -201,3 +201,106 @@
     setTimeout(() => observer.disconnect(), 12000);
   }
 })();
+
+/*
+ * Scolago : conserver uniquement les ressources générales de l'application.
+ * Les procédures propres à l'école ne doivent pas apparaître dans le portail.
+ */
+(() => {
+  const root = document.getElementById('legacy-source');
+  const app = document.getElementById('app');
+  if (!root || !app) return;
+
+  const URLS = {
+    login: 'https://scolago.com/fr-CA/Account/Login',
+    sso: 'https://support.scolago.com/fr/support/solutions/articles/151000200140-tous-comment-fonctionne-la-connexion-s%C3%A9curis%C3%A9e-sso-',
+    guide: 'https://drive.google.com/file/d/1YrR-0R-9Y6L22aKgriBD7U95E4MdC7r1/view?usp=drivesdk',
+    support: 'https://support.scolago.com/fr/support/home',
+    privacy: 'https://scolago.com/Content/Documents/PolitiqueDeConfidentialite.html',
+    terms: 'https://scolago.com/Content/Documents/ConditionsDUtilisation.html'
+  };
+
+  const generalKeywords = [
+    'Scolago scola go connexion se connecter login compte accès acces authentification SSO connexion sécurisée connexion securisee Google Microsoft',
+    'guide utilisateur guide d utilisateur guide employé guide employe guide employés guide employes aide support centre aide centre d aide FAQ',
+    'politique politiques confidentialité confidentialite vie privée vie privee conditions utilisation conditions d utilisation termes conditions',
+    'absence absences suppléance suppleance suppléant suppleant remplacement remplaçant remplacant disponibilité disponibilite'
+  ].join(' ');
+
+  const generalBody = `
+    <p><strong>Scolago</strong> : connexion et ressources générales d’aide pour les employés.</p>
+    <div class="links">
+      <a class="btn primary" href="${URLS.login}" target="_blank" rel="noopener noreferrer">Se connecter à Scolago</a>
+      <a class="btn" href="${URLS.sso}" target="_blank" rel="noopener noreferrer">Comment se connecter — SSO</a>
+      <a class="btn" href="${URLS.guide}" target="_blank" rel="noopener noreferrer">Guide d’utilisateur — employés</a>
+      <a class="btn" href="${URLS.support}" target="_blank" rel="noopener noreferrer">Centre d’aide Scolago</a>
+      <a class="btn" href="${URLS.privacy}" target="_blank" rel="noopener noreferrer">Politique de confidentialité</a>
+      <a class="btn" href="${URLS.terms}" target="_blank" rel="noopener noreferrer">Conditions d’utilisation</a>
+    </div>`;
+
+  const scolago = root.querySelector('#scolago');
+  if (scolago) {
+    scolago.dataset.title = 'Scolago';
+    scolago.dataset.keywords = generalKeywords;
+    const title = scolago.querySelector('h2,h3');
+    const subtitle = scolago.querySelector('.card-sub');
+    const body = scolago.querySelector('.card-body');
+    if (title) title.textContent = 'Scolago';
+    if (subtitle) subtitle.textContent = 'Connexion, guide d’utilisateur et politiques';
+    if (body) body.innerHTML = generalBody;
+  }
+
+  const patchApplicationsBox = () => {
+    const applications = root.querySelector('#applications-cssc');
+    if (!applications) return false;
+    const box = [...applications.querySelectorAll('.resource-box')].find(node =>
+      (node.querySelector('h4')?.textContent || '').trim().toLowerCase() === 'scolago'
+    );
+    if (!box) return false;
+    const copy = box.querySelector('.resource-copy');
+    const paragraph = copy?.querySelector('p');
+    let actions = copy?.querySelector('.resource-actions');
+    if (paragraph) paragraph.textContent = 'Accéder à Scolago et consulter les ressources générales : connexion, guide d’utilisateur, aide et politiques.';
+    if (!actions && copy) {
+      actions = document.createElement('div');
+      actions.className = 'resource-actions';
+      copy.appendChild(actions);
+    }
+    if (actions) {
+      actions.innerHTML = `
+        <a class="btn primary" href="${URLS.login}" target="_blank" rel="noopener noreferrer">Se connecter</a>
+        <a class="btn" href="${URLS.guide}" target="_blank" rel="noopener noreferrer">Guide d’utilisateur</a>
+        <a class="btn" href="${URLS.support}" target="_blank" rel="noopener noreferrer">Centre d’aide</a>
+        <a class="btn" href="${URLS.privacy}" target="_blank" rel="noopener noreferrer">Confidentialité</a>
+        <a class="btn" href="${URLS.terms}" target="_blank" rel="noopener noreferrer">Conditions d’utilisation</a>`;
+    }
+    applications.dataset.keywords = `${applications.dataset.keywords || ''} ${generalKeywords}`.replace(/\s+/g, ' ').trim();
+    return true;
+  };
+
+  if (!patchApplicationsBox()) {
+    const sourceObserver = new MutationObserver(() => {
+      if (patchApplicationsBox()) sourceObserver.disconnect();
+    });
+    sourceObserver.observe(root, { childList: true, subtree: true });
+    setTimeout(() => sourceObserver.disconnect(), 5000);
+  }
+
+  // assets-map.js crée encore temporairement l'ancienne fiche afin que ses
+  // ajustements de rendu puissent se terminer proprement. On la retire aussitôt
+  // après le rendu principal, avant que le moteur de recherche final l'indexe.
+  const removeSchoolProcedure = () => {
+    const duplicate = document.getElementById('scolago-absence-personnel');
+    if (duplicate) duplicate.remove();
+    return Boolean(document.getElementById('scolago'));
+  };
+
+  const renderedObserver = new MutationObserver(() => {
+    if (removeSchoolProcedure()) renderedObserver.disconnect();
+  });
+  renderedObserver.observe(app, { childList: true, subtree: true });
+  setTimeout(() => {
+    removeSchoolProcedure();
+    renderedObserver.disconnect();
+  }, 6000);
+})();
