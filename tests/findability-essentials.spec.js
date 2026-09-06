@@ -22,7 +22,7 @@ test('le portail charge sans erreur JavaScript', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('suppléance trouve le rapport de temps', async ({ page }) => {
+test('suppléance trouve le rapport de temps ou Scolago', async ({ page }) => {
   const errors = await openPortal(page);
   await expectFirstSuggestion(page, 'suppléance', /Rapport de temps|Scolago/i);
   expect(errors).toEqual([]);
@@ -70,11 +70,26 @@ test('eleve difficulte trouve les services d’appui', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('Scolago ne montre plus les procédures propres à l’école', async ({ page }) => {
+  const errors = await openPortal(page);
+  await expect(page.locator('#scolago')).toHaveCount(1);
+  await expect(page.locator('#scolago-absence-personnel')).toHaveCount(0);
+  const scolago = page.locator('#scolago');
+  await expect(scolago).toContainText('Connexion, guide d’utilisateur et politiques');
+  await expect(scolago.locator('a[href="https://scolago.com/fr-CA/Account/Login"]')).toHaveCount(1);
+  await expect(scolago.locator('a[href*="1YrR-0R-9Y6L22aKgriBD7U95E4MdC7r1"]')).toHaveCount(1);
+  await expect(scolago.locator('a[href*="PolitiqueDeConfidentialite.html"]')).toHaveCount(1);
+  await expect(scolago.locator('a[href*="ConditionsDUtilisation.html"]')).toHaveCount(1);
+  await expect(scolago).not.toContainText('Procédurier — absences du personnel enseignant');
+  await expect(scolago).not.toContainText('Note de service — Scolago');
+  expect(errors).toEqual([]);
+});
+
 test('les catégories restent cohérentes', async ({ page }) => {
   const errors = await openPortal(page);
   await expect(page.locator('#section-organisation .category-heading h2')).toContainText('Réservations et logistique');
   await expect(page.locator('#section-formulaires #rapport-temps-travail')).toHaveCount(1);
-  await expect(page.locator('#section-formulaires #scolago-absence-personnel')).toHaveCount(1);
+  await expect(page.locator('#scolago-absence-personnel')).toHaveCount(0);
   await expect(page.locator('#section-organisation-scolaire #evaluation-bulletin-planification')).toHaveCount(1);
   await expect(page.locator('#section-classe #code-vie-regles')).toHaveCount(1);
   await expect(page.locator('#section-suivi #aide-eleve-services-appui')).toHaveCount(1);
