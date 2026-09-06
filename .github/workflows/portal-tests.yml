@@ -23,7 +23,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,7 +31,7 @@ jobs:
           node-version: 24
       - name: Installer les dépendances
         run: npm install --no-audit --no-fund
-      - name: Installer Chromium et WebKit
-        run: npx playwright install --with-deps chromium webkit
+      - name: Installer Chromium, Firefox et WebKit
+        run: npx playwright install --with-deps chromium firefox webkit
       - name: Tester les parcours critiques sur desktop et mobile
         run: npm run test:e2e
