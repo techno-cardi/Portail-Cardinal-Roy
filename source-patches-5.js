@@ -11,10 +11,10 @@
     rfeef: 'https://rfeef.cssc.gouv.qc.ca/',
     perfLocal: 'https://appsp.ca/formulaire/envoi.php?id=1',
     perfCentral: 'https://drive.google.com/file/d/1JM3oKD1UJ3xhqIlXqvaErvO1QKrBKwDD/view?usp=drive_link',
-    horaireEnseignants: 'https://drive.google.com/file/d/1E2W_9W5rQAeyq9b1I3iin7uuazH8n70J/view?usp=drive_link',
-    horaireLocaux: 'https://drive.google.com/file/d/1NosMEe-dexjnXa2h9gOIIS-p4nZd4gE5/view?usp=drive_link',
-    planNouvellePartie: 'https://drive.google.com/file/d/11yGTXbZL1WUYYRKOxtDspNLZbqs7Jcu0/view?usp=drive_link',
-    planPartieExistante: 'https://drive.google.com/file/d/124-lJYUIbzcFfmrflPw5iEAygAWMaf3n/view?usp=drive_link'
+    horaireEnseignants: 'https://drive.google.com/file/d/1ptDonxP2Dx4FVUmY36PlppBYDc0HVRG5/view?usp=drivesdk',
+    horaireLocaux: 'https://drive.google.com/file/d/13dpfWN2_Jws3V4bwptfamOe-VSahZvCd/view?usp=drivesdk',
+    planNouvellePartie: 'https://drive.google.com/file/d/1TYRKzIvOm2iKM44iiKV2sozXnEStJ7vB/view?usp=drivesdk',
+    planPartieExistante: 'https://drive.google.com/file/d/1TPVfnGKfqiZLMQ0C1KXR_lGXXFLlzSci/view?usp=drivesdk'
   };
 
   const normalize = value => (value || '')
