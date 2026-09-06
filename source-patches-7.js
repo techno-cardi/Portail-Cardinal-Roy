@@ -122,3 +122,82 @@
     setTimeout(() => observer.disconnect(), 12000);
   }
 })();
+
+/*
+ * Vocabulaire de recherche pensé pour la façon dont le personnel formule
+ * réellement ses besoins au quotidien. Les mots restent invisibles : ils ne
+ * servent qu'au moteur de recherche du portail.
+ */
+(() => {
+  const source = document.getElementById('legacy-source');
+  if (!source) return;
+
+  const addSourceKeywords = (id, keywords) => {
+    const node = source.querySelector(`#${CSS.escape(id)}`);
+    if (!node) return;
+    const current = node.dataset.keywords || '';
+    node.dataset.keywords = `${current} ${keywords}`.replace(/\s+/g, ' ').trim();
+  };
+
+  const teacherVocabulary = {
+    c2atom: [
+      'bug bugs bogue bogues problème probleme problèmes problemes problème informatique probleme informatique souci informatique pépin informatique pepin informatique',
+      'informatique TI soutien informatique support informatique aide informatique assistance informatique billet informatique billet TI ticket informatique ticket soutien dépannage depannage',
+      'ça marche pas ca marche pas marche pas ne marche pas fonctionne pas ne fonctionne pas fonctionne plus planté plante plantage erreur erreurs message erreur',
+      'ordi ordinateur pc portable laptop poste poste de travail chromebook appareil écran ecran écran noir ecran noir souris clavier caméra camera webcam',
+      'wifi wi-fi internet réseau reseau sans fil imprimante imprimantes impression projecteur tbi tableau interactif son audio micro microphone haut-parleur haut parleur',
+      'teams microsoft teams office microsoft office word excel powerpoint application applications logiciel logiciels installation mise à jour mise a jour',
+      'mon ordi mon ordinateur mon pc mon portable mon chromebook besoin aide besoin informatique je veux billet faire billet ouvrir billet'
+    ].join(' '),
+    presences: 'prendre présence prendre presence prendre présences prendre presences faire présence faire presence faire les présences faire les presences absence élève absence eleve élève absent eleve absent retard retards retardataire arrivée tardive arrivee tardive Mozaïk Mozaik présence matin presence matin',
+    avis: 'comportement comportement élève comportement eleve manquement manquements discipline indiscipline note comportement note au dossier avertissement avertir parent incident incidents soi suivi comportement signaler comportement',
+    courriels: 'écrire parent ecrire parent écrire aux parents ecrire aux parents envoyer courriel parent envoyer courriel parents envoyer email parent message parent message aux parents communiquer parent communiquer parents communication parents',
+    planclasse: 'placer élèves placer eleves place élèves place eleves places élèves places eleves places assises disposition classe disposition élèves disposition eleves plan sièges plan sieges seating plan changer place élève changer place eleve',
+    reservation: 'réserver reserver réservation reservation réserver local reserver local réserver salle reserver salle local libre local disponible gym gymnase laboratoire labo auditorium bibliothèque bibliotheque matériel materiel chariot réserver chariot reserver chariot récupérer local recuperer local convoquer élève convoquer eleve reprise examen récupération recuperation récup recup',
+    monhoraire: 'horaire prof horaire professeur horaire enseignant horaire enseignante mon horaire grille horaire grille horaire prof période periode périodes periodes jour cycle journée cycle journee cycle locaux cours',
+    drive: 'drive commun dossier commun fichier partagé fichier partage dossier partagé dossier partage document partagé document partage trouver fichier trouver document où est ou est dossier ressources communes documents école documents ecole',
+    plandetravail: 'élève absent longtemps eleve absent longtemps longue absence absence longue travaux élève absent travaux eleve absent quoi envoyer élève absent quoi envoyer eleve absent travail maison devoirs absence prolongée absence prolongee',
+    rfeef: 'facture factures achat achats remboursement rembourser dépense depense dépenses depenses fournisseur paiement payer commande bon de commande frais compte dépense compte depense',
+    'perf-central': 'formation perfectionnement perfectionnements congrès congres colloque atelier inscription formation demande formation remboursement formation activité perfectionnement activite perfectionnement',
+    'perf-local': 'formation perfectionnement perfectionnements congrès congres colloque atelier inscription formation demande formation remboursement formation activité perfectionnement activite perfectionnement',
+    'mise-a-jour-recuperation': 'élève a manqué matière eleve a manque matiere élève a manqué cours eleve a manque cours rattraper matière rattraper matiere reprendre notion quoi choisir mise jour recup',
+    'etude-surveillee': 'faire reprendre examen élève faire reprendre examen eleve reprise examen élève absent examen eleve absent examen local reprise où envoyer élève ou envoyer eleve étude examen etude examen',
+    'sos-groupe': 'classe rough groupe rough groupe tough groupe difficile classe difficile mes élèves sont difficiles mes eleves sont difficiles groupe ingérable groupe ingerable classe ingérable classe ingerable quoi faire avec groupe aide gestion classe',
+    'commotion-cerebrale': 'coup tête coup tete élève frappé tête eleve frappe tete élève s est cogné tête eleve s est cogne tete mal tête après choc mal tete apres choc commotion quoi faire',
+    'sortie-educative': 'organiser sortie faire sortie sortie scolaire activité spéciale activite speciale permission sortie autorisation sortie formulaire sortie activité hors école activite hors ecole voyage scolaire'
+  };
+
+  Object.entries(teacherVocabulary).forEach(([id, keywords]) => addSourceKeywords(id, keywords));
+
+  const passwordKeywords = [
+    'application mot de passe mot de passe mots de passe mdp password oublié oublie perdu réinitialiser reinitialiser reset changer changement modifier expiration expire expiré bloque bloqué compte verrouillé compte verrouille',
+    'double authentification double-authentification double auth authentification double authentification à deux facteurs authentification a deux facteurs deux facteurs 2 facteurs 2fa mfa multifacteur multifactoriel',
+    'microsoft authenticator authenticator application authenticator code authenticator notification authenticator approuver connexion approbation connexion',
+    'cell cellulaire cellulaire téléphone telephone téléphone intelligent telephone intelligent smartphone iphone android samsung pixel appareil mobile mobile',
+    'nouveau téléphone nouveau telephone nouveau cell nouveau cellulaire nouveau smartphone nouveau appareil nouveau mobile changer téléphone changer telephone changé téléphone change telephone changé de téléphone change de telephone',
+    'changer cell changé cell change cell changer cellulaire changé cellulaire change cellulaire changé de cell change de cell nouveau numéro nouveau numero numéro téléphone numero telephone',
+    'téléphone perdu telephone perdu cell perdu cellulaire perdu téléphone brisé telephone brise cell brisé cell brise ancien téléphone ancien telephone ancien cell',
+    'transfert authenticator transférer authenticator transferer authenticator réinstaller authenticator reinstaller authenticator installer authenticator configurer authenticator',
+    'code qr qr code code vérification code verification code sécurité code securite pas de code aucun code pas notification aucune notification notification marche pas authenticator marche pas',
+    'connexion impossible accès impossible acces impossible plus accès plus acces compte bloqué compte bloque mot de passe expiré mot de passe expire mot passe oublié mot passe oublie'
+  ].join(' ');
+
+  const updatePasswordResource = () => {
+    const box = document.querySelector('#app-mot-de-passe.subresource-search-target, #app-mot-de-passe');
+    if (!box) return false;
+    const title = 'Mot de passe / double authentification';
+    const heading = box.querySelector('h4');
+    if (heading) heading.textContent = title;
+    box.dataset.searchLabel = title;
+    box.dataset.searchKeywords = `${box.dataset.searchKeywords || ''} ${passwordKeywords}`.replace(/\s+/g, ' ').trim();
+    return true;
+  };
+
+  if (!updatePasswordResource()) {
+    const observer = new MutationObserver(() => {
+      if (updatePasswordResource()) observer.disconnect();
+    });
+    observer.observe(document.getElementById('app') || document.body, { childList: true, subtree: true });
+    setTimeout(() => observer.disconnect(), 12000);
+  }
+})();
