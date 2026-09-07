@@ -73,7 +73,7 @@ test('« il reste » au complet affiche le compte à rebours scolaire', async ({
   const egg = page.locator('#search-suggestions .search-countdown-egg');
   await expect(egg).toBeVisible();
   await expect(egg.locator('.search-countdown-title')).toHaveText('Il reste...');
-  await expect(egg).toContainText('0 jour d’école avant le prochain congé (Fête du Travail)');
+  await expect(egg).toContainText('0 jour d’école avant le prochain congé (lundi 7 septembre - Fête du Travail)');
   await expect(egg).toContainText('Après celui-ci, le prochain congé sera le lundi 12 octobre 2026 (Action de grâce).');
   await expect(egg).toContainText('(0 semaine de cours)');
   await expect(egg).toContainText('36 jours d’école avant l’Halloween');
@@ -105,7 +105,7 @@ test('la prochaine interruption devient une pédagogique quand elle arrive avant
   await page.locator('#guide-search').fill('il reste');
   const egg = page.locator('#search-suggestions .search-countdown-egg');
 
-  await expect(egg).toContainText('0 jour d’école avant la prochaine journée pédagogique (18 septembre)');
+  await expect(egg).toContainText('0 jour d’école avant la prochaine journée pédagogique (vendredi 18 septembre)');
   await expect(egg).toContainText('Après celle-ci, la prochaine journée pédagogique sera le lundi 5 octobre 2026.');
   expect(errors).toEqual([]);
 });
