@@ -139,7 +139,7 @@
 })();
 
 /*
- * Charge les easter eggs seulement lorsque le moteur de recherche final est prêt.
+ * Charge les compléments de recherche seulement lorsque le moteur final est prêt.
  * Ils restent indépendants du moteur principal et ne peuvent pas perturber
  * l'indexation normale des ressources.
  */
@@ -159,6 +159,12 @@
         extraScript.src = 'search-easter-eggs-extra.js';
         extraScript.dataset.searchEasterEggsExtra = 'true';
         document.body.appendChild(extraScript);
+      }
+      if (!document.querySelector('script[data-search-resource-suggestion]')) {
+        const suggestionScript = document.createElement('script');
+        suggestionScript.src = 'search-resource-suggestion.js';
+        suggestionScript.dataset.searchResourceSuggestion = 'true';
+        document.body.appendChild(suggestionScript);
       }
       return;
     }
