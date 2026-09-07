@@ -29,34 +29,33 @@
 .search-stage{padding:14px 0 18px!important}
 .search-stage-inner{padding-block:0!important}
 
-/* L'ancien bloc de pensée ne doit jamais apparaître, même pendant le chargement. */
+/* Les anciens rendus de la pensée ne doivent jamais réapparaître. */
 #daily-thought,
 #daily-thought-fallback,
-.daily-thought-standalone{display:none!important}
+.daily-thought-button-row{display:none!important}
 
-/* Bande Dates importantes centrée avec la page. */
+/* Dates importantes reste seul dans sa bande, ancré en haut à gauche. */
 .school-news-ticker{
   width:min(820px,100%)!important;
   min-height:54px!important;
-  margin:0 auto 9px!important;
+  margin:0 0 9px 0!important;
   padding:6px 8px!important;
-  align-items:center!important;
+  align-items:start!important;
   text-align:left!important;
 }
 .school-news-ticker>.school-news-badge{
-  align-self:center!important;
+  align-self:start!important;
   justify-self:start!important;
 }
 
-/* L'événement courant a sa propre boîte et son contenu y est centré
-   horizontalement et verticalement. */
+/* L'événement courant garde sa propre boîte et son contenu y est centré. */
 .school-news-ticker>.school-news-track{
   min-height:42px!important;
   padding:6px 12px!important;
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
-  align-self:center!important;
+  align-self:start!important;
   justify-self:stretch!important;
   gap:8px!important;
   border:1px solid rgba(255,255,255,.24)!important;
@@ -69,7 +68,7 @@
   text-align:center!important;
 }
 .school-news-ticker>.school-news-controls{
-  align-self:center!important;
+  align-self:start!important;
 }
 
 .search-intro{width:min(820px,100%)!important}
@@ -176,8 +175,8 @@
   .search-guidance-row p{font-size:.82rem!important}
 }
 
-/* Mobile / iOS : la pensée n'est pas affichée; la bande des dates reste centrée
-   et l'événement conserve sa boîte centrée sans débordement horizontal. */
+/* Mobile / iOS : Dates importantes demeure en haut à gauche; l'événement reste
+   centré dans sa boîte et la pensée garde son petit bouton autonome dessous. */
 @media(max-width:620px){
   .masthead{
     min-height:auto;
@@ -191,13 +190,14 @@
     width:100%!important;
     min-height:0!important;
     padding:9px 10px!important;
-    margin:0 auto 9px!important;
-    align-items:center!important;
-    text-align:center!important;
+    margin:0 0 9px 0!important;
+    align-items:stretch!important;
+    text-align:left!important;
   }
   .school-news-ticker>.school-news-badge{
-    align-self:center!important;
-    justify-self:center!important;
+    align-self:flex-start!important;
+    justify-self:start!important;
+    margin:0!important;
   }
   .school-news-ticker>.school-news-track{
     width:100%!important;
@@ -207,6 +207,9 @@
     align-items:center!important;
     justify-content:center!important;
     gap:3px!important;
+  }
+  .school-news-ticker>.school-news-controls{
+    align-self:center!important;
   }
   .search-intro h2{font-size:1.55rem!important}
   .search-guidance-row{
