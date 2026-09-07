@@ -18,12 +18,12 @@ async function openPortal(page) {
   await page.goto('/');
   await expect(page.locator('#guide-search')).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.PORTAL_SEARCH_ENGINE || '')).toBe('2.0');
-  await expect.poll(() => page.evaluate(() => document.documentElement.dataset.homeCompact || '')).toBe('1.2');
+  await expect.poll(() => page.evaluate(() => document.documentElement.dataset.homeCompact || '')).toBe('1.3');
   await expect(page.locator('#school-news-ticker')).toBeVisible();
   return errors;
 }
 
-test('le haut de page desktop garde une bande de dates centrée et la pensée à droite', async ({ page }) => {
+test('le haut de page desktop garde Dates importantes centré et l’événement centré dans sa boîte', async ({ page }) => {
   await page.setViewportSize({ width: 1797, height: 832 });
   const errors = await openPortal(page);
 
@@ -64,10 +64,12 @@ test('le haut de page desktop garde une bande de dates centrée et la pensée à
 
   const ticker = page.locator('#school-news-ticker');
   const dateBadge = ticker.locator(':scope > .school-news-badge');
+  const eventBox = ticker.locator(':scope > .school-news-track');
   const trigger = ticker.locator(':scope > .daily-thought-control .daily-thought-trigger');
 
   await expect(dateBadge).toBeVisible();
   await expect(dateBadge).toContainText('Dates importantes');
+  await expect(eventBox).toBeVisible();
   await expect(trigger).toBeVisible();
   await expect(ticker).toHaveClass(/has-daily-thought/);
 
@@ -75,26 +77,44 @@ test('le haut de page desktop garde une bande de dates centrée et la pensée à
     const stage = document.querySelector('.search-stage-inner');
     const ticker = document.getElementById('school-news-ticker');
     const badge = ticker?.querySelector(':scope > .school-news-badge');
+    const eventBox = ticker?.querySelector(':scope > .school-news-track');
+    const eventDate = eventBox?.querySelector('.school-news-date');
+    const eventText = eventBox?.querySelector('.school-news-text');
     const trigger = ticker?.querySelector(':scope > .daily-thought-control .daily-thought-trigger');
     const stageRect = stage?.getBoundingClientRect();
     const tickerRect = ticker?.getBoundingClientRect();
     const badgeRect = badge?.getBoundingClientRect();
+    const eventRect = eventBox?.getBoundingClientRect();
+    const dateRect = eventDate?.getBoundingClientRect();
+    const textRect = eventText?.getBoundingClientRect();
     const triggerRect = trigger?.getBoundingClientRect();
+    const eventStyle = eventBox ? getComputedStyle(eventBox) : null;
+    const contentCenterY = dateRect && textRect
+      ? (Math.min(dateRect.top, textRect.top) + Math.max(dateRect.bottom, textRect.bottom)) / 2
+      : 0;
     return {
       centerDelta: Math.abs(((tickerRect?.left || 0) + (tickerRect?.right || 0)) / 2 - ((stageRect?.left || 0) + (stageRect?.right || 0)) / 2),
       width: tickerRect?.width || 0,
-      badgeNearTickerTop: Boolean(tickerRect && badgeRect && Math.abs(badgeRect.top - tickerRect.top) <= 12),
       badgeNearTickerLeft: Boolean(tickerRect && badgeRect && Math.abs(badgeRect.left - tickerRect.left) <= 12),
       triggerNearTickerRight: Boolean(tickerRect && triggerRect && Math.abs(tickerRect.right - triggerRect.right) <= 12),
-      sameLine: Boolean(badgeRect && triggerRect && Math.abs(badgeRect.top - triggerRect.top) <= 4)
+      badgeAndTriggerCentered: Boolean(badgeRect && triggerRect && Math.abs((badgeRect.top + badgeRect.bottom) / 2 - (triggerRect.top + triggerRect.bottom) / 2) <= 4),
+      eventHorizontalCentering: eventStyle?.justifyContent,
+      eventVerticalCentering: eventStyle?.alignItems,
+      eventContentCenterDeltaY: eventRect ? Math.abs(contentCenterY - (eventRect.top + eventRect.bottom) / 2) : 999,
+      eventHasOwnBorder: eventStyle?.borderTopStyle !== 'none',
+      eventHasRadius: parseFloat(eventStyle?.borderTopLeftRadius || '0') > 0
     };
   });
   expect(alignment.centerDelta).toBeLessThanOrEqual(2);
   expect(alignment.width).toBeLessThanOrEqual(822);
-  expect(alignment.badgeNearTickerTop).toBe(true);
   expect(alignment.badgeNearTickerLeft).toBe(true);
   expect(alignment.triggerNearTickerRight).toBe(true);
-  expect(alignment.sameLine).toBe(true);
+  expect(alignment.badgeAndTriggerCentered).toBe(true);
+  expect(alignment.eventHorizontalCentering).toBe('center');
+  expect(alignment.eventVerticalCentering).toBe('center');
+  expect(alignment.eventContentCenterDeltaY).toBeLessThanOrEqual(4);
+  expect(alignment.eventHasOwnBorder).toBe(true);
+  expect(alignment.eventHasRadius).toBe(true);
 
   const buttonLayout = await trigger.evaluate(node => {
     const rect = node.getBoundingClientRect();
@@ -123,7 +143,7 @@ test('le haut de page desktop garde une bande de dates centrée et la pensée à
   expect(errors).toEqual([]);
 });
 
-test('sur mobile la pensée du jour disparaît complètement sans débordement', async ({ page }) => {
+test('sur mobile la pensée disparaît et l’événement reste centré sans débordement', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const errors = await openPortal(page);
 
@@ -135,18 +155,24 @@ test('sur mobile la pensée du jour disparaît complètement sans débordement',
   await expect(page.locator('#daily-thought-popover')).toHaveCount(0);
 
   const ticker = page.locator('#school-news-ticker');
+  const eventBox = ticker.locator(':scope > .school-news-track');
   await expect(ticker.locator(':scope > .school-news-badge')).toBeVisible();
+  await expect(eventBox).toBeVisible();
   await expect(ticker).not.toHaveClass(/has-daily-thought/);
 
   const layout = await page.evaluate(() => {
     const fav = document.getElementById('favorites-jump').getBoundingClientRect();
     const shell = document.querySelector('.search-shell').getBoundingClientRect();
     const ticker = document.getElementById('school-news-ticker').getBoundingClientRect();
+    const eventBox = document.querySelector('#school-news-ticker > .school-news-track');
+    const eventStyle = getComputedStyle(eventBox);
     return {
       bodyOverflow: document.documentElement.scrollWidth - window.innerWidth,
       favoriteRightDelta: Math.abs(fav.right - shell.right),
       tickerRightOverflow: ticker.right - window.innerWidth,
-      tickerLeft: ticker.left
+      tickerLeft: ticker.left,
+      eventHorizontalCentering: eventStyle.justifyContent,
+      eventVerticalCentering: eventStyle.alignItems
     };
   });
 
@@ -154,6 +180,8 @@ test('sur mobile la pensée du jour disparaît complètement sans débordement',
   expect(layout.favoriteRightDelta).toBeLessThanOrEqual(2);
   expect(layout.tickerRightOverflow).toBeLessThanOrEqual(1);
   expect(layout.tickerLeft).toBeGreaterThanOrEqual(0);
+  expect(layout.eventHorizontalCentering).toBe('center');
+  expect(layout.eventVerticalCentering).toBe('center');
 
   const search = page.locator('#guide-search');
   await search.fill('reservation');
