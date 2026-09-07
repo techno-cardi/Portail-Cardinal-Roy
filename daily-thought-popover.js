@@ -143,6 +143,11 @@
     document.head.appendChild(style);
   };
 
+  // Important : le CSS qui masque l'ancien bloc est injecté immédiatement,
+  // avant même que daily-thought.js ait fini de créer sa source de données.
+  // Ça empêche tout retour ou flash de l'ancienne barre, même avec WebKit.
+  ensureStyles();
+
   const legacyBlock = () => document.getElementById('daily-thought');
 
   const closePopover = (returnFocus = false) => {
@@ -173,8 +178,6 @@
       document.querySelector('.daily-thought-standalone')?.remove();
       return false;
     }
-
-    ensureStyles();
 
     let control = document.querySelector('.daily-thought-control');
     if (!control) {
