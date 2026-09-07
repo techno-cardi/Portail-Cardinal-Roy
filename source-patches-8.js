@@ -195,7 +195,7 @@
   if (!document.querySelector('link[data-portal-upgrades]')) {
     const style = document.createElement('link');
     style.rel = 'stylesheet';
-    style.href = 'portal-upgrades.css?v=20260907';
+    style.href = 'portal-upgrades.css?v=20260907-1455';
     style.dataset.portalUpgrades = 'true';
     document.head.appendChild(style);
   }
@@ -223,8 +223,8 @@
       return;
     }
     try {
-      await loadOnce('portal-registry.js?v=20260907', 'data-portal-registry-script');
-      await loadOnce('portal-upgrades.js?v=20260907', 'data-portal-upgrades-script');
+      await loadOnce('portal-registry.js?v=20260907-1455', 'data-portal-registry-script');
+      await loadOnce('portal-upgrades.js?v=20260907-1455', 'data-portal-upgrades-script');
     } catch (error) {
       console.error('Impossible de charger les upgrades du portail', error);
     }
