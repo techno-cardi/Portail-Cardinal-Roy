@@ -42,11 +42,14 @@
     springBreak: '2027-03-01'
   };
 
-  const NO_SCHOOL_DAYS = new Set([
-    // Journées pédagogiques fixes.
+  const PEDAGOGICAL_DAYS = new Set([
     '2026-09-18', '2026-10-05', '2026-11-19', '2026-11-20',
     '2027-01-05', '2027-01-25', '2027-02-19', '2027-03-08',
-    '2027-04-09', '2027-04-19', '2027-05-07', '2027-05-21', '2027-06-04',
+    '2027-04-09', '2027-04-19', '2027-05-07', '2027-05-21', '2027-06-04'
+  ]);
+
+  const NO_SCHOOL_DAYS = new Set([
+    ...PEDAGOGICAL_DAYS,
     // Congés isolés.
     '2026-09-07', '2026-10-12', '2027-03-26', '2027-03-29', '2027-05-24'
   ]);
@@ -64,16 +67,40 @@
   addRangeToSet(NO_SCHOOL_DAYS, '2026-12-21', '2027-01-04');
   addRangeToSet(NO_SCHOOL_DAYS, '2027-03-01', '2027-03-05');
 
-  const HOLIDAY_BLOCKS = [
-    { start: '2026-09-07', label: 'Fête du Travail' },
-    { start: '2026-10-12', label: 'Action de grâce' },
-    { start: '2026-12-21', label: 'Congé des Fêtes' },
-    { start: '2027-03-26', label: 'Vendredi saint' },
-    { start: '2027-03-29', label: 'Lundi de Pâques' },
-    { start: '2027-05-24', label: 'Journée nationale des patriotes' }
+  // On garde seulement le début d'une période de congé dans cette liste :
+  // elle sert à annoncer la prochaine interruption, pas à lister chaque jour.
+  const SCHOOL_INTERRUPTION_DAYS = [
+    { start: '2026-09-07', type: 'conge', label: 'Fête du Travail' },
+    { start: '2026-09-18', type: 'pedago', label: 'journée pédagogique' },
+    { start: '2026-10-05', type: 'pedago', label: 'journée pédagogique' },
+    { start: '2026-10-12', type: 'conge', label: 'Action de grâce' },
+    { start: '2026-11-19', type: 'pedago', label: 'journée pédagogique' },
+    { start: '2026-11-20', type: 'pedago', label: 'journée pédagogique' },
+    { start: '2026-12-21', type: 'conge', label: 'vacances des Fêtes' },
+    { start: '2027-01-05', type: 'pedago', label: 'journée pédagogique' },
+    { start: '2027-01-25', type: 'pedago', label: 'journée pédagogique' },
+    { start: '2027-02-19', type: 'pedago', label: 'journée pédagogique' },
+    { start: '2027-03-01', type: 'conge', label: 'semaine de relâche' },
+    { start: '2027-03-08', type: 'pedago', label: 'journée pédagogique' },
+    { start: '2027-03-26', type: 'conge', label: 'Vendredi saint' },
+    { start: '2027-03-29', type: 'conge', label: 'Lundi de Pâques' },
+    { start: '2027-04-09', type: 'pedago', label: 'journée pédagogique' },
+    { start: '2027-04-19', type: 'pedago', label: 'journée pédagogique' },
+    { start: '2027-05-07', type: 'pedago', label: 'journée pédagogique' },
+    { start: '2027-05-21', type: 'pedago', label: 'journée pédagogique' },
+    { start: '2027-05-24', type: 'conge', label: 'Journée nationale des patriotes' },
+    { start: '2027-06-04', type: 'pedago', label: 'journée pédagogique' }
   ];
 
-  const weekdayForKey = key => new Date(`${key}T12:00:00Z`).getUTCDay();
+  const dateFromKey = key => new Date(`${key}T12:00:00Z`);
+  const keyFromDate = value => value.toISOString().slice(0, 10);
+  const addDaysKey = (key, amount) => {
+    const value = dateFromKey(key);
+    value.setUTCDate(value.getUTCDate() + amount);
+    return keyFromDate(value);
+  };
+  const weekdayForKey = key => dateFromKey(key).getUTCDay();
+
   const buildSchoolDays = () => {
     const days = [];
     let cursor = Date.parse(`${SCHOOL_YEAR.start}T12:00:00Z`);
@@ -88,6 +115,7 @@
   };
 
   const SCHOOL_DAYS = buildSchoolDays();
+  const SCHOOL_DAY_SET = new Set(SCHOOL_DAYS);
 
   const quebecDateKey = value => {
     const parts = new Intl.DateTimeFormat('en-CA', {
@@ -103,6 +131,21 @@
     return `${fields.year}-${fields.month}-${fields.day}`;
   };
 
+  const formatDate = key => new Intl.DateTimeFormat('fr-CA', {
+    timeZone: 'UTC',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(dateFromKey(key));
+
+  const formatWeekDate = key => new Intl.DateTimeFormat('fr-CA', {
+    timeZone: 'UTC',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(dateFromKey(key));
+
   const schoolDaysBetween = (today, target, includeTarget = false) => SCHOOL_DAYS.filter(key =>
     key > today && (includeTarget ? key <= target : key < target)
   ).length;
@@ -115,12 +158,103 @@
   };
 
   const dayLabel = count => `${count} ${count === 1 ? 'jour d’école' : 'jours d’école'}`;
+  const courseDayLabel = count => `${count} ${count === 1 ? 'jour de cours' : 'jours de cours'}`;
 
   const countdownLine = (days, label) => `
     <div class="search-countdown-line">
       <span><strong>${dayLabel(days)}</strong> ${label}</span>
       <span class="search-countdown-weeks">(${formatWeeks(days)})</span>
     </div>`;
+
+  const mondayOfWeek = key => {
+    const weekday = weekdayForKey(key);
+    const offset = weekday === 0 ? -6 : 1 - weekday;
+    return addDaysKey(key, offset);
+  };
+
+  const schoolDaysInWeek = mondayKey => {
+    let count = 0;
+    for (let offset = 0; offset < 5; offset += 1) {
+      if (SCHOOL_DAY_SET.has(addDaysKey(mondayKey, offset))) count += 1;
+    }
+    return count;
+  };
+
+  const upcomingWeeks = (today, limit = 10) => {
+    const firstMonday = addDaysKey(mondayOfWeek(today), 7);
+    const weeks = [];
+    let monday = firstMonday;
+    let offset = 1;
+    while (weeks.length < limit && monday <= SCHOOL_YEAR.end) {
+      weeks.push({
+        monday,
+        count: schoolDaysInWeek(monday),
+        offset
+      });
+      monday = addDaysKey(monday, 7);
+      offset += 1;
+    }
+    return weeks;
+  };
+
+  const shortWeekRelative = offset => {
+    if (offset === 1) return 'la semaine prochaine';
+    return `dans ${offset} semaines`;
+  };
+
+  const buildShortWeeks = today => {
+    const weeks = upcomingWeeks(today, 10);
+    const nextShort = weeks.find(week => week.count < 5);
+
+    const summary = nextShort
+      ? `<div class="search-short-week-summary">
+          <span class="search-short-week-kicker">Prochaine semaine courte</span>
+          <strong>${courseDayLabel(nextShort.count)}</strong> - semaine du ${formatWeekDate(nextShort.monday)}
+          <span class="search-short-week-relative">(${shortWeekRelative(nextShort.offset)})</span>
+        </div>`
+      : `<div class="search-short-week-summary">
+          <span class="search-short-week-kicker">Prochaine semaine courte</span>
+          <strong>Aucune dans les 10 prochaines semaines.</strong>
+        </div>`;
+
+    const rows = weeks.map(week => `
+      <div class="search-week-row${week.count < 5 ? ' is-short' : ''}">
+        <span>Semaine du ${formatWeekDate(week.monday)}</span>
+        <strong>${courseDayLabel(week.count)}</strong>
+      </div>`).join('');
+
+    const detailsLabel = weeks.length === 10
+      ? 'Voir les 10 prochaines semaines'
+      : `Voir les ${weeks.length} prochaines semaines`;
+
+    return `
+      <div class="search-short-weeks">
+        ${summary}
+        ${weeks.length ? `<details class="search-weeks-details">
+          <summary>${detailsLabel}</summary>
+          <div class="search-weeks-grid">${rows}</div>
+        </details>` : ''}
+      </div>`;
+  };
+
+  const buildNextInterruption = today => {
+    // Si aujourd'hui EST déjà un congé/pédago, on annonce le suivant : le mot
+    // "prochain" reste ainsi utile même lorsqu'on consulte le portail ce jour-là.
+    const next = SCHOOL_INTERRUPTION_DAYS.find(item => item.start > today);
+    if (!next) return '';
+
+    const isPedago = next.type === 'pedago';
+    const noun = isPedago ? 'la prochaine journée pédagogique' : 'le prochain congé';
+    const intro = isPedago ? 'La prochaine journée pédagogique' : 'Le prochain congé';
+    const days = schoolDaysBetween(today, next.start, false);
+    const detail = next.label && next.label !== 'journée pédagogique'
+      ? ` <span class="search-interruption-name">(${next.label})</span>`
+      : '';
+
+    return `
+      ${countdownLine(days, `avant ${noun}`)}
+      <div class="search-interruption-date">${intro} sera le <strong>${formatDate(next.start)}</strong>.${detail}</div>`;
+  };
 
   const buildCountdown = () => {
     const today = quebecDateKey(new Date());
@@ -135,11 +269,7 @@
     }
 
     const lines = [];
-    const nextHoliday = HOLIDAY_BLOCKS.find(item => item.start >= today);
-    if (nextHoliday) {
-      const days = schoolDaysBetween(today, nextHoliday.start, false);
-      lines.push(countdownLine(days, 'avant le prochain <strong>CONGÉ</strong>'));
-    }
+    lines.push(buildNextInterruption(today));
 
     if (today <= SCHOOL_YEAR.halloween) {
       lines.push(countdownLine(
@@ -172,7 +302,8 @@
     return `
       <div class="no-suggestion search-countdown-egg" role="status">
         <div class="search-countdown-title">Il reste...</div>
-        <div class="search-countdown-list">${lines.join('')}</div>
+        <div class="search-countdown-list">${lines.filter(Boolean).join('')}</div>
+        ${buildShortWeeks(today)}
         <div class="search-countdown-note">Compté avec les vrais jours de classe - les pédagogiques, congés et la relâche sont exclus.</div>
       </div>`;
   };
@@ -271,13 +402,85 @@
         padding:4px 0;
         line-height:1.3;
       }
-      .search-countdown-line + .search-countdown-line{
+      .search-countdown-line + .search-countdown-line,
+      .search-interruption-date + .search-countdown-line{
         border-top:1px solid rgba(127,20,39,.08);
       }
       .search-countdown-weeks{
         flex:0 0 auto;
         color:#805662;
         font-size:.82rem;
+        white-space:nowrap;
+      }
+      .search-interruption-date{
+        margin:-2px 0 3px;
+        padding:0 0 6px;
+        color:#78545d;
+        font-size:.78rem;
+        line-height:1.35;
+      }
+      .search-interruption-name{color:#906d76}
+      .search-short-weeks{
+        margin-top:11px;
+        padding-top:10px;
+        border-top:1px solid rgba(127,20,39,.15);
+      }
+      .search-short-week-summary{
+        line-height:1.4;
+        color:#5f2431;
+      }
+      .search-short-week-kicker{
+        display:block;
+        margin-bottom:2px;
+        color:#7a1428;
+        font-size:.7rem;
+        font-weight:800;
+        letter-spacing:.04em;
+        text-transform:uppercase;
+      }
+      .search-short-week-relative{
+        color:#86616a;
+        font-size:.8rem;
+        white-space:nowrap;
+      }
+      .search-weeks-details{
+        margin-top:7px;
+        border:1px solid rgba(127,20,39,.13);
+        border-radius:10px;
+        background:rgba(255,255,255,.55);
+      }
+      .search-weeks-details summary{
+        cursor:pointer;
+        padding:8px 10px;
+        color:#741426;
+        font-size:.8rem;
+        font-weight:750;
+        user-select:none;
+      }
+      .search-weeks-details[open] summary{
+        border-bottom:1px solid rgba(127,20,39,.1);
+      }
+      .search-weeks-grid{
+        display:grid;
+        padding:3px 10px 7px;
+      }
+      .search-week-row{
+        display:flex;
+        justify-content:space-between;
+        gap:12px;
+        padding:5px 0;
+        color:#68434c;
+        font-size:.75rem;
+        line-height:1.25;
+      }
+      .search-week-row + .search-week-row{
+        border-top:1px solid rgba(127,20,39,.07);
+      }
+      .search-week-row.is-short{
+        color:#6f1427;
+      }
+      .search-week-row strong{
+        flex:0 0 auto;
         white-space:nowrap;
       }
       .search-countdown-note{
@@ -335,6 +538,21 @@
           padding:6px 0;
         }
         .search-countdown-weeks{
+          display:block;
+          margin-top:2px;
+          white-space:normal;
+        }
+        .search-interruption-date{padding-bottom:7px}
+        .search-short-week-relative{
+          display:block;
+          margin-top:1px;
+          white-space:normal;
+        }
+        .search-week-row{
+          display:block;
+          padding:6px 0;
+        }
+        .search-week-row strong{
           display:block;
           margin-top:2px;
           white-space:normal;
