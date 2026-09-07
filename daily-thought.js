@@ -52,7 +52,7 @@
       .school-news-ticker>.daily-thought-control{
         grid-column:4;
         grid-row:1;
-        align-self:start;
+        align-self:center;
         justify-self:end;
         position:relative;
         display:inline-flex;
