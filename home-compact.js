@@ -3,7 +3,7 @@
   let scheduled = false;
 
   const ensureStyles = () => {
-    if (document.querySelector('link[data-home-compact-style]')) return;
+    if (document.querySelector('link[data-home-compact],link[data-home-compact-style],link[href$="home-compact.css"]')) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'home-compact.css';
