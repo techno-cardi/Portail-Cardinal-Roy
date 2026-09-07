@@ -3,6 +3,7 @@
   const DATA_URL = 'daily-thoughts.txt?v=20260907-0900';
   const STYLE_ID = 'daily-thought-style';
   const POPOVER_ID = 'daily-thought-popover';
+  const LEGACY_SELECTOR = '#daily-thought, #daily-thought-fallback';
   let thoughts = new Map();
   let tickerObserver = null;
   let hostObserver = null;
@@ -34,11 +35,17 @@
     if (node && node.textContent !== value) node.textContent = value;
   };
 
+  const removeLegacyThoughts = () => {
+    document.querySelectorAll(LEGACY_SELECTOR).forEach(node => node.remove());
+  };
+
   const ensureStyles = () => {
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
+      #daily-thought,
+      #daily-thought-fallback{display:none!important}
       .school-news-ticker{overflow:visible!important;position:relative;z-index:4}
       .school-news-badges{
         min-width:0;
@@ -226,6 +233,8 @@
   };
 
   const placeControl = () => {
+    removeLegacyThoughts();
+
     const host = document.querySelector('.search-stage-inner');
     const intro = host?.querySelector('.search-intro');
     const ticker = document.getElementById('school-news-ticker');
@@ -292,6 +301,7 @@
   });
 
   ensureStyles();
+  removeLegacyThoughts();
   placeControl();
   loadThoughts();
 
@@ -301,6 +311,7 @@
     hostObserver.observe(host, { childList: true, subtree: true });
   } else {
     const bootstrap = new MutationObserver(() => {
+      removeLegacyThoughts();
       if (placeControl()) {
         bootstrap.disconnect();
         const readyHost = document.querySelector('.search-stage-inner');
