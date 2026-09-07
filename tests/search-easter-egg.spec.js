@@ -73,7 +73,9 @@ test('« il reste » au complet affiche le compte à rebours scolaire', async ({
   const egg = page.locator('#search-suggestions .search-countdown-egg');
   await expect(egg).toBeVisible();
   await expect(egg.locator('.search-countdown-title')).toHaveText('Il reste...');
-  await expect(egg).toContainText('0 jour d’école avant le prochain CONGÉ');
+  await expect(egg).toContainText('0 jour d’école avant le prochain congé');
+  await expect(egg).toContainText('Le prochain congé sera le lundi 7 septembre 2026.');
+  await expect(egg).toContainText('Fête du Travail');
   await expect(egg).toContainText('(0 semaine de cours)');
   await expect(egg).toContainText('36 jours d’école avant l’Halloween');
   await expect(egg).toContainText('(7,2 semaines de cours)');
@@ -98,15 +100,43 @@ test('« il reste » ne se déclenche pas pendant une saisie partielle ou dans u
   expect(errors).toEqual([]);
 });
 
-test('les journées pédagogiques ne sont jamais comptées comme jours d’école', async ({ page }) => {
+test('la prochaine interruption devient une pédagogique quand elle arrive avant le prochain congé', async ({ page }) => {
   await freezeTime(page, '2026-09-17T16:00:00Z');
   const errors = await openPortal(page);
   await page.locator('#guide-search').fill('il reste');
   const egg = page.locator('#search-suggestions .search-countdown-egg');
 
-  // Le 18 septembre et le 5 octobre sont des journées pédagogiques : elles
-  // sont exclues du calcul avant le congé de l'Action de grâce.
-  await expect(egg).toContainText('14 jours d’école avant le prochain CONGÉ');
+  await expect(egg).toContainText('0 jour d’école avant la prochaine journée pédagogique');
+  await expect(egg).toContainText('La prochaine journée pédagogique sera le vendredi 18 septembre 2026.');
+  expect(errors).toEqual([]);
+});
+
+test('la prochaine semaine courte et les 10 prochaines semaines utilisent seulement les jours de cours', async ({ page }) => {
+  await freezeTime(page, '2026-09-06T16:00:00Z');
+  const errors = await openPortal(page);
+  await page.locator('#guide-search').fill('il reste');
+  const egg = page.locator('#search-suggestions .search-countdown-egg');
+
+  const shortWeek = egg.locator('.search-short-week-summary');
+  await expect(shortWeek).toContainText('Prochaine semaine courte');
+  await expect(shortWeek).toContainText('4 jours de cours');
+  await expect(shortWeek).toContainText('semaine du 7 septembre 2026');
+  await expect(shortWeek).toContainText('la semaine prochaine');
+
+  const details = egg.locator('.search-weeks-details');
+  await expect(details).not.toHaveAttribute('open', '');
+  await expect(details.locator('.search-week-row')).toHaveCount(10);
+  await details.locator('summary').click();
+  await expect(details).toHaveAttribute('open', '');
+
+  const rows = details.locator('.search-week-row');
+  await expect(rows.nth(0)).toContainText('Semaine du 7 septembre 2026');
+  await expect(rows.nth(0)).toContainText('4 jours de cours');
+  // La semaine du 14 septembre est également courte à cause de la pédagogique du 18.
+  await expect(rows.nth(1)).toContainText('Semaine du 14 septembre 2026');
+  await expect(rows.nth(1)).toContainText('4 jours de cours');
+  await expect(rows.nth(2)).toContainText('Semaine du 21 septembre 2026');
+  await expect(rows.nth(2)).toContainText('5 jours de cours');
   expect(errors).toEqual([]);
 });
 
@@ -130,5 +160,6 @@ test('après le dernier jour de classe, le portail demande d’actualiser le cal
   await expect(egg).toContainText('Année scolaire terminée!');
   await expect(egg).toContainText('Il faut actualiser le calendrier.');
   await expect(egg.locator('.search-countdown-line')).toHaveCount(0);
+  await expect(egg.locator('.search-short-weeks')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
