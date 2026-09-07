@@ -209,14 +209,17 @@
     const matches = registry.search(rawQuery, 7);
     if (!matches.length) return;
 
-    const preservedSubresources = [...suggestions.querySelectorAll('.subresource-suggestion')]
+    // Le moteur 2.0 sait déjà cibler des sous-ressources précises (mot de passe,
+    // Repro+, PAE, etc.). On les conserve devant nos résultats enrichis plutôt
+    // que de les remplacer par la catégorie générique Applications CSSC.
+    const preservedSubresources = [...suggestions.querySelectorAll('.subresource-suggestion,[data-search-subresource]')]
       .map(node => node.cloneNode(true));
     const preciseSubresourcePresent = preservedSubresources.length > 0;
     const ids = new Set();
     const fragment = document.createDocumentFragment();
 
     preservedSubresources.forEach(node => {
-      const key = node.dataset.subresourceId || node.textContent;
+      const key = node.dataset.subresourceId || node.dataset.searchSubresource || node.textContent;
       if (ids.has(key)) return;
       ids.add(key);
       fragment.appendChild(node);
@@ -245,7 +248,7 @@
 
   input.addEventListener('keydown', event => {
     if (event.key !== 'Enter' || hasEasterEgg()) return;
-    const top = suggestions.querySelector('.subresource-suggestion,.smart-suggestion');
+    const top = suggestions.querySelector('.subresource-suggestion,[data-search-subresource],.smart-suggestion');
     if (!top) return;
     event.preventDefault();
     event.stopImmediatePropagation();
