@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '1.0';
+  const VERSION = '1.1';
   const FAILURE_THRESHOLD = 3;
   const FAILURE_DELAY_MS = 900;
   const MAIL_SUBJECT = 'Suggestion d’ajout d’une ressource sur le Portail Cardinal-Roy';
@@ -12,6 +12,30 @@
     .replace(/[^a-z0-9+ -]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+
+  const MOVED_RESOURCES = [
+    {
+      id: 'declaration-evenements-risque',
+      category: 'Formulaires',
+      icon: '⚠️',
+      keywords: [
+        'formulaire declaration événement evenement accidentel accident accidents incident incidents blessure blessures',
+        'situation risque danger dangereux santé sante sécurité securite sst cnesst csst',
+        'harcèlement harcelement discrimination intimidation violence agression menace menaces',
+        'quasi accident presque accident accident travail accident du travail déclarer declarer signaler'
+      ].join(' ')
+    },
+    {
+      id: 'calendrier-scolaire-2026-2027',
+      category: 'Organisation scolaire',
+      icon: '🗓️',
+      keywords: [
+        'calendrier scolaire 2026 2027 année annee rentrée rentree congé conge congés conges',
+        'journée pédagogique journee pedagogique journées pédagogiques journees pedagogiques pédago pedago',
+        'relâche relache vacances noël noel pâques paques fin étape fin etape bulletin rencontre parents'
+      ].join(' ')
+    }
+  ];
 
   const suggestionMailto = () => {
     const contact = document.querySelector('.techno-contact[href^="mailto:"]');
@@ -52,6 +76,71 @@
     input.dataset.resourceSuggestionBound = 'true';
     window.PORTAL_RESOURCE_SUGGESTION = VERSION;
     injectStyle();
+
+    const movedMatches = rawQuery => {
+      const query = normalize(rawQuery);
+      if (!query || query.length < 2) return [];
+      const tokens = query.split(/\s+/).filter(Boolean);
+      return MOVED_RESOURCES.filter(resource => {
+        const target = document.getElementById(resource.id);
+        if (!target) return false;
+        const haystack = normalize(`${resource.keywords} ${target.textContent || ''}`);
+        return tokens.every(token => haystack.includes(token));
+      });
+    };
+
+    const movedTitle = target =>
+      target?.querySelector('.procedure-title')?.textContent?.trim() ||
+      target?.querySelector('summary')?.textContent?.trim() ||
+      'Ressource';
+
+    const prioritizeMovedResources = () => {
+      const matches = movedMatches(input.value);
+      if (!matches.length) return;
+
+      // Ces ressources ont été déplacées hors de « Applications CSSC » : la
+      // suggestion générique ne doit plus les masquer.
+      suggestions.querySelectorAll('.suggestion[data-open-id="applications-cssc"]').forEach(node => node.remove());
+
+      [...matches].reverse().forEach(resource => {
+        const target = document.getElementById(resource.id);
+        if (!target) return;
+        suggestions.querySelectorAll(`.suggestion[data-open-id="${resource.id}"]`).forEach(node => node.remove());
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'suggestion moved-resource-suggestion';
+        button.setAttribute('role', 'option');
+        button.dataset.openId = resource.id;
+        button.dataset.movedResource = 'true';
+        button.innerHTML = `<span class="suggestion-visual emoji-visual" aria-hidden="true">${resource.icon}</span><span class="suggestion-copy"><strong>${movedTitle(target)}</strong><small>${resource.category}</small></span><span class="suggestion-arrow" aria-hidden="true">→</span>`;
+        suggestions.prepend(button);
+      });
+
+      [...suggestions.querySelectorAll('.suggestion')].slice(7).forEach(node => node.remove());
+      suggestions.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+      const status = document.getElementById('search-status');
+      const count = suggestions.querySelectorAll('.suggestion').length;
+      if (status) status.textContent = `${count} suggestion${count > 1 ? 's' : ''}`;
+    };
+
+    const queueMovedResources = () => queueMicrotask(prioritizeMovedResources);
+    input.addEventListener('input', queueMovedResources);
+    input.addEventListener('focus', queueMovedResources);
+
+    // Le moteur principal traite Entrée avant de connaître ce correctif. En phase
+    // de capture, on ouvre donc la ressource précise quand elle correspond.
+    input.addEventListener('keydown', event => {
+      if (event.key !== 'Enter') return;
+      const resource = movedMatches(input.value)[0];
+      if (!resource) return;
+      const button = suggestions.querySelector(`.suggestion[data-open-id="${resource.id}"]`);
+      if (!button) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      button.click();
+    }, true);
 
     const failedQueries = new Set();
     let failureTimer = 0;
