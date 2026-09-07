@@ -63,6 +63,18 @@
   root.querySelector('#scolago-absence-personnel')?.remove();
 })();
 
+/* Le formulaire officiel AppSP est la source à utiliser pour une sortie éducative ou une activité spéciale. */
+(() => {
+  const root = document.getElementById('legacy-source');
+  const card = root?.querySelector('#sortie-educative');
+  if (!card) return;
+  const primary = card.querySelector('.links a.btn.primary');
+  if (primary) {
+    primary.href = 'https://appsp.ca/formulaire/envoi.php?id=5';
+    primary.textContent = 'Formulaire — sortie éducative ou activité spéciale';
+  }
+})();
+
 /*
  * Icônes originales générées et approuvées pour le portail.
  * On les branche sur les fiches AVANT ui-polish afin que le moteur de rendu
