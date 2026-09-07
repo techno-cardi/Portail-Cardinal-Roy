@@ -4,9 +4,9 @@
   if (document.querySelector('link[data-home-compact]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = 'home-compact.css?v=20260907-0900';
+  link.href = 'home-compact.css?v=20260907-0908';
   link.dataset.homeCompact = 'true';
-  link.dataset.homeCompactVersion = '20260907-0900';
+  link.dataset.homeCompactVersion = '20260907-0908';
   document.head.appendChild(link);
 })();
 
@@ -160,7 +160,7 @@
     if (ready) {
       if (!document.querySelector('script[data-home-compact-layout]')) {
         const layoutScript = document.createElement('script');
-        layoutScript.src = 'home-compact.js?v=20260907-0900';
+        layoutScript.src = 'home-compact.js?v=20260907-0908';
         layoutScript.dataset.homeCompactLayout = 'true';
         document.body.appendChild(layoutScript);
       }
@@ -194,7 +194,7 @@
 (() => {
   if (document.querySelector('script[data-daily-thought]')) return;
   const script = document.createElement('script');
-  script.src = 'daily-thought.js?v=20260907-0900';
+  script.src = 'daily-thought.js?v=20260907-0908';
   script.dataset.dailyThought = 'true';
   document.body.appendChild(script);
 })();
