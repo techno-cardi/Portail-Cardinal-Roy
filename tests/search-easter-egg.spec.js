@@ -24,6 +24,17 @@ for (const sacre of sacres) {
   });
 }
 
+test('l’easter egg fait un petit flash et anime le visage', async ({ page }) => {
+  const errors = await openPortal(page);
+  await page.locator('#guide-search').fill('tabarnak');
+  const egg = page.locator('#search-suggestions .search-easter-egg');
+  await expect(egg).toBeVisible();
+  await expect(egg.locator('.search-easter-egg-face')).toContainText('🥸');
+  const animationName = await egg.evaluate(node => getComputedStyle(node).animationName);
+  expect(animationName).toContain('sacreSurprise');
+  expect(errors).toEqual([]);
+});
+
 test('un sacre incomplet ne déclenche pas l’easter egg', async ({ page }) => {
   const errors = await openPortal(page);
   await page.locator('#guide-search').fill('tabarna');
