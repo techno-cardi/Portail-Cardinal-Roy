@@ -22,74 +22,60 @@ async function openPortal(page) {
   await page.goto('/');
   await expect(page.locator('#guide-search')).toBeVisible();
   await expect.poll(() => page.locator('script[data-daily-thought]').count()).toBe(1);
+  await expect(page.locator('.daily-thought-trigger')).toBeVisible();
   return errors;
 }
 
-test('la pensée du 8 septembre est affichée au-dessus des dates importantes', async ({ page }) => {
+test('la pensée du 8 septembre reste masquée jusqu’au clic sur le petit bouton', async ({ page }) => {
   await freezeTime(page, '2026-09-08T14:00:00Z');
   const errors = await openPortal(page);
 
-  const thought = page.locator('#daily-thought');
-  await expect(thought).toBeVisible();
-  await expect(thought).toHaveAttribute('data-thought-date', '2026-09-08');
-  await expect(thought.locator('.daily-thought-label')).toContainText('Pensée du jour');
-  await expect(thought.locator('.daily-thought-quote')).toHaveText("« Il est des portes sur la mer que l'on ouvre avec des mots. »");
-  await expect(thought.locator('.daily-thought-author')).toHaveText('- Rafael Alberti');
-  await expect(thought.locator('.daily-thought-quote')).toHaveCSS('font-style', 'italic');
+  await expect(page.locator('#daily-thought')).toHaveCount(0);
+  await expect(page.locator('#daily-thought-fallback')).toHaveCount(0);
 
-  const ticker = page.locator('#school-news-ticker');
-  await expect(ticker).toBeAttached();
-  await expect.poll(async () => {
-    return page.evaluate(() => {
-      const thought = document.getElementById('daily-thought');
-      const ticker = document.getElementById('school-news-ticker');
-      return Boolean(thought && ticker && thought.nextElementSibling === ticker);
-    });
-  }).toBe(true);
+  const trigger = page.locator('.daily-thought-trigger');
+  const popover = page.locator('#daily-thought-popover');
+  await expect(popover).toBeHidden();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+  await trigger.click();
+  await expect(popover).toBeVisible();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await expect(popover.locator('.daily-thought-popover-quote')).toHaveText("« Il est des portes sur la mer que l'on ouvre avec des mots. »");
+  await expect(popover.locator('.daily-thought-popover-author')).toHaveText('- Rafael Alberti');
+  await expect(popover.locator('.daily-thought-popover-quote')).toHaveCSS('font-style', 'italic');
 
   expect(errors).toEqual([]);
 });
 
-test('une pensée de réserve reste visible un jour absent du calendrier', async ({ page }) => {
+test('un jour sans pensée ne réintroduit aucun gros bloc permanent', async ({ page }) => {
   await freezeTime(page, '2026-09-06T14:00:00Z');
   const errors = await openPortal(page);
 
-  const fallback = page.locator('#daily-thought-fallback');
-  await expect(fallback).toBeVisible();
-  await expect(fallback).toHaveAttribute('data-thought-date', '2026-09-06');
-  await expect(fallback).toHaveAttribute('data-thought-source', 'reserve');
-  await expect(fallback.locator('.daily-thought-label')).toContainText('Pensée du jour');
-  await expect(fallback.locator('.daily-thought-author')).toHaveText('- Auteur inconnu');
-  await expect(fallback.locator('.daily-thought-quote')).toHaveCSS('font-style', 'italic');
   await expect(page.locator('#daily-thought')).toHaveCount(0);
+  await expect(page.locator('#daily-thought-fallback')).toHaveCount(0);
 
-  const ticker = page.locator('#school-news-ticker');
-  await expect(ticker).toBeAttached();
-  await expect.poll(() => page.evaluate(() => {
-    const fallback = document.getElementById('daily-thought-fallback');
-    const ticker = document.getElementById('school-news-ticker');
-    return Boolean(fallback && ticker && fallback.nextElementSibling === ticker);
-  })).toBe(true);
+  const trigger = page.locator('.daily-thought-trigger');
+  const popover = page.locator('#daily-thought-popover');
+  await expect(popover).toBeHidden();
+  await trigger.click();
+  await expect(popover).toBeVisible();
+  await expect(popover.locator('.daily-thought-popover-quote')).toHaveText('Aucune pensée planifiée aujourd’hui.');
+  await expect(popover.locator('.daily-thought-popover-author')).toBeHidden();
 
   expect(errors).toEqual([]);
 });
 
-test('la date est calculée en heure du Québec', async ({ page }) => {
+test('la date de la pensée est calculée en heure du Québec', async ({ page }) => {
   await freezeTime(page, '2026-09-09T03:30:00Z');
   const errors = await openPortal(page);
-  const thought = page.locator('#daily-thought');
-  await expect(thought).toHaveAttribute('data-thought-date', '2026-09-08');
-  await expect(thought.locator('.daily-thought-author')).toHaveText('- Rafael Alberti');
-  expect(errors).toEqual([]);
-});
 
-test('la pensée du 12 mai utilise la version neutre de réserve', async ({ page }) => {
-  await freezeTime(page, '2027-05-12T14:00:00Z');
-  const errors = await openPortal(page);
-  const thought = page.locator('#daily-thought');
-  await expect(thought).toHaveAttribute('data-thought-date', '2027-05-12');
-  await expect(thought.locator('.daily-thought-quote')).toHaveText('« Les petites avancées construisent de grands chemins. »');
-  await expect(thought.locator('.daily-thought-author')).toHaveText('- Auteur inconnu');
-  await expect(thought).not.toContainText('Robert Brasillach');
+  const trigger = page.locator('.daily-thought-trigger');
+  const popover = page.locator('#daily-thought-popover');
+  await trigger.click();
+  await expect(popover.locator('.daily-thought-popover-author')).toHaveText('- Rafael Alberti');
+  await expect(popover.locator('.daily-thought-popover-quote')).toContainText('Il est des portes sur la mer');
+  await expect(page.locator('#daily-thought')).toHaveCount(0);
+
   expect(errors).toEqual([]);
 });
