@@ -1,12 +1,12 @@
 (() => {
   const TIMEZONE = 'America/Toronto';
-  const DATA_URL = 'daily-thoughts.txt?v=20260907-0900';
+  const DATA_URL = 'daily-thoughts.txt?v=20260907-0920';
   const STYLE_ID = 'daily-thought-style';
   const POPOVER_ID = 'daily-thought-popover';
   const LEGACY_SELECTOR = '#daily-thought, #daily-thought-fallback';
   let thoughts = new Map();
-  let tickerObserver = null;
-  let hostObserver = null;
+  let attempts = 0;
+  let bootstrapTimer = 0;
 
   const dateKey = value => {
     const parts = new Intl.DateTimeFormat('en-CA', {
@@ -39,6 +39,16 @@
     document.querySelectorAll(LEGACY_SELECTOR).forEach(node => node.remove());
   };
 
+  const cleanTicker = ticker => {
+    if (!ticker) return;
+    ticker.querySelectorAll(':scope > .daily-thought-control').forEach(node => node.remove());
+    const wrapper = ticker.querySelector(':scope > .school-news-badges');
+    if (!wrapper) return;
+    const dateBadge = wrapper.querySelector('.school-news-badge');
+    if (dateBadge) ticker.insertBefore(dateBadge, wrapper);
+    wrapper.remove();
+  };
+
   const ensureStyles = () => {
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
@@ -46,19 +56,15 @@
     style.textContent = `
       #daily-thought,
       #daily-thought-fallback{display:none!important}
-      .school-news-ticker{overflow:visible!important;position:relative;z-index:4}
-      .school-news-badges{
-        min-width:0;
-        display:flex;
-        align-items:center;
-        gap:6px;
-        position:relative;
-      }
       .daily-thought-standalone{
         width:min(820px,100%);
-        margin:0 0 6px;
+        min-height:29px;
+        margin:-2px 0 6px;
         display:flex;
         justify-content:flex-end;
+        align-items:center;
+        position:relative;
+        z-index:8;
       }
       .daily-thought-control{
         position:relative;
@@ -98,7 +104,7 @@
         position:absolute;
         z-index:90;
         top:calc(100% + 8px);
-        left:0;
+        right:0;
         width:min(430px,calc(100vw - 32px));
         padding:13px 15px 12px;
         border:1px solid rgba(127,20,39,.18);
@@ -112,7 +118,7 @@
       .daily-thought-popover::before{
         content:'';
         position:absolute;
-        left:28px;
+        right:28px;
         top:-6px;
         width:10px;
         height:10px;
@@ -148,14 +154,9 @@
       .daily-thought-popover-author:empty{display:none}
 
       @media(max-width:620px){
-        .school-news-badges{
-          width:100%;
-          justify-content:center;
-          flex-wrap:wrap;
-        }
         .daily-thought-standalone{
           justify-content:center;
-          margin-bottom:7px;
+          margin:0 0 7px;
         }
         .daily-thought-trigger{
           min-height:32px;
@@ -163,12 +164,14 @@
           font-size:.7rem;
         }
         .daily-thought-popover{
+          right:auto;
           left:50%;
           transform:translateX(-50%);
           width:min(360px,calc(100vw - 24px));
           padding:12px 13px;
         }
         .daily-thought-popover::before{
+          right:auto;
           left:50%;
           transform:translateX(-50%) rotate(45deg);
         }
@@ -237,45 +240,33 @@
 
     const host = document.querySelector('.search-stage-inner');
     const intro = host?.querySelector('.search-intro');
-    const ticker = document.getElementById('school-news-ticker');
     if (!host || !intro) return false;
 
     ensureStyles();
-    let control = document.querySelector('.daily-thought-control');
-    if (!control) control = createControl();
+    const ticker = document.getElementById('school-news-ticker');
+    cleanTicker(ticker);
 
-    if (ticker && !ticker.hidden) {
-      let badges = ticker.querySelector('.school-news-badges');
-      if (!badges) {
-        const datesBadge = ticker.querySelector('.school-news-badge');
-        if (datesBadge) {
-          badges = document.createElement('span');
-          badges.className = 'school-news-badges';
-          ticker.insertBefore(badges, datesBadge);
-          badges.appendChild(datesBadge);
-        }
-      }
-      if (badges && control.parentElement !== badges) badges.appendChild(control);
-      host.querySelector('.daily-thought-standalone')?.remove();
-    } else {
-      let standalone = host.querySelector('.daily-thought-standalone');
-      if (!standalone) {
-        standalone = document.createElement('div');
-        standalone.className = 'daily-thought-standalone';
-        host.insertBefore(standalone, ticker || intro);
-      }
-      if (control.parentElement !== standalone) standalone.appendChild(control);
+    let standalone = host.querySelector('.daily-thought-standalone');
+    if (!standalone) {
+      standalone = document.createElement('div');
+      standalone.className = 'daily-thought-standalone';
+      standalone.setAttribute('aria-label', 'Pensée du jour');
+    }
+
+    let control = standalone.querySelector('.daily-thought-control');
+    if (!control) {
+      document.querySelectorAll('.daily-thought-control').forEach(node => node.remove());
+      control = createControl();
+      standalone.appendChild(control);
+    }
+
+    if (ticker) {
+      if (ticker.nextElementSibling !== standalone) ticker.insertAdjacentElement('afterend', standalone);
+    } else if (standalone.parentElement !== host || standalone.nextElementSibling !== intro) {
+      host.insertBefore(standalone, intro);
     }
 
     updateContent();
-
-    if (ticker && !tickerObserver) {
-      tickerObserver = new MutationObserver(() => {
-        closePopover();
-        placeControl();
-      });
-      tickerObserver.observe(ticker, { attributes: true, attributeFilter: ['hidden'] });
-    }
     return true;
   };
 
@@ -295,6 +286,15 @@
     }
   };
 
+  const bootstrap = () => {
+    const placed = placeControl();
+    attempts += 1;
+    const tickerReady = Boolean(document.getElementById('school-news-ticker'));
+    if ((!placed || !tickerReady) && attempts < 40) {
+      bootstrapTimer = window.setTimeout(bootstrap, 150);
+    }
+  };
+
   document.addEventListener('click', () => closePopover());
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') closePopover(true);
@@ -302,31 +302,9 @@
 
   ensureStyles();
   removeLegacyThoughts();
-  placeControl();
+  bootstrap();
   loadThoughts();
+  window.addEventListener('load', placeControl, { once: true });
 
-  const host = document.querySelector('.search-stage-inner');
-  if (host) {
-    hostObserver = new MutationObserver(() => placeControl());
-    hostObserver.observe(host, { childList: true, subtree: true });
-  } else {
-    const bootstrap = new MutationObserver(() => {
-      removeLegacyThoughts();
-      if (placeControl()) {
-        bootstrap.disconnect();
-        const readyHost = document.querySelector('.search-stage-inner');
-        if (readyHost) {
-          hostObserver = new MutationObserver(() => placeControl());
-          hostObserver.observe(readyHost, { childList: true, subtree: true });
-        }
-      }
-    });
-    bootstrap.observe(document.getElementById('app') || document.body, { childList: true, subtree: true });
-    window.setTimeout(() => bootstrap.disconnect(), 12000);
-  }
-
-  window.setInterval(() => {
-    updateContent();
-    placeControl();
-  }, 60 * 1000);
+  window.setInterval(updateContent, 60 * 1000);
 })();
