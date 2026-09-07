@@ -87,4 +87,23 @@
   // Après le chargement, une dernière passe couvre aussi les navigateurs qui
   // planifient différemment les callbacks de MutationObserver.
   window.addEventListener('load', repairStructure, { once: true });
+
+  // Garde-fou éditorial pour la banque de pensées du jour.
+  // La citation prévue le 12 mai a été remplacée par une création neutre de la banque de réserve.
+  const repairDailyThought = () => {
+    const block = document.getElementById('daily-thought');
+    if (!block || block.dataset.thoughtDate !== '2027-05-12') return;
+
+    const quote = block.querySelector('.daily-thought-quote');
+    const author = block.querySelector('.daily-thought-author');
+    const safeQuote = '« Les petites avancées construisent de grands chemins. »';
+    const safeAuthor = '- Auteur inconnu';
+
+    if (quote && quote.textContent !== safeQuote) quote.textContent = safeQuote;
+    if (author && author.textContent !== safeAuthor) author.textContent = safeAuthor;
+  };
+
+  const thoughtObserver = new MutationObserver(repairDailyThought);
+  thoughtObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
+  repairDailyThought();
 })();
