@@ -31,6 +31,8 @@
     return map;
   };
 
+  const currentItem = () => thoughts.get(dateKey(new Date())) || null;
+
   const removeLegacyThoughts = () => {
     document.querySelectorAll(LEGACY_SELECTOR).forEach(node => node.remove());
   };
@@ -44,12 +46,8 @@
       #daily-thought-fallback,
       .daily-thought-standalone{display:none!important}
 
-      .school-news-ticker{
+      .school-news-ticker.has-daily-thought{
         grid-template-columns:auto minmax(0,1fr) auto auto!important;
-      }
-      .school-news-ticker>.school-news-badge{
-        align-self:start!important;
-        justify-self:start!important;
       }
       .school-news-ticker>.daily-thought-control{
         grid-column:4;
@@ -154,8 +152,6 @@
     document.head.appendChild(style);
   };
 
-  const currentItem = () => thoughts.get(dateKey(new Date())) || null;
-
   const closePopover = (returnFocus = false) => {
     const button = document.querySelector('.daily-thought-trigger');
     const popover = document.getElementById(POPOVER_ID);
@@ -197,6 +193,7 @@
   const removeControl = () => {
     closePopover();
     document.querySelectorAll('.daily-thought-control').forEach(node => node.remove());
+    document.getElementById('school-news-ticker')?.classList.remove('has-daily-thought');
   };
 
   const syncControl = () => {
@@ -210,6 +207,7 @@
       return false;
     }
 
+    ticker.classList.add('has-daily-thought');
     let control = ticker.querySelector(':scope > .daily-thought-control');
     if (!control) {
       document.querySelectorAll('.daily-thought-control').forEach(node => node.remove());
@@ -249,11 +247,8 @@
   });
 
   const handleViewportChange = () => {
-    if (mobileQuery.matches) {
-      removeControl();
-    } else {
-      retryPlacement();
-    }
+    if (mobileQuery.matches) removeControl();
+    else retryPlacement();
   };
   if (typeof mobileQuery.addEventListener === 'function') {
     mobileQuery.addEventListener('change', handleViewportChange);
