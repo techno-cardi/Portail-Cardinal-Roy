@@ -65,3 +65,14 @@ test('la date est calculée en heure du Québec', async ({ page }) => {
   await expect(thought.locator('.daily-thought-author')).toHaveText('- Rafael Alberti');
   expect(errors).toEqual([]);
 });
+
+test('la pensée du 12 mai utilise la version neutre de réserve', async ({ page }) => {
+  await freezeTime(page, '2027-05-12T14:00:00Z');
+  const errors = await openPortal(page);
+  const thought = page.locator('#daily-thought');
+  await expect(thought).toHaveAttribute('data-thought-date', '2027-05-12');
+  await expect(thought.locator('.daily-thought-quote')).toHaveText('« Les petites avancées construisent de grands chemins. »');
+  await expect(thought.locator('.daily-thought-author')).toHaveText('- Auteur inconnu');
+  await expect(thought).not.toContainText('Robert Brasillach');
+  expect(errors).toEqual([]);
+});
