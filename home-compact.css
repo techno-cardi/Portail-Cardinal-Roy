@@ -36,29 +36,30 @@
   padding:6px 10px!important;
 }
 
-/* Sur ordinateur, la pensée elle-même est réellement centrée dans la boîte.
-   Le libellé « Pensée du jour » reste dans la colonne de gauche, aligné à droite. */
+/* Desktop : une seule ligne. Le groupe libellé + pensée est centré dans la
+   boîte; le libellé garde son alignement vers la pensée. */
 @media(min-width:621px){
   .daily-thought{
-    display:grid!important;
-    grid-template-columns:minmax(125px,1fr) minmax(0,4fr) minmax(125px,1fr);
-    align-items:center;
-    text-align:center;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:8px!important;
+    flex-wrap:nowrap!important;
+    text-align:center!important;
   }
   .daily-thought-label{
-    grid-column:1;
-    justify-self:end;
-    text-align:right;
+    flex:0 0 auto!important;
+    margin:0!important;
+    text-align:right!important;
+    white-space:nowrap!important;
   }
   .daily-thought-text{
-    grid-column:2;
-    justify-self:center;
-    width:100%;
-    text-align:center;
-  }
-  .daily-thought::after{
-    content:'';
-    grid-column:3;
+    flex:0 1 auto!important;
+    min-width:0!important;
+    width:auto!important;
+    margin:0!important;
+    text-align:center!important;
+    white-space:nowrap!important;
   }
 }
 
@@ -68,29 +69,39 @@
   padding:5px 8px!important;
 }
 
+.search-intro{width:min(820px,100%)!important}
 .search-intro h2{
   font-size:clamp(1.45rem,2.45vw,1.95rem)!important;
   line-height:1.08!important;
 }
-.search-intro p{
-  margin:4px auto 10px!important;
-  font-size:.9rem!important;
-  line-height:1.38;
-}
 
-/* Favoris : juste au-dessus de la barre, alignés sur son bord droit. */
-.search-favorites-row{
-  width:min(820px,100%);
-  min-height:30px;
-  margin:0 auto 4px;
-  display:flex;
-  justify-content:flex-end;
+/* Le texte d'aide et « Mes favoris » partagent vraiment la même ligne au-dessus
+   de la barre de recherche. Aucun espace vertical supplémentaire n'est réservé. */
+.search-guidance-row{
+  width:100%;
+  min-height:32px;
+  margin:4px auto 6px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
   align-items:center;
+  gap:12px;
 }
-.search-favorites-row .favorites-jump{
+.search-guidance-row p{
+  min-width:0;
+  max-width:none!important;
+  margin:0!important;
+  color:#f3dfe4!important;
+  font-size:.88rem!important;
+  line-height:1.3!important;
+  text-align:center!important;
+  white-space:nowrap;
+}
+.search-guidance-row .favorites-jump{
   min-height:30px;
-  padding:4px 9px;
   margin:0;
+  padding:4px 9px;
+  justify-self:end;
+  white-space:nowrap;
 }
 
 .search-shell{min-height:54px!important}
@@ -99,7 +110,8 @@
   font-size:1rem!important;
 }
 
-/* Le statut reste sous la barre, mais ne réserve plus une grosse ligne vide. */
+/* Le statut reste sous la barre uniquement quand le moteur a quelque chose à
+   annoncer; il ne réserve aucune ligne vide au repos. */
 .search-under{
   width:min(820px,100%)!important;
   min-height:0!important;
@@ -157,11 +169,14 @@
   }
   .school-mark .official-logo{width:138px;height:55px}
   .search-stage{padding:14px 0 18px!important}
-  .search-intro p{margin-bottom:10px!important}
+  .search-guidance-row{
+    gap:9px;
+  }
+  .search-guidance-row p{font-size:.82rem!important}
 }
 
-/* Mobile / iOS : la navigation devient une ligne horizontale balayable et les
-   contrôles gardent des cibles tactiles confortables. */
+/* Mobile / iOS : quand la largeur ne permet plus de garder le long texte et le
+   bouton sur la même ligne sans les écraser, on les empile proprement. */
 @media(max-width:620px){
   .masthead{
     min-height:auto;
@@ -180,11 +195,13 @@
     display:block!important;
     margin-bottom:3px!important;
     text-align:center!important;
+    white-space:normal!important;
   }
   .daily-thought-text{
     display:block!important;
     width:100%!important;
     text-align:center!important;
+    white-space:normal!important;
   }
 
   .school-news-ticker{
@@ -193,18 +210,21 @@
     margin-bottom:9px!important;
   }
   .search-intro h2{font-size:1.55rem!important}
-  .search-intro p{
-    margin:5px auto 10px!important;
-    font-size:.88rem!important;
+  .search-guidance-row{
+    min-height:0;
+    margin:5px auto 7px;
+    grid-template-columns:1fr auto;
+    gap:8px;
   }
-  .search-favorites-row{
-    width:100%;
-    min-height:32px;
-    margin-bottom:4px;
+  .search-guidance-row p{
+    font-size:.8rem!important;
+    line-height:1.25!important;
+    text-align:left!important;
+    white-space:normal;
   }
-  .search-favorites-row .favorites-jump{
+  .search-guidance-row .favorites-jump{
     min-height:32px;
-    padding:5px 10px;
+    padding:5px 9px;
   }
   .search-shell{min-height:54px!important}
   #guide-search{padding-block:13px!important}
