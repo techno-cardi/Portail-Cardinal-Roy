@@ -190,6 +190,48 @@
   attach();
 })();
 
+/* Registre central, recherche intelligente, récents, fraîcheur et analytics locaux. */
+(() => {
+  if (!document.querySelector('link[data-portal-upgrades]')) {
+    const style = document.createElement('link');
+    style.rel = 'stylesheet';
+    style.href = 'portal-upgrades.css?v=20260907';
+    style.dataset.portalUpgrades = 'true';
+    document.head.appendChild(style);
+  }
+
+  let attempts = 0;
+  const loadOnce = (src, marker) => new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[${marker}]`);
+    if (existing) {
+      if (existing.dataset.loaded === 'true') resolve();
+      else existing.addEventListener('load', resolve, {once:true});
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.setAttribute(marker, 'true');
+    script.addEventListener('load', () => { script.dataset.loaded = 'true'; resolve(); }, {once:true});
+    script.addEventListener('error', reject, {once:true});
+    document.body.appendChild(script);
+  });
+
+  const attach = async () => {
+    if (window.PORTAL_SEARCH_ENGINE !== '2.0' || !document.querySelector('.procedure[id]')) {
+      attempts += 1;
+      if (attempts < 140) window.setTimeout(attach, 100);
+      return;
+    }
+    try {
+      await loadOnce('portal-registry.js?v=20260907', 'data-portal-registry-script');
+      await loadOnce('portal-upgrades.js?v=20260907', 'data-portal-upgrades-script');
+    } catch (error) {
+      console.error('Impossible de charger les upgrades du portail', error);
+    }
+  };
+  attach();
+})();
+
 /* Pensée du jour : petit bouton autonome, toujours séparé de Dates importantes. */
 (() => {
   if (document.querySelector('script[data-daily-thought]')) return;
