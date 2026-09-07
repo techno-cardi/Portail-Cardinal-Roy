@@ -8,6 +8,7 @@ async function openPortal(page) {
   await expect.poll(() => page.evaluate(() => window.PORTAL_SEARCH_ENGINE || '')).toBe('2.0');
   await expect.poll(() => page.evaluate(() => window.PORTAL_REGISTRY?.version || '')).toBe('2.0');
   await expect.poll(() => page.evaluate(() => document.documentElement.dataset.portalUpgrades || '')).toBe('1.0');
+  await expect.poll(() => page.evaluate(() => Boolean(window.PORTAL_ANALYTICS?.remoteAvailable))).toBe(true);
   return errors;
 }
 
@@ -60,7 +61,7 @@ test('la fraîcheur reste cachée tant que la carte est fermée', async ({ page 
   expect(errors).toEqual([]);
 });
 
-test('les analytics restent locaux et comptent recherches et ouvertures', async ({ page }) => {
+test('les analytics locales comptent recherches et ouvertures', async ({ page }) => {
   const errors = await openPortal(page);
   await page.evaluate(() => window.PORTAL_ANALYTICS.clear());
   await page.locator('#guide-search').fill('harcellement');
@@ -71,6 +72,21 @@ test('les analytics restent locaux et comptent recherches et ouvertures', async 
   expect(snapshot.totals.searches).toBeGreaterThanOrEqual(1);
   expect(snapshot.totals.opens).toBeGreaterThanOrEqual(1);
   expect(snapshot.searches.harcellement?.count || 0).toBeGreaterThanOrEqual(1);
+  expect(errors).toEqual([]);
+});
+
+test('le backend Supabase est configuré mais les tests locaux ne lui écrivent pas', async ({ page }) => {
+  const errors = await openPortal(page);
+  const remote = await page.evaluate(() => ({
+    available: window.PORTAL_ANALYTICS.remoteAvailable,
+    enabled: window.PORTAL_ANALYTICS.remoteEnabled,
+    endpoint: window.PORTAL_ANALYTICS.remoteEndpoint,
+    mode: document.documentElement.dataset.portalAnalyticsRemote
+  }));
+  expect(remote.available).toBe(true);
+  expect(remote.enabled).toBe(false);
+  expect(remote.endpoint).toBe('https://ojyswaxuqwnqilrvtjll.supabase.co/functions/v1/portal-analytics');
+  expect(remote.mode).toBe('local-only');
   expect(errors).toEqual([]);
 });
 
