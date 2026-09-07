@@ -58,14 +58,14 @@ test('le haut de page desktop affiche la pensée uniquement comme petit bouton',
   expect(guidanceLayout.verticalGap).toBeGreaterThanOrEqual(0);
   expect(guidanceLayout.verticalGap).toBeLessThanOrEqual(8);
 
-  const legacy = page.locator('#daily-thought');
-  await expect(legacy).toBeHidden();
-  await expect(legacy).toHaveAttribute('hidden', '');
-  await expect.poll(() => legacy.evaluate(node => getComputedStyle(node).display)).toBe('none');
+  // L'ancienne barre n'existe plus du tout dans le DOM.
+  await expect(page.locator('#daily-thought')).toHaveCount(0);
+  await expect(page.locator('.daily-thought-button-row')).toHaveCount(0);
 
-  const trigger = page.locator('.daily-thought-button-row .daily-thought-trigger');
+  // Le seul contrôle visible est un petit bouton à côté de « Dates importantes ».
+  const trigger = page.locator('.school-news-badges .daily-thought-trigger');
   await expect(trigger).toBeVisible();
-  await expect(page.locator('.school-news-badges .daily-thought-trigger')).toHaveCount(0);
+  await expect(page.locator('.school-news-badges .school-news-badge')).toBeVisible();
 
   const buttonLayout = await trigger.evaluate(node => {
     const rect = node.getBoundingClientRect();
@@ -103,7 +103,7 @@ test('le bouton de pensée reste propre sur mobile et iOS', async ({ page }) => 
 
   await expect(page.locator('.section-nav a[href="#section-commencer"]')).toHaveCount(0);
   await expect(page.locator('#favorites-jump').locator('xpath=..')).toHaveClass(/search-guidance-row/);
-  await expect(page.locator('#daily-thought')).toBeHidden();
+  await expect(page.locator('#daily-thought')).toHaveCount(0);
 
   const trigger = page.locator('.daily-thought-trigger');
   const triggerSize = await trigger.evaluate(node => {
