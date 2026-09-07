@@ -1,13 +1,17 @@
 (() => {
-  const VERSION = '1.1';
+  const VERSION = '1.2';
+  const ASSET_VERSION = '20260907-0824';
   let scheduled = false;
 
   const ensureStyles = () => {
-    if (document.querySelector('link[data-home-compact],link[data-home-compact-style],link[href$="home-compact.css"]')) return;
+    const existing = document.querySelector('link[data-home-compact],link[data-home-compact-style]');
+    if (existing && existing.dataset.homeCompactVersion === ASSET_VERSION) return;
+    existing?.remove();
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'home-compact.css';
+    link.href = `home-compact.css?v=${ASSET_VERSION}`;
     link.dataset.homeCompactStyle = 'true';
+    link.dataset.homeCompactVersion = ASSET_VERSION;
     document.head.appendChild(link);
   };
 
