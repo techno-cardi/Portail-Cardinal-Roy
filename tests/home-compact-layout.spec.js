@@ -23,7 +23,7 @@ async function openPortal(page) {
   return errors;
 }
 
-test('le haut de page desktop aligne la bande des dates sur la recherche et garde la pensée à droite', async ({ page }) => {
+test('le haut de page desktop garde une bande de dates centrée et la pensée à droite', async ({ page }) => {
   await page.setViewportSize({ width: 1797, height: 832 });
   const errors = await openPortal(page);
 
@@ -72,25 +72,25 @@ test('le haut de page desktop aligne la bande des dates sur la recherche et gard
   await expect(ticker).toHaveClass(/has-daily-thought/);
 
   const alignment = await page.evaluate(() => {
+    const stage = document.querySelector('.search-stage-inner');
     const ticker = document.getElementById('school-news-ticker');
-    const shell = document.querySelector('.search-shell');
     const badge = ticker?.querySelector(':scope > .school-news-badge');
     const trigger = ticker?.querySelector(':scope > .daily-thought-control .daily-thought-trigger');
+    const stageRect = stage?.getBoundingClientRect();
     const tickerRect = ticker?.getBoundingClientRect();
-    const shellRect = shell?.getBoundingClientRect();
     const badgeRect = badge?.getBoundingClientRect();
     const triggerRect = trigger?.getBoundingClientRect();
     return {
-      tickerLeftToSearch: Math.abs((tickerRect?.left || 0) - (shellRect?.left || 0)),
-      tickerRightToSearch: Math.abs((tickerRect?.right || 0) - (shellRect?.right || 0)),
+      centerDelta: Math.abs(((tickerRect?.left || 0) + (tickerRect?.right || 0)) / 2 - ((stageRect?.left || 0) + (stageRect?.right || 0)) / 2),
+      width: tickerRect?.width || 0,
       badgeNearTickerTop: Boolean(tickerRect && badgeRect && Math.abs(badgeRect.top - tickerRect.top) <= 12),
       badgeNearTickerLeft: Boolean(tickerRect && badgeRect && Math.abs(badgeRect.left - tickerRect.left) <= 12),
       triggerNearTickerRight: Boolean(tickerRect && triggerRect && Math.abs(tickerRect.right - triggerRect.right) <= 12),
       sameLine: Boolean(badgeRect && triggerRect && Math.abs(badgeRect.top - triggerRect.top) <= 4)
     };
   });
-  expect(alignment.tickerLeftToSearch).toBeLessThanOrEqual(2);
-  expect(alignment.tickerRightToSearch).toBeLessThanOrEqual(2);
+  expect(alignment.centerDelta).toBeLessThanOrEqual(2);
+  expect(alignment.width).toBeLessThanOrEqual(822);
   expect(alignment.badgeNearTickerTop).toBe(true);
   expect(alignment.badgeNearTickerLeft).toBe(true);
   expect(alignment.triggerNearTickerRight).toBe(true);
