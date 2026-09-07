@@ -1,0 +1,4 @@
+project_id = "portail-cardinal-roy"
+
+[functions.portal-analytics]
+verify_jwt = false
