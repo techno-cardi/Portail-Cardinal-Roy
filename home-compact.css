@@ -29,10 +29,6 @@
 .search-stage{padding:14px 0 18px!important}
 .search-stage-inner{padding-block:0!important}
 
-/* La pensée du jour n'est plus un bloc permanent : daily-thought.js garde les
-   données à jour et daily-thought-popover.js les présente dans une pastille. */
-#daily-thought.daily-thought{display:none!important}
-
 .school-news-ticker{
   min-height:38px!important;
   margin-bottom:9px!important;
@@ -143,8 +139,7 @@
   .search-guidance-row p{font-size:.82rem!important}
 }
 
-/* Mobile / iOS : le texte et les favoris peuvent se resserrer proprement sans
-   débordement; la pastille de pensée est gérée par son composant dédié. */
+/* Mobile / iOS : le texte et les favoris peuvent se resserrer proprement sans débordement. */
 @media(max-width:620px){
   .masthead{
     min-height:auto;
