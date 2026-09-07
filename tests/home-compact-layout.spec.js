@@ -23,7 +23,7 @@ async function openPortal(page) {
   return errors;
 }
 
-test('le haut de page desktop met Dates importantes à gauche et Pensée du jour à droite', async ({ page }) => {
+test('le haut de page desktop aligne la bande des dates sur la recherche et garde la pensée à droite', async ({ page }) => {
   await page.setViewportSize({ width: 1797, height: 832 });
   const errors = await openPortal(page);
 
@@ -69,23 +69,28 @@ test('le haut de page desktop met Dates importantes à gauche et Pensée du jour
   await expect(dateBadge).toBeVisible();
   await expect(dateBadge).toContainText('Dates importantes');
   await expect(trigger).toBeVisible();
+  await expect(ticker).toHaveClass(/has-daily-thought/);
 
   const alignment = await page.evaluate(() => {
     const ticker = document.getElementById('school-news-ticker');
+    const shell = document.querySelector('.search-shell');
     const badge = ticker?.querySelector(':scope > .school-news-badge');
     const trigger = ticker?.querySelector(':scope > .daily-thought-control .daily-thought-trigger');
     const tickerRect = ticker?.getBoundingClientRect();
+    const shellRect = shell?.getBoundingClientRect();
     const badgeRect = badge?.getBoundingClientRect();
     const triggerRect = trigger?.getBoundingClientRect();
     return {
-      triggerInsideTicker: Boolean(ticker && trigger && ticker.contains(trigger)),
+      tickerLeftToSearch: Math.abs((tickerRect?.left || 0) - (shellRect?.left || 0)),
+      tickerRightToSearch: Math.abs((tickerRect?.right || 0) - (shellRect?.right || 0)),
       badgeNearTickerTop: Boolean(tickerRect && badgeRect && Math.abs(badgeRect.top - tickerRect.top) <= 12),
       badgeNearTickerLeft: Boolean(tickerRect && badgeRect && Math.abs(badgeRect.left - tickerRect.left) <= 12),
       triggerNearTickerRight: Boolean(tickerRect && triggerRect && Math.abs(tickerRect.right - triggerRect.right) <= 12),
       sameLine: Boolean(badgeRect && triggerRect && Math.abs(badgeRect.top - triggerRect.top) <= 4)
     };
   });
-  expect(alignment.triggerInsideTicker).toBe(true);
+  expect(alignment.tickerLeftToSearch).toBeLessThanOrEqual(2);
+  expect(alignment.tickerRightToSearch).toBeLessThanOrEqual(2);
   expect(alignment.badgeNearTickerTop).toBe(true);
   expect(alignment.badgeNearTickerLeft).toBe(true);
   expect(alignment.triggerNearTickerRight).toBe(true);
@@ -118,7 +123,7 @@ test('le haut de page desktop met Dates importantes à gauche et Pensée du jour
   expect(errors).toEqual([]);
 });
 
-test('sur mobile la pensée du jour disparaît complètement', async ({ page }) => {
+test('sur mobile la pensée du jour disparaît complètement sans débordement', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const errors = await openPortal(page);
 
@@ -131,18 +136,24 @@ test('sur mobile la pensée du jour disparaît complètement', async ({ page }) 
 
   const ticker = page.locator('#school-news-ticker');
   await expect(ticker.locator(':scope > .school-news-badge')).toBeVisible();
+  await expect(ticker).not.toHaveClass(/has-daily-thought/);
 
   const layout = await page.evaluate(() => {
     const fav = document.getElementById('favorites-jump').getBoundingClientRect();
     const shell = document.querySelector('.search-shell').getBoundingClientRect();
+    const ticker = document.getElementById('school-news-ticker').getBoundingClientRect();
     return {
       bodyOverflow: document.documentElement.scrollWidth - window.innerWidth,
-      favoriteRightDelta: Math.abs(fav.right - shell.right)
+      favoriteRightDelta: Math.abs(fav.right - shell.right),
+      tickerRightOverflow: ticker.right - window.innerWidth,
+      tickerLeft: ticker.left
     };
   });
 
   expect(layout.bodyOverflow).toBeLessThanOrEqual(1);
   expect(layout.favoriteRightDelta).toBeLessThanOrEqual(2);
+  expect(layout.tickerRightOverflow).toBeLessThanOrEqual(1);
+  expect(layout.tickerLeft).toBeGreaterThanOrEqual(0);
 
   const search = page.locator('#guide-search');
   await search.fill('reservation');
