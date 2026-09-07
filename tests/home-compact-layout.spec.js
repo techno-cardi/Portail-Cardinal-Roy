@@ -17,13 +17,16 @@ test('le haut de page desktop tient sur une ligne et place les favoris au-dessus
 
   await expect(page.locator('.section-nav a[href="#section-commencer"]')).toHaveCount(0);
 
-  const navRows = await page.locator('.section-nav-inner > a').evaluateAll(links =>
-    links.filter(link => getComputedStyle(link).display !== 'none').map(link => Math.round(link.getBoundingClientRect().top))
-  );
-  expect(new Set(navRows).size).toBe(1);
+  const navLayout = await page.locator('.section-nav-inner').evaluate(nav => ({
+    rows: [...nav.children]
+      .filter(link => getComputedStyle(link).display !== 'none')
+      .map(link => Math.round(link.getBoundingClientRect().top)),
+    overflow: nav.scrollWidth - nav.clientWidth
+  }));
+  expect(new Set(navLayout.rows).size).toBe(1);
+  expect(navLayout.overflow).toBeLessThanOrEqual(2);
 
   const favorite = page.locator('#favorites-jump');
-  const search = page.locator('.search-shell');
   await expect(favorite.locator('xpath=..')).toHaveClass(/search-favorites-row/);
 
   const alignment = await page.evaluate(() => {
