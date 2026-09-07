@@ -8,7 +8,8 @@ const isLocalOrigin = (origin: string) =>
 const corsHeaders = (origin: string) => ({
   'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) || isLocalOrigin(origin) ? origin : 'https://techno-cardi.github.io',
   'Access-Control-Allow-Headers': 'content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Cache-Control': 'no-store',
   'Vary': 'Origin'
 });
 
@@ -40,14 +41,52 @@ const getSecretKey = () => {
   return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 };
 
+const isAllowedOrigin = (origin: string) =>
+  !origin || ALLOWED_ORIGINS.has(origin) || isLocalOrigin(origin);
+
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get('origin') || '';
   const headers = corsHeaders(origin);
 
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers });
-  if (req.method !== 'POST') return Response.json({ error: 'method_not_allowed' }, { status: 405, headers });
-  if (origin && !ALLOWED_ORIGINS.has(origin) && !isLocalOrigin(origin)) {
+  if (!isAllowedOrigin(origin)) {
     return Response.json({ error: 'origin_not_allowed' }, { status: 403, headers });
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+  const secretKey = getSecretKey();
+  if (!supabaseUrl || !secretKey) {
+    console.error('Supabase environment is incomplete');
+    return Response.json({ error: 'backend_not_configured' }, { status: 500, headers });
+  }
+
+  if (req.method === 'GET') {
+    const url = new URL(req.url);
+    const requestedDays = Number(url.searchParams.get('days') || 30);
+    const days = Number.isFinite(requestedDays)
+      ? Math.max(1, Math.min(365, Math.trunc(requestedDays)))
+      : 30;
+
+    const summary = await fetch(`${supabaseUrl}/rest/v1/rpc/portal_analytics_summary`, {
+      method: 'POST',
+      headers: {
+        'apikey': secretKey,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({ p_days: days })
+    });
+
+    if (!summary.ok) {
+      console.error('Analytics summary failed', summary.status, await summary.text());
+      return Response.json({ error: 'summary_failed' }, { status: 502, headers });
+    }
+
+    const data = await summary.json();
+    return Response.json(data, { status: 200, headers });
+  }
+
+  if (req.method !== 'POST') {
+    return Response.json({ error: 'method_not_allowed' }, { status: 405, headers });
   }
 
   let body: Record<string, unknown>;
@@ -79,13 +118,6 @@ Deno.serve(async (req: Request) => {
       return Response.json({ error: 'invalid_resource_id' }, { status: 400, headers });
     }
     row.resource_id = resourceId;
-  }
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-  const secretKey = getSecretKey();
-  if (!supabaseUrl || !secretKey) {
-    console.error('Supabase environment is incomplete');
-    return Response.json({ error: 'backend_not_configured' }, { status: 500, headers });
   }
 
   const insert = await fetch(`${supabaseUrl}/rest/v1/portal_analytics_events`, {
