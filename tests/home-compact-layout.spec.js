@@ -1,17 +1,30 @@
 const { test, expect } = require('@playwright/test');
 
 async function openPortal(page) {
+  await page.addInitScript(() => {
+    const RealDate = Date;
+    const fixed = new RealDate('2026-09-08T16:00:00Z').getTime();
+    class FixedDate extends RealDate {
+      constructor(...args) { super(...(args.length ? args : [fixed])); }
+      static now() { return fixed; }
+    }
+    FixedDate.parse = RealDate.parse;
+    FixedDate.UTC = RealDate.UTC;
+    window.Date = FixedDate;
+  });
+
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await expect(page.locator('#guide-search')).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.PORTAL_SEARCH_ENGINE || '')).toBe('2.0');
   await expect.poll(() => page.evaluate(() => document.documentElement.dataset.homeCompact || '')).toBe('1.1');
-  await expect(page.locator('.daily-thought')).toBeVisible();
+  await expect(page.locator('#school-news-ticker')).toBeVisible();
+  await expect(page.locator('.daily-thought-trigger')).toBeVisible();
   return errors;
 }
 
-test('le haut de page desktop garde la pensée et le guidage sur une seule ligne', async ({ page }) => {
+test('le haut de page desktop garde la pensée discrète à côté des dates importantes', async ({ page }) => {
   await page.setViewportSize({ width: 1797, height: 832 });
   const errors = await openPortal(page);
 
@@ -45,48 +58,74 @@ test('le haut de page desktop garde la pensée et le guidage sur une seule ligne
   expect(guidanceLayout.verticalGap).toBeGreaterThanOrEqual(0);
   expect(guidanceLayout.verticalGap).toBeLessThanOrEqual(8);
 
-  const thoughtLayout = await page.evaluate(() => {
-    const label = document.querySelector('.daily-thought-label').getBoundingClientRect();
-    const textNode = document.querySelector('.daily-thought-text');
-    const text = textNode.getBoundingClientRect();
-    const range = document.createRange();
-    range.selectNodeContents(textNode);
-    return {
-      sameRow: Math.abs((label.top + label.bottom) / 2 - (text.top + text.bottom) / 2),
-      textLineRects: range.getClientRects().length
-    };
+  await expect(page.locator('#daily-thought')).toBeHidden();
+  await expect(page.locator('.school-news-badges .school-news-badge')).toBeVisible();
+  await expect(page.locator('.school-news-badges .daily-thought-trigger')).toBeVisible();
+
+  const badgeAlignment = await page.evaluate(() => {
+    const dates = document.querySelector('.school-news-badge').getBoundingClientRect();
+    const thought = document.querySelector('.daily-thought-trigger').getBoundingClientRect();
+    return Math.abs((dates.top + dates.bottom) / 2 - (thought.top + thought.bottom) / 2);
   });
-  expect(thoughtLayout.sameRow).toBeLessThanOrEqual(3);
-  expect(thoughtLayout.textLineRects).toBe(1);
+  expect(badgeAlignment).toBeLessThanOrEqual(3);
+
+  const trigger = page.locator('.daily-thought-trigger');
+  await trigger.click();
+  const popover = page.locator('#daily-thought-popover');
+  await expect(popover).toBeVisible();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await expect(popover).toContainText('Il est des portes sur la mer');
+  await expect(popover).toContainText('Rafael Alberti');
+
+  const popoverBounds = await popover.evaluate(node => {
+    const rect = node.getBoundingClientRect();
+    return { left: rect.left, right: rect.right, top: rect.top, width: window.innerWidth };
+  });
+  expect(popoverBounds.left).toBeGreaterThanOrEqual(0);
+  expect(popoverBounds.right).toBeLessThanOrEqual(popoverBounds.width + 1);
+  expect(popoverBounds.top).toBeGreaterThanOrEqual(0);
+
+  await page.locator('.search-intro h2').click();
+  await expect(popover).toBeHidden();
 
   const quickTop = await page.locator('.quick-area').evaluate(node => node.getBoundingClientRect().top);
   expect(quickTop).toBeLessThan(832);
   expect(errors).toEqual([]);
 });
 
-test('la version mobile reste propre sans débordement horizontal', async ({ page }) => {
+test('la pastille de pensée reste propre sur mobile et iOS', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const errors = await openPortal(page);
 
   await expect(page.locator('.section-nav a[href="#section-commencer"]')).toHaveCount(0);
   await expect(page.locator('#favorites-jump').locator('xpath=..')).toHaveClass(/search-guidance-row/);
+  await expect(page.locator('#daily-thought')).toBeHidden();
+
+  const trigger = page.locator('.daily-thought-trigger');
+  await trigger.click();
+  const popover = page.locator('#daily-thought-popover');
+  await expect(popover).toBeVisible();
 
   const layout = await page.evaluate(() => {
     const fav = document.getElementById('favorites-jump').getBoundingClientRect();
     const shell = document.querySelector('.search-shell').getBoundingClientRect();
-    const thought = document.querySelector('.daily-thought').getBoundingClientRect();
+    const popover = document.getElementById('daily-thought-popover').getBoundingClientRect();
     return {
       bodyOverflow: document.documentElement.scrollWidth - window.innerWidth,
       favoriteRightDelta: Math.abs(fav.right - shell.right),
-      thoughtLeft: thought.left,
-      thoughtRight: thought.right,
+      popoverLeft: popover.left,
+      popoverRight: popover.right,
       viewportWidth: window.innerWidth
     };
   });
 
   expect(layout.bodyOverflow).toBeLessThanOrEqual(1);
   expect(layout.favoriteRightDelta).toBeLessThanOrEqual(2);
-  expect(layout.thoughtLeft).toBeGreaterThanOrEqual(0);
-  expect(layout.thoughtRight).toBeLessThanOrEqual(layout.viewportWidth + 1);
+  expect(layout.popoverLeft).toBeGreaterThanOrEqual(0);
+  expect(layout.popoverRight).toBeLessThanOrEqual(layout.viewportWidth + 1);
+
+  await page.keyboard.press('Escape');
+  await expect(popover).toBeHidden();
+  await expect(trigger).toBeFocused();
   expect(errors).toEqual([]);
 });
