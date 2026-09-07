@@ -52,6 +52,30 @@ test('groupe difficil trouve S.O.S. Groupe malgré la faute', async ({ page }) =
   expect(errors).toEqual([]);
 });
 
+test('harcèlement trouve directement le formulaire de déclaration', async ({ page }) => {
+  const errors = await openPortal(page);
+  await expect.poll(() => page.evaluate(() => window.PORTAL_RESOURCE_SUGGESTION || '')).toBe('1.1');
+  await expectFirstSuggestion(page, 'harcèlement', /Déclaration d’un événement accidentel|situation à risque/i);
+  await expect(page.locator('#search-suggestions .suggestion').first()).toHaveAttribute('data-open-id', 'declaration-evenements-risque');
+  expect(errors).toEqual([]);
+});
+
+test('le formulaire de déclaration reste visible dans Formulaires avec son lien', async ({ page }) => {
+  const errors = await openPortal(page);
+  const declaration = page.locator('#section-formulaires #declaration-evenements-risque');
+  await expect(declaration).toHaveCount(1);
+  await expect(declaration.locator('a[href="https://jotform.cssc.gouv.qc.ca/240294011577857"]')).toHaveCount(1);
+  expect(errors).toEqual([]);
+});
+
+test('relâche trouve directement le calendrier scolaire déplacé', async ({ page }) => {
+  const errors = await openPortal(page);
+  await expect.poll(() => page.evaluate(() => window.PORTAL_RESOURCE_SUGGESTION || '')).toBe('1.1');
+  await expectFirstSuggestion(page, 'relâche', /Calendrier scolaire 2026-2027/i);
+  await expect(page.locator('#search-suggestions .suggestion').first()).toHaveAttribute('data-open-id', 'calendrier-scolaire-2026-2027');
+  expect(errors).toEqual([]);
+});
+
 test('normes modalités trouve Évaluation, bulletin et planification', async ({ page }) => {
   const errors = await openPortal(page);
   await expectFirstSuggestion(page, 'normes modalites', /Évaluation, bulletin et planification/i);
