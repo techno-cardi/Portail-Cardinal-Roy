@@ -40,13 +40,15 @@ test('une requête naturelle sur un groupe difficile trouve S.O.S. Groupe', asyn
   expect(errors).toEqual([]);
 });
 
-test('les ressources ouvertes apparaissent dans récemment consultés', async ({ page }) => {
+test('aucun bloc récemment consulté ne s’affiche mais les ouvertures restent comptées', async ({ page }) => {
   const errors = await openPortal(page);
-  await page.evaluate(() => localStorage.removeItem('cardi-portal-recent-v1'));
+  await page.evaluate(() => window.PORTAL_ANALYTICS.clear());
+  await expect(page.locator('.portal-recent')).toHaveCount(0);
   await page.locator('#c2atom > summary').click();
-  const recent = page.locator('.portal-recent');
-  await expect(recent).toBeVisible();
-  await expect(recent).toContainText(/C2Atom/i);
+  await page.waitForTimeout(50);
+  await expect(page.locator('.portal-recent')).toHaveCount(0);
+  const snapshot = await page.evaluate(() => window.PORTAL_ANALYTICS.snapshot());
+  expect(snapshot.opens.c2atom?.count || 0).toBeGreaterThanOrEqual(1);
   expect(errors).toEqual([]);
 });
 
