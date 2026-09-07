@@ -1,7 +1,6 @@
 (() => {
   const STYLE_ID = 'daily-thought-popover-style';
   const POPOVER_ID = 'daily-thought-popover';
-  let tickerObserver = null;
   let contentObserver = null;
   let bootstrapTimer = 0;
   let attempts = 0;
@@ -11,39 +10,39 @@
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      /* L'ancien bloc demeure la source de données, mais ne prend plus de place. */
+      /* La vieille présentation ne doit jamais être visible. */
       #daily-thought.daily-thought{display:none!important}
 
-      .school-news-ticker{overflow:visible!important;position:relative;z-index:4}
-      .school-news-badges{
-        min-width:0;
-        display:flex;
-        align-items:center;
-        gap:6px;
-        position:relative;
-      }
-      .daily-thought-standalone{
+      .daily-thought-button-row{
         width:min(820px,100%);
-        margin:0 0 6px;
+        min-height:30px;
+        margin:0 0 5px;
         display:flex;
-        justify-content:flex-start;
+        justify-content:flex-end;
+        align-items:center;
+        position:relative;
+        z-index:8;
       }
       .daily-thought-control{
         position:relative;
         display:inline-flex;
         align-items:center;
-        flex:0 0 auto;
+        width:auto;
+        max-width:100%;
       }
       .daily-thought-trigger{
+        appearance:none;
+        -webkit-appearance:none;
         display:inline-flex;
         align-items:center;
         justify-content:center;
         gap:5px;
-        min-height:29px;
-        padding:5px 8px;
-        border:1px solid rgba(255,255,255,.3);
-        border-radius:6px;
-        background:rgba(255,255,255,.075);
+        width:auto;
+        min-height:30px;
+        padding:5px 9px;
+        border:1px solid rgba(255,255,255,.34);
+        border-radius:7px;
+        background:rgba(255,255,255,.08);
         color:#fff;
         font:800 .71rem/1.1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
         letter-spacing:.01em;
@@ -63,11 +62,10 @@
       .daily-thought-popover{
         position:absolute;
         z-index:90;
-        top:calc(100% + 9px);
-        left:50%;
+        top:calc(100% + 8px);
+        right:0;
         width:min(430px,calc(100vw - 32px));
         padding:13px 15px 12px;
-        transform:translateX(-50%);
         border:1px solid rgba(127,20,39,.18);
         border-radius:10px;
         background:#fff;
@@ -79,11 +77,11 @@
       .daily-thought-popover::before{
         content:'';
         position:absolute;
-        left:50%;
+        right:28px;
         top:-6px;
         width:10px;
         height:10px;
-        transform:translateX(-50%) rotate(45deg);
+        transform:rotate(45deg);
         border-left:1px solid rgba(127,20,39,.16);
         border-top:1px solid rgba(127,20,39,.16);
         background:#fff;
@@ -114,14 +112,10 @@
       }
 
       @media(max-width:620px){
-        .school-news-badges{
-          width:100%;
-          justify-content:center;
-          flex-wrap:wrap;
-        }
-        .daily-thought-standalone{
-          justify-content:center;
-          margin-bottom:7px;
+        .daily-thought-button-row{
+          min-height:32px;
+          margin-bottom:5px;
+          justify-content:flex-end;
         }
         .daily-thought-trigger{
           min-height:32px;
@@ -129,7 +123,6 @@
           font-size:.7rem;
         }
         .daily-thought-popover{
-          top:calc(100% + 7px);
           width:min(360px,calc(100vw - 24px));
           padding:12px 13px;
         }
@@ -143,12 +136,16 @@
     document.head.appendChild(style);
   };
 
-  // Important : le CSS qui masque l'ancien bloc est injecté immédiatement,
-  // avant même que daily-thought.js ait fini de créer sa source de données.
-  // Ça empêche tout retour ou flash de l'ancienne barre, même avec WebKit.
   ensureStyles();
 
   const legacyBlock = () => document.getElementById('daily-thought');
+
+  const forceHideLegacy = legacy => {
+    if (!legacy) return;
+    legacy.hidden = true;
+    legacy.setAttribute('aria-hidden', 'true');
+    legacy.style.setProperty('display', 'none', 'important');
+  };
 
   const closePopover = (returnFocus = false) => {
     const button = document.querySelector('.daily-thought-trigger');
@@ -163,6 +160,7 @@
     const legacy = legacyBlock();
     const popover = document.getElementById(POPOVER_ID);
     if (!legacy || !popover) return false;
+    forceHideLegacy(legacy);
     const quote = legacy.querySelector('.daily-thought-quote')?.textContent?.trim() || '';
     const author = legacy.querySelector('.daily-thought-author')?.textContent?.trim() || '';
     if (!quote) return false;
@@ -173,13 +171,26 @@
 
   const ensureControl = () => {
     const legacy = legacyBlock();
-    if (!legacy) {
-      document.querySelector('.daily-thought-control')?.remove();
-      document.querySelector('.daily-thought-standalone')?.remove();
+    const host = document.querySelector('.search-stage-inner');
+    const ticker = document.getElementById('school-news-ticker');
+    const intro = host?.querySelector('.search-intro');
+
+    if (!legacy || !host || !intro) {
+      if (!legacy) document.querySelector('.daily-thought-button-row')?.remove();
       return false;
     }
 
-    let control = document.querySelector('.daily-thought-control');
+    forceHideLegacy(legacy);
+
+    let row = host.querySelector('.daily-thought-button-row');
+    if (!row) {
+      row = document.createElement('div');
+      row.className = 'daily-thought-button-row';
+      row.setAttribute('aria-label', 'Pensée du jour');
+      host.insertBefore(row, ticker || intro);
+    }
+
+    let control = row.querySelector('.daily-thought-control');
     if (!control) {
       control = document.createElement('span');
       control.className = 'daily-thought-control';
@@ -192,6 +203,7 @@
           <span class="daily-thought-popover-quote"></span>
           <span class="daily-thought-popover-author"></span>
         </span>`;
+      row.appendChild(control);
 
       const button = control.querySelector('.daily-thought-trigger');
       const popover = control.querySelector('.daily-thought-popover');
@@ -205,47 +217,11 @@
       popover.addEventListener('click', event => event.stopPropagation());
     }
 
-    const ticker = document.getElementById('school-news-ticker');
-    const host = document.querySelector('.search-stage-inner');
-    const intro = host?.querySelector('.search-intro');
-    const tickerVisible = ticker && !ticker.hidden;
-
-    if (tickerVisible) {
-      let badges = ticker.querySelector('.school-news-badges');
-      if (!badges) {
-        const badge = ticker.querySelector('.school-news-badge');
-        if (badge) {
-          badges = document.createElement('span');
-          badges.className = 'school-news-badges';
-          ticker.insertBefore(badges, badge);
-          badges.appendChild(badge);
-        }
-      }
-      if (badges && control.parentElement !== badges) badges.appendChild(control);
-      document.querySelector('.daily-thought-standalone')?.remove();
-    } else if (host && intro) {
-      let standalone = host.querySelector('.daily-thought-standalone');
-      if (!standalone) {
-        standalone = document.createElement('div');
-        standalone.className = 'daily-thought-standalone';
-        host.insertBefore(standalone, ticker || intro);
-      }
-      if (control.parentElement !== standalone) standalone.appendChild(control);
-    }
-
     syncContent();
 
     if (!contentObserver) {
       contentObserver = new MutationObserver(syncContent);
       contentObserver.observe(legacy, { childList: true, subtree: true, characterData: true });
-    }
-
-    if (ticker && !tickerObserver) {
-      tickerObserver = new MutationObserver(() => {
-        closePopover();
-        ensureControl();
-      });
-      tickerObserver.observe(ticker, { attributes: true, attributeFilter: ['hidden'] });
     }
 
     return true;
@@ -265,8 +241,6 @@
   bootstrap();
   window.addEventListener('load', ensureControl, { once: true });
 
-  // Après les premières secondes, un observateur léger couvre les rares
-  // reconstructions du ticker ou de la pensée sans scruter toute la page en continu.
   window.setTimeout(() => {
     if (bootstrapTimer) window.clearTimeout(bootstrapTimer);
     const host = document.querySelector('.search-stage-inner');
