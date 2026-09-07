@@ -8,22 +8,17 @@
   if (!registry || !input || !suggestions) return;
 
   const VERSION = '1.0';
-  const RECENT_KEY = 'cardi-portal-recent-v1';
   const ANALYTICS_KEY = 'cardi-portal-analytics-v1';
-  const MAX_RECENT = 6;
   const MAX_ANALYTICS_QUERIES = 100;
   const searchRecordCooldown = new Map();
+
+  // La rangée « Récemment consultés » a été retirée de l'interface.
+  document.querySelectorAll('.portal-recent').forEach(node => node.remove());
+  localStorage.removeItem('cardi-portal-recent-v1');
 
   const safeJson = (value, fallback) => {
     try { return JSON.parse(value); } catch { return fallback; }
   };
-
-  const readRecent = () => {
-    const data = safeJson(localStorage.getItem(RECENT_KEY) || '[]', []);
-    return Array.isArray(data) ? data.filter(item => item && registry.get(item.id)).slice(0, MAX_RECENT) : [];
-  };
-
-  const writeRecent = recent => localStorage.setItem(RECENT_KEY, JSON.stringify(recent.slice(0, MAX_RECENT)));
 
   const defaultAnalytics = () => ({
     version: 1,
@@ -109,56 +104,6 @@
   };
   window.PORTAL_ANALYTICS = analytics;
 
-  const renderRecent = () => {
-    const stage = document.querySelector('.search-stage-inner');
-    if (!stage) return;
-    let host = stage.querySelector('.portal-recent');
-    if (!host) {
-      host = document.createElement('div');
-      host.className = 'portal-recent';
-      host.setAttribute('aria-label', 'Ressources récemment consultées');
-      const under = stage.querySelector('.search-under');
-      const ribbon = stage.querySelector('.app-ribbon');
-      if (under) under.insertAdjacentElement('afterend', host);
-      else if (ribbon) ribbon.insertAdjacentElement('beforebegin', host);
-      else stage.appendChild(host);
-    }
-
-    const recent = readRecent();
-    if (!recent.length) {
-      host.hidden = true;
-      host.innerHTML = '';
-      return;
-    }
-
-    host.hidden = false;
-    host.innerHTML = '<span class="portal-recent-label">Récemment consultés</span>';
-    const list = document.createElement('div');
-    list.className = 'portal-recent-list';
-    recent.forEach(item => {
-      const resource = registry.get(item.id);
-      if (!resource) return;
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'portal-recent-button';
-      button.dataset.openId = resource.id;
-      button.title = resource.title;
-      button.textContent = resource.title;
-      list.appendChild(button);
-    });
-    host.appendChild(list);
-  };
-
-  const recordRecent = id => {
-    const resource = registry.get(id);
-    if (!resource) return;
-    const recent = readRecent().filter(item => item.id !== id);
-    recent.unshift({ id, ts: new Date().toISOString() });
-    writeRecent(recent);
-    analytics.recordOpen(id);
-    renderRecent();
-  };
-
   const cloneSuggestionVisual = resource => {
     const visual = resource.node.querySelector('summary .procedure-visual')?.cloneNode(true);
     if (visual) {
@@ -209,9 +154,6 @@
     const matches = registry.search(rawQuery, 7);
     if (!matches.length) return;
 
-    // Le moteur 2.0 sait déjà cibler des sous-ressources précises (mot de passe,
-    // Repro+, PAE, etc.). On les conserve devant nos résultats enrichis plutôt
-    // que de les remplacer par la catégorie générique Applications CSSC.
     const preservedSubresources = [...suggestions.querySelectorAll('.subresource-suggestion,[data-search-subresource]')]
       .map(node => node.cloneNode(true));
     const preciseSubresourcePresent = preservedSubresources.length > 0;
@@ -284,7 +226,7 @@
       if (procedure && event.target.closest('a,button')) id = procedure.id;
     }
 
-    if (id && registry.get(id)) window.setTimeout(() => recordRecent(id), 0);
+    if (id && registry.get(id)) window.setTimeout(() => analytics.recordOpen(id), 0);
   }, true);
 
   const formatDate = iso => {
@@ -311,11 +253,10 @@
     });
   };
 
-  renderRecent();
   decorateFreshness();
   if (location.hash) {
     const id = decodeURIComponent(location.hash.slice(1));
-    if (registry.get(id)) window.setTimeout(() => recordRecent(id), 400);
+    if (registry.get(id)) window.setTimeout(() => analytics.recordOpen(id), 400);
   }
 
   document.documentElement.dataset.portalUpgrades = VERSION;
