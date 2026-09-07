@@ -67,28 +67,28 @@
   addRangeToSet(NO_SCHOOL_DAYS, '2026-12-21', '2027-01-04');
   addRangeToSet(NO_SCHOOL_DAYS, '2027-03-01', '2027-03-05');
 
-  // On garde seulement le début d'une période de congé dans cette liste :
-  // elle sert à annoncer la prochaine interruption, pas à lister chaque jour.
+  // Le début sert à annoncer l'interruption; end sert à expliquer les semaines
+  // raccourcies lorsqu'une période de congé chevauche plusieurs semaines.
   const SCHOOL_INTERRUPTION_DAYS = [
-    { start: '2026-09-07', type: 'conge', label: 'Fête du Travail' },
+    { start: '2026-09-07', type: 'conge', label: 'Fête du Travail', weekReason: 'congé de la Fête du Travail' },
     { start: '2026-09-18', type: 'pedago', label: 'journée pédagogique' },
     { start: '2026-10-05', type: 'pedago', label: 'journée pédagogique' },
-    { start: '2026-10-12', type: 'conge', label: 'Action de grâce' },
+    { start: '2026-10-12', type: 'conge', label: 'Action de grâce', weekReason: 'congé de l’Action de grâce' },
     { start: '2026-11-19', type: 'pedago', label: 'journée pédagogique' },
     { start: '2026-11-20', type: 'pedago', label: 'journée pédagogique' },
-    { start: '2026-12-21', type: 'conge', label: 'vacances des Fêtes' },
+    { start: '2026-12-21', end: '2027-01-04', type: 'conge', label: 'vacances des Fêtes', weekReason: 'vacances des Fêtes' },
     { start: '2027-01-05', type: 'pedago', label: 'journée pédagogique' },
     { start: '2027-01-25', type: 'pedago', label: 'journée pédagogique' },
     { start: '2027-02-19', type: 'pedago', label: 'journée pédagogique' },
-    { start: '2027-03-01', type: 'conge', label: 'semaine de relâche' },
+    { start: '2027-03-01', end: '2027-03-05', type: 'conge', label: 'semaine de relâche', weekReason: 'semaine de relâche' },
     { start: '2027-03-08', type: 'pedago', label: 'journée pédagogique' },
-    { start: '2027-03-26', type: 'conge', label: 'Vendredi saint' },
-    { start: '2027-03-29', type: 'conge', label: 'Lundi de Pâques' },
+    { start: '2027-03-26', type: 'conge', label: 'Vendredi saint', weekReason: 'congé du Vendredi saint' },
+    { start: '2027-03-29', type: 'conge', label: 'Lundi de Pâques', weekReason: 'congé du Lundi de Pâques' },
     { start: '2027-04-09', type: 'pedago', label: 'journée pédagogique' },
     { start: '2027-04-19', type: 'pedago', label: 'journée pédagogique' },
     { start: '2027-05-07', type: 'pedago', label: 'journée pédagogique' },
     { start: '2027-05-21', type: 'pedago', label: 'journée pédagogique' },
-    { start: '2027-05-24', type: 'conge', label: 'Journée nationale des patriotes' },
+    { start: '2027-05-24', type: 'conge', label: 'Journée nationale des patriotes', weekReason: 'congé de la Journée nationale des patriotes' },
     { start: '2027-06-04', type: 'pedago', label: 'journée pédagogique' }
   ];
 
@@ -146,6 +146,12 @@
     year: 'numeric'
   }).format(dateFromKey(key));
 
+  const formatDayMonth = key => new Intl.DateTimeFormat('fr-CA', {
+    timeZone: 'UTC',
+    day: 'numeric',
+    month: 'long'
+  }).format(dateFromKey(key));
+
   const schoolDaysBetween = (today, target, includeTarget = false) => SCHOOL_DAYS.filter(key =>
     key > today && (includeTarget ? key <= target : key < target)
   ).length;
@@ -180,16 +186,28 @@
     return count;
   };
 
+  const weekReasonFor = mondayKey => {
+    const fridayKey = addDaysKey(mondayKey, 4);
+    const reasons = SCHOOL_INTERRUPTION_DAYS
+      .filter(item => item.start <= fridayKey && (item.end || item.start) >= mondayKey)
+      .map(item => item.type === 'pedago'
+        ? `pédagogique du ${formatDayMonth(item.start)}`
+        : (item.weekReason || `congé - ${item.label}`));
+    return [...new Set(reasons)].join(' et ');
+  };
+
   const upcomingWeeks = (today, limit = 10) => {
     const firstMonday = addDaysKey(mondayOfWeek(today), 7);
     const weeks = [];
     let monday = firstMonday;
     let offset = 1;
     while (weeks.length < limit && monday <= SCHOOL_YEAR.end) {
+      const count = schoolDaysInWeek(monday);
       weeks.push({
         monday,
-        count: schoolDaysInWeek(monday),
-        offset
+        count,
+        offset,
+        reason: count < 5 ? weekReasonFor(monday) : ''
       });
       monday = addDaysKey(monday, 7);
       offset += 1;
@@ -202,6 +220,10 @@
     return `dans ${offset} semaines`;
   };
 
+  const shortWeekReasonHtml = week => week?.reason
+    ? ` <span class="search-week-reason">(${week.reason})</span>`
+    : '';
+
   const buildShortWeeks = today => {
     const weeks = upcomingWeeks(today, 10);
     const nextShort = weeks.find(week => week.count < 5);
@@ -209,7 +231,7 @@
     const summary = nextShort
       ? `<div class="search-short-week-summary">
           <span class="search-short-week-kicker">Prochaine semaine courte</span>
-          <strong>${courseDayLabel(nextShort.count)}</strong> - semaine du ${formatWeekDate(nextShort.monday)}
+          <strong>${courseDayLabel(nextShort.count)}</strong>${shortWeekReasonHtml(nextShort)} - semaine du ${formatWeekDate(nextShort.monday)}
           <span class="search-short-week-relative">(${shortWeekRelative(nextShort.offset)})</span>
         </div>`
       : `<div class="search-short-week-summary">
@@ -220,7 +242,7 @@
     const rows = weeks.map(week => `
       <div class="search-week-row${week.count < 5 ? ' is-short' : ''}">
         <span>Semaine du ${formatWeekDate(week.monday)}</span>
-        <strong>${courseDayLabel(week.count)}</strong>
+        <strong>${courseDayLabel(week.count)}${shortWeekReasonHtml(week)}</strong>
       </div>`).join('');
 
     const detailsLabel = weeks.length === 10
@@ -238,22 +260,30 @@
   };
 
   const buildNextInterruption = today => {
-    // Si aujourd'hui EST déjà un congé/pédago, on annonce le suivant : le mot
-    // "prochain" reste ainsi utile même lorsqu'on consulte le portail ce jour-là.
+    // La première ligne affiche la prochaine interruption réelle. La petite ligne
+    // sous celle-ci annonce ensuite l'interruption du même type qui viendra après.
     const next = SCHOOL_INTERRUPTION_DAYS.find(item => item.start > today);
     if (!next) return '';
 
     const isPedago = next.type === 'pedago';
     const noun = isPedago ? 'la prochaine journée pédagogique' : 'le prochain congé';
-    const intro = isPedago ? 'La prochaine journée pédagogique' : 'Le prochain congé';
+    const intro = isPedago ? 'la prochaine journée pédagogique' : 'le prochain congé';
     const days = schoolDaysBetween(today, next.start, false);
-    const detail = next.label && next.label !== 'journée pédagogique'
-      ? ` <span class="search-interruption-name">(${next.label})</span>`
+    const topDetail = isPedago
+      ? ` <span class="search-interruption-name">(${formatDayMonth(next.start)})</span>`
+      : ` <span class="search-interruption-name">(${next.label})</span>`;
+
+    const following = SCHOOL_INTERRUPTION_DAYS.find(item =>
+      item.type === next.type && item.start > next.start
+    );
+
+    const followingLine = following
+      ? `<div class="search-interruption-date">Après ${isPedago ? 'celle-ci' : 'celui-ci'}, ${intro} sera le <strong>${formatDate(following.start)}</strong>${following.type === 'conge' ? ` <span class="search-interruption-name">(${following.label})</span>` : ''}.</div>`
       : '';
 
     return `
-      ${countdownLine(days, `avant ${noun}`)}
-      <div class="search-interruption-date">${intro} sera le <strong>${formatDate(next.start)}</strong>.${detail}</div>`;
+      ${countdownLine(days, `avant ${noun}${topDetail}`)}
+      ${followingLine}`;
   };
 
   const buildCountdown = () => {
@@ -443,6 +473,11 @@
         font-size:.8rem;
         white-space:nowrap;
       }
+      .search-week-reason{
+        color:#86616a;
+        font-weight:600;
+        white-space:normal;
+      }
       .search-weeks-details{
         margin-top:7px;
         border:1px solid rgba(127,20,39,.13);
@@ -482,6 +517,11 @@
       .search-week-row strong{
         flex:0 0 auto;
         white-space:nowrap;
+      }
+      .search-week-row.is-short strong{
+        max-width:58%;
+        white-space:normal;
+        text-align:right;
       }
       .search-countdown-note{
         margin-top:9px;
@@ -552,9 +592,12 @@
           display:block;
           padding:6px 0;
         }
-        .search-week-row strong{
+        .search-week-row strong,
+        .search-week-row.is-short strong{
           display:block;
+          max-width:none;
           margin-top:2px;
+          text-align:left;
           white-space:normal;
         }
       }
