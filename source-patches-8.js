@@ -190,11 +190,11 @@
   attach();
 })();
 
-/* Pensée du jour : bouton compact autonome, toujours séparé des dates importantes. */
+/* Pensée du jour : à droite de la ligne des dates, absente sur mobile et les jours sans pensée. */
 (() => {
   if (document.querySelector('script[data-daily-thought]')) return;
   const script = document.createElement('script');
-  script.src = 'daily-thought.js?v=20260907-0920';
+  script.src = 'daily-thought.js?v=20260907-0932';
   script.dataset.dailyThought = 'true';
   document.body.appendChild(script);
 })();
