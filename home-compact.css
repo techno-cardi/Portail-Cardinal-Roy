@@ -31,21 +31,23 @@
 
 /* L'ancien bloc de pensée ne doit jamais apparaître, même pendant le chargement. */
 #daily-thought,
-#daily-thought-fallback{display:none!important}
+#daily-thought-fallback,
+.daily-thought-standalone{display:none!important}
 
+/* La bande des dates partage exactement l'axe horizontal de la barre de recherche.
+   Le badge reste en haut à gauche; le bouton de pensée, lorsqu'il existe, est géré
+   comme un enfant direct à droite par daily-thought.js. */
 .school-news-ticker{
+  width:min(780px,100%)!important;
   min-height:38px!important;
-  margin:0 auto 9px 0!important;
+  margin:0 auto 9px!important;
   padding:5px 8px!important;
   align-items:start!important;
   text-align:left!important;
 }
-.school-news-ticker>.school-news-badges{
+.school-news-ticker>.school-news-badge{
   align-self:start!important;
   justify-self:start!important;
-}
-.school-news-ticker>.school-news-badges .school-news-badge{
-  align-self:flex-start!important;
 }
 
 .search-intro{width:min(820px,100%)!important}
@@ -152,7 +154,8 @@
   .search-guidance-row p{font-size:.82rem!important}
 }
 
-/* Mobile / iOS : le texte et les favoris peuvent se resserrer proprement sans débordement. */
+/* Mobile / iOS : la pensée n'est pas affichée; la bande des dates reprend sa
+   présentation mobile centrée sans débordement horizontal. */
 @media(max-width:620px){
   .masthead{
     min-height:auto;
@@ -163,18 +166,16 @@
   .search-stage{padding:13px 0 17px!important}
 
   .school-news-ticker{
+    width:100%!important;
     min-height:0!important;
     padding:9px 10px!important;
     margin:0 auto 9px!important;
     align-items:center!important;
     text-align:center!important;
   }
-  .school-news-ticker>.school-news-badges{
+  .school-news-ticker>.school-news-badge{
     align-self:center!important;
     justify-self:center!important;
-  }
-  .school-news-ticker>.school-news-badges .school-news-badge{
-    align-self:center!important;
   }
   .search-intro h2{font-size:1.55rem!important}
   .search-guidance-row{
