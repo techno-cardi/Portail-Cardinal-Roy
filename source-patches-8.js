@@ -161,3 +161,12 @@
   };
   attach();
 })();
+
+/* La pensée du jour attend le rendu du portail et se place juste au-dessus des dates importantes. */
+(() => {
+  if (document.querySelector('script[data-daily-thought]')) return;
+  const script = document.createElement('script');
+  script.src = 'daily-thought.js';
+  script.dataset.dailyThought = 'true';
+  document.body.appendChild(script);
+})();
