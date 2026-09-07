@@ -4,20 +4,10 @@
   if (document.querySelector('link[data-home-compact]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = 'home-compact.css?v=20260907-0832';
+  link.href = 'home-compact.css?v=20260907-0900';
   link.dataset.homeCompact = 'true';
-  link.dataset.homeCompactVersion = '20260907-0832';
+  link.dataset.homeCompactVersion = '20260907-0900';
   document.head.appendChild(link);
-})();
-
-/* Coupe-circuit indépendant : l'ancienne barre de pensée ne doit jamais être
-   visible, même pendant le chargement des composants ou avec un cache agressif. */
-(() => {
-  if (document.getElementById('daily-thought-legacy-off')) return;
-  const style = document.createElement('style');
-  style.id = 'daily-thought-legacy-off';
-  style.textContent = '#daily-thought.daily-thought{display:none!important}';
-  document.head.appendChild(style);
 })();
 
 (() => {
@@ -136,7 +126,6 @@
 
   Object.entries(icons).forEach(([id, [src, alt]]) => setIcon(id, src, alt));
 
-  // Tolérance accrue aux formulations naturelles, accents absents et fautes fréquentes.
   const addKeywords = (id, extra) => {
     const card = root.querySelector(`#${CSS.escape(id)}`);
     if (!card) return;
@@ -171,7 +160,7 @@
     if (ready) {
       if (!document.querySelector('script[data-home-compact-layout]')) {
         const layoutScript = document.createElement('script');
-        layoutScript.src = 'home-compact.js?v=20260907-0832';
+        layoutScript.src = 'home-compact.js?v=20260907-0900';
         layoutScript.dataset.homeCompactLayout = 'true';
         document.body.appendChild(layoutScript);
       }
@@ -201,20 +190,11 @@
   attach();
 })();
 
-/* La pensée reste alimentée par son calendrier, mais sa seule présentation
-   visible est maintenant un petit bouton. Le composant du bouton est chargé
-   avant les données afin de masquer la vieille barre dès sa création. */
+/* Pensée du jour : un seul composant, un vrai bouton compact, aucune ancienne barre. */
 (() => {
-  if (!document.querySelector('script[data-daily-thought-popover]')) {
-    const popoverScript = document.createElement('script');
-    popoverScript.src = 'daily-thought-popover.js?v=20260907-0832';
-    popoverScript.dataset.dailyThoughtPopover = 'true';
-    document.body.appendChild(popoverScript);
-  }
-  if (!document.querySelector('script[data-daily-thought]')) {
-    const script = document.createElement('script');
-    script.src = 'daily-thought.js?v=20260907-0832';
-    script.dataset.dailyThought = 'true';
-    document.body.appendChild(script);
-  }
+  if (document.querySelector('script[data-daily-thought]')) return;
+  const script = document.createElement('script');
+  script.src = 'daily-thought.js?v=20260907-0900';
+  script.dataset.dailyThought = 'true';
+  document.body.appendChild(script);
 })();
