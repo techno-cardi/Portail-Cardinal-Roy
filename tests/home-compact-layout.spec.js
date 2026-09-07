@@ -24,7 +24,7 @@ async function openPortal(page) {
   return errors;
 }
 
-test('le haut de page desktop garde la pensée discrète à côté des dates importantes', async ({ page }) => {
+test('le haut de page desktop affiche la pensée uniquement comme petit bouton', async ({ page }) => {
   await page.setViewportSize({ width: 1797, height: 832 });
   const errors = await openPortal(page);
 
@@ -58,19 +58,22 @@ test('le haut de page desktop garde la pensée discrète à côté des dates imp
   expect(guidanceLayout.verticalGap).toBeGreaterThanOrEqual(0);
   expect(guidanceLayout.verticalGap).toBeLessThanOrEqual(8);
 
-  await expect(page.locator('#daily-thought')).toBeHidden();
-  await expect.poll(() => page.locator('#daily-thought').evaluate(node => getComputedStyle(node).display)).toBe('none');
-  await expect(page.locator('.school-news-badges .school-news-badge')).toBeVisible();
-  await expect(page.locator('.school-news-badges .daily-thought-trigger')).toBeVisible();
+  const legacy = page.locator('#daily-thought');
+  await expect(legacy).toBeHidden();
+  await expect(legacy).toHaveAttribute('hidden', '');
+  await expect.poll(() => legacy.evaluate(node => getComputedStyle(node).display)).toBe('none');
 
-  const badgeAlignment = await page.evaluate(() => {
-    const dates = document.querySelector('.school-news-badge').getBoundingClientRect();
-    const thought = document.querySelector('.daily-thought-trigger').getBoundingClientRect();
-    return Math.abs((dates.top + dates.bottom) / 2 - (thought.top + thought.bottom) / 2);
+  const trigger = page.locator('.daily-thought-button-row .daily-thought-trigger');
+  await expect(trigger).toBeVisible();
+  await expect(page.locator('.school-news-badges .daily-thought-trigger')).toHaveCount(0);
+
+  const buttonLayout = await trigger.evaluate(node => {
+    const rect = node.getBoundingClientRect();
+    return { width: rect.width, height: rect.height };
   });
-  expect(badgeAlignment).toBeLessThanOrEqual(3);
+  expect(buttonLayout.width).toBeLessThan(180);
+  expect(buttonLayout.height).toBeLessThan(40);
 
-  const trigger = page.locator('.daily-thought-trigger');
   await trigger.click();
   const popover = page.locator('#daily-thought-popover');
   await expect(popover).toBeVisible();
@@ -94,7 +97,7 @@ test('le haut de page desktop garde la pensée discrète à côté des dates imp
   expect(errors).toEqual([]);
 });
 
-test('la pastille de pensée reste propre sur mobile et iOS', async ({ page }) => {
+test('le bouton de pensée reste propre sur mobile et iOS', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const errors = await openPortal(page);
 
@@ -103,6 +106,13 @@ test('la pastille de pensée reste propre sur mobile et iOS', async ({ page }) =
   await expect(page.locator('#daily-thought')).toBeHidden();
 
   const trigger = page.locator('.daily-thought-trigger');
+  const triggerSize = await trigger.evaluate(node => {
+    const rect = node.getBoundingClientRect();
+    return { width: rect.width, right: rect.right, viewportWidth: window.innerWidth };
+  });
+  expect(triggerSize.width).toBeLessThan(180);
+  expect(triggerSize.right).toBeLessThanOrEqual(triggerSize.viewportWidth + 1);
+
   await trigger.click();
   const popover = page.locator('#daily-thought-popover');
   await expect(popover).toBeVisible();
