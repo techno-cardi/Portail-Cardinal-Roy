@@ -150,15 +150,20 @@
 })();
 
 /*
- * Charge les compléments de recherche seulement lorsque le moteur final est prêt.
- * Ils restent indépendants du moteur principal et ne peuvent pas perturber
- * l'indexation normale des ressources.
+ * Charge les compléments de recherche et le positionnement final du haut de page
+ * seulement lorsque le moteur de recherche final est prêt.
  */
 (() => {
   let attempts = 0;
   const attach = () => {
     const ready = window.PORTAL_SEARCH_ENGINE === '2.0' && document.getElementById('guide-search');
     if (ready) {
+      if (!document.querySelector('script[data-home-compact-layout]')) {
+        const layoutScript = document.createElement('script');
+        layoutScript.src = 'home-compact.js';
+        layoutScript.dataset.homeCompactLayout = 'true';
+        document.body.appendChild(layoutScript);
+      }
       if (!document.querySelector('script[data-search-easter-egg]')) {
         const script = document.createElement('script');
         script.src = 'search-easter-egg.js';
