@@ -289,8 +289,8 @@
     const intro = isPedago ? 'la prochaine journée pédagogique' : 'le prochain congé';
     const days = schoolDaysBetween(today, next.start, false);
     const topDetail = isPedago
-      ? ` <span class="search-interruption-name">(${formatDayMonth(next.start)})</span>`
-      : ` <span class="search-interruption-name">(${next.label})</span>`;
+      ? ` <span class="search-interruption-name">(${formatWeekdayDayMonth(next.start)})</span>`
+      : ` <span class="search-interruption-name">(${formatWeekdayDayMonth(next.start)} - ${next.label})</span>`;
 
     const following = SCHOOL_INTERRUPTION_DAYS.find(item =>
       item.type === next.type && item.start > next.start
