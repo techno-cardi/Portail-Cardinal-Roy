@@ -1,12 +1,20 @@
 (() => {
-  const VERSION = '1.3';
-  const ASSET_VERSION = '20260907-1045';
-  let scheduled = false;
+  const VERSION = '1.4';
+  const ASSET_VERSION = '20260907-finalfix';
+  const MAX_RETRIES = 50;
+  let retries = 0;
+  let retryTimer = 0;
 
   const ensureStyles = () => {
-    const existing = document.querySelector('link[data-home-compact],link[data-home-compact-style]');
-    if (existing && existing.dataset.homeCompactVersion === ASSET_VERSION) return;
-    existing?.remove();
+    const links = [...document.querySelectorAll('link[data-home-compact],link[data-home-compact-style]')];
+    const current = links.find(link => link.dataset.homeCompactVersion === ASSET_VERSION);
+    if (current) {
+      links.forEach(link => {
+        if (link !== current) link.remove();
+      });
+      return;
+    }
+    links.forEach(link => link.remove());
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = `home-compact.css?v=${ASSET_VERSION}`;
@@ -43,28 +51,22 @@
     return true;
   };
 
-  const scheduleApply = () => {
-    if (scheduled) return;
-    scheduled = true;
-    Promise.resolve().then(() => {
-      scheduled = false;
-      applyLayout();
-    });
+  const boot = () => {
+    window.clearTimeout(retryTimer);
+    ensureStyles();
+    if (applyLayout()) return;
+    retries += 1;
+    if (retries < MAX_RETRIES) retryTimer = window.setTimeout(boot, 120);
   };
 
-  ensureStyles();
-  applyLayout();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
 
-  /* On observe uniquement les zones qui peuvent réellement modifier la mise en
-     page compacte. Les rotations du ticker et les résultats de recherche ne
-     déclenchent donc plus inutilement applyLayout(). */
-  const nav = document.querySelector('.section-nav-inner');
-  const stage = document.querySelector('.search-stage-inner');
-  const intro = stage?.querySelector('.search-intro');
-  const observer = new MutationObserver(scheduleApply);
-  if (nav) observer.observe(nav, { childList: true });
-  if (stage) observer.observe(stage, { childList: true });
-  if (intro) observer.observe(intro, { childList: true, subtree: true });
-
-  window.addEventListener('load', applyLayout, { once: true });
+  window.addEventListener('load', () => {
+    retries = 0;
+    boot();
+  }, { once: true });
 })();
