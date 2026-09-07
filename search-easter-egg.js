@@ -152,6 +152,13 @@
     month: 'long'
   }).format(dateFromKey(key));
 
+  const formatWeekdayDayMonth = key => new Intl.DateTimeFormat('fr-CA', {
+    timeZone: 'UTC',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long'
+  }).format(dateFromKey(key));
+
   const schoolDaysBetween = (today, target, includeTarget = false) => SCHOOL_DAYS.filter(key =>
     key > today && (includeTarget ? key <= target : key < target)
   ).length;
@@ -190,9 +197,21 @@
     const fridayKey = addDaysKey(mondayKey, 4);
     const reasons = SCHOOL_INTERRUPTION_DAYS
       .filter(item => item.start <= fridayKey && (item.end || item.start) >= mondayKey)
-      .map(item => item.type === 'pedago'
-        ? `pédagogique du ${formatDayMonth(item.start)}`
-        : (item.weekReason || `congé - ${item.label}`));
+      .map(item => {
+        const itemEnd = item.end || item.start;
+        const overlapStart = item.start > mondayKey ? item.start : mondayKey;
+        const overlapEnd = itemEnd < fridayKey ? itemEnd : fridayKey;
+
+        if (item.type === 'pedago') {
+          return `journée pédagogique le ${formatWeekdayDayMonth(item.start)}`;
+        }
+
+        const reason = item.weekReason || `congé - ${item.label}`;
+        if (item.start === itemEnd || overlapStart === overlapEnd) {
+          return `${reason} le ${formatWeekdayDayMonth(overlapStart)}`;
+        }
+        return `${reason} du ${formatWeekdayDayMonth(overlapStart)} au ${formatWeekdayDayMonth(overlapEnd)}`;
+      });
     return [...new Set(reasons)].join(' et ');
   };
 
