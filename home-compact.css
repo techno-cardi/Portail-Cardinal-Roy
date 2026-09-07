@@ -1,10 +1,11 @@
 /*
  * Variante compacte de l'accueil.
- * Objectif : conserver exactement la même hiérarchie et les mêmes fonctions,
- * mais réduire l'espace vertical perdu avant les accès rapides.
+ * Objectif : conserver la structure et les fonctions du portail, mais réduire
+ * l'espace vertical perdu avant les accès rapides.
  *
- * Sauvegarde de la mise en page précédente :
- * backup-layout-before-compact-home-2026-09-07
+ * Sauvegardes :
+ * - backup-layout-before-compact-home-2026-09-07
+ * - backup-compact-before-nav-favorites-thought-2026-09-07
  */
 
 /* En-tête blanc : même composition, densité légèrement accrue. */
@@ -22,30 +23,45 @@
   font-size:clamp(1.95rem,3.3vw,2.65rem);
 }
 .masthead-copy p{font-size:.9rem}
-.techno-contact{
-  padding:9px 13px!important;
-}
+.techno-contact{padding:9px 13px!important}
 
-/*
- * Le plus gros gain vient d'ici : styles.css donnait déjà du padding à
- * .search-stage-inner, puis guide-updates.css en ajoutait aussi au parent.
- * On garde un seul niveau d'espacement autour de la zone bourgogne.
- */
-.search-stage{
-  padding:14px 0 18px!important;
-}
-.search-stage-inner{
-  padding-block:0!important;
-}
+/* Un seul niveau d'espacement autour de la zone bourgogne. */
+.search-stage{padding:14px 0 18px!important}
+.search-stage-inner{padding-block:0!important}
 
-/* Les deux informations utiles du haut restent bien présentes, simplement
-   plus denses. Les !important sont nécessaires puisque leurs styles sont
-   injectés dynamiquement après les feuilles CSS statiques. */
+/* Pensée et dates importantes : plus denses sans sacrifier la lisibilité. */
 .daily-thought{
   min-height:34px!important;
   margin-bottom:6px!important;
   padding:6px 10px!important;
 }
+
+/* Sur ordinateur, la pensée elle-même est réellement centrée dans la boîte.
+   Le libellé « Pensée du jour » reste dans la colonne de gauche, aligné à droite. */
+@media(min-width:621px){
+  .daily-thought{
+    display:grid!important;
+    grid-template-columns:minmax(125px,1fr) minmax(0,4fr) minmax(125px,1fr);
+    align-items:center;
+    text-align:center;
+  }
+  .daily-thought-label{
+    grid-column:1;
+    justify-self:end;
+    text-align:right;
+  }
+  .daily-thought-text{
+    grid-column:2;
+    justify-self:center;
+    width:100%;
+    text-align:center;
+  }
+  .daily-thought::after{
+    content:'';
+    grid-column:3;
+  }
+}
+
 .school-news-ticker{
   min-height:38px!important;
   margin-bottom:9px!important;
@@ -57,108 +73,153 @@
   line-height:1.08!important;
 }
 .search-intro p{
-  margin:4px auto 12px!important;
+  margin:4px auto 10px!important;
   font-size:.9rem!important;
   line-height:1.38;
 }
-.search-shell{
-  min-height:54px!important;
+
+/* Favoris : juste au-dessus de la barre, alignés sur son bord droit. */
+.search-favorites-row{
+  width:min(820px,100%);
+  min-height:30px;
+  margin:0 auto 4px;
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
 }
+.search-favorites-row .favorites-jump{
+  min-height:30px;
+  padding:4px 9px;
+  margin:0;
+}
+
+.search-shell{min-height:54px!important}
 #guide-search{
   padding:12px 8px!important;
   font-size:1rem!important;
 }
+
+/* Le statut reste sous la barre, mais ne réserve plus une grosse ligne vide. */
 .search-under{
-  min-height:31px!important;
-  margin-top:6px!important;
+  width:min(820px,100%)!important;
+  min-height:0!important;
+  margin-top:4px!important;
+  justify-content:flex-start!important;
 }
-.favorites-jump{
-  min-height:30px;
-  padding:4px 9px;
-}
+.search-status:empty{display:none}
+
 .app-ribbon{
-  margin-top:8px!important;
+  margin-top:7px!important;
   gap:6px;
 }
 .app-chip{
   min-height:34px;
   padding:4px 9px 4px 5px;
 }
-.app-chip-icon{
-  width:25px;
-  height:25px;
-}
+.app-chip-icon{width:25px;height:25px}
 
-/* Navigation et début du contenu légèrement remontés. */
-.section-nav-inner,
+/* Navigation : « Commencer » reste accessible dans le contenu, mais n'occupe
+   plus une place dans la barre. Sur ordinateur, tout tient sur une seule ligne. */
+.section-nav a[href="#section-commencer"]{display:none!important}
+.section-nav-inner{
+  min-height:48px;
+  flex-wrap:nowrap!important;
+  gap:0 22px!important;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.section-nav-inner::-webkit-scrollbar{display:none}
 .section-nav a{
   min-height:48px;
+  flex:0 0 auto;
+  white-space:nowrap;
+  font-size:.86rem;
 }
-.main-layout{
-  padding-top:24px;
+.main-layout{padding-top:24px}
+
+/* Écrans intermédiaires : garde une seule ligne, mais avec un espacement plus serré. */
+@media(max-width:1100px){
+  .section-nav-inner{
+    justify-content:flex-start!important;
+    gap:0 14px!important;
+  }
+  .section-nav a{font-size:.82rem}
 }
 
-/* Sur les écrans intermédiaires on conserve un peu d'air pour éviter l'effet tassé. */
 @media(max-width:900px){
   .masthead{
     min-height:88px;
     gap:18px;
     padding-block:11px;
   }
-  .school-mark .official-logo{
-    width:138px;
-    height:55px;
-  }
-  .search-stage{
-    padding:14px 0 18px!important;
-  }
-  .search-intro p{
-    margin-bottom:11px!important;
-  }
+  .school-mark .official-logo{width:138px;height:55px}
+  .search-stage{padding:14px 0 18px!important}
+  .search-intro p{margin-bottom:10px!important}
 }
 
-/* Mobile : compact, mais sans réduire les cibles tactiles ni serrer les blocs. */
+/* Mobile / iOS : la navigation devient une ligne horizontale balayable et les
+   contrôles gardent des cibles tactiles confortables. */
 @media(max-width:620px){
   .masthead{
     min-height:auto;
     padding-block:12px;
   }
-  .school-mark .official-logo{
-    width:126px;
-    height:50px;
-  }
-  .masthead-copy h1{
-    font-size:1.85rem;
-  }
-  .search-stage{
-    padding:13px 0 17px!important;
-  }
+  .school-mark .official-logo{width:126px;height:50px}
+  .masthead-copy h1{font-size:1.85rem}
+  .search-stage{padding:13px 0 17px!important}
+
   .daily-thought{
+    display:block!important;
     padding:7px 9px!important;
+    text-align:center!important;
   }
+  .daily-thought-label{
+    display:block!important;
+    margin-bottom:3px!important;
+    text-align:center!important;
+  }
+  .daily-thought-text{
+    display:block!important;
+    width:100%!important;
+    text-align:center!important;
+  }
+
   .school-news-ticker{
     min-height:0!important;
     padding:9px 10px!important;
     margin-bottom:9px!important;
   }
-  .search-intro h2{
-    font-size:1.55rem!important;
-  }
+  .search-intro h2{font-size:1.55rem!important}
   .search-intro p{
-    margin:5px auto 12px!important;
+    margin:5px auto 10px!important;
     font-size:.88rem!important;
   }
-  .search-shell{
-    min-height:54px!important;
+  .search-favorites-row{
+    width:100%;
+    min-height:32px;
+    margin-bottom:4px;
   }
-  #guide-search{
-    padding-block:13px!important;
+  .search-favorites-row .favorites-jump{
+    min-height:32px;
+    padding:5px 10px;
   }
-  .section-nav-inner,
+  .search-shell{min-height:54px!important}
+  #guide-search{padding-block:13px!important}
+  .search-under{margin-top:3px!important}
+  .app-ribbon{margin-top:6px!important}
+
+  .section-nav-inner{
+    width:100%;
+    min-height:50px;
+    padding-inline:16px;
+    gap:0 16px!important;
+    justify-content:flex-start!important;
+  }
   .section-nav a{
     min-height:50px;
+    font-size:.84rem;
   }
-  .main-layout{
-    padding-top:24px;
-  }
+  .main-layout{padding-top:24px}
 }
