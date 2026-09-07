@@ -29,39 +29,9 @@
 .search-stage{padding:14px 0 18px!important}
 .search-stage-inner{padding-block:0!important}
 
-/* Pensée et dates importantes : plus denses sans sacrifier la lisibilité. */
-.daily-thought{
-  min-height:34px!important;
-  margin-bottom:6px!important;
-  padding:6px 10px!important;
-}
-
-/* Desktop : une seule ligne. Le groupe libellé + pensée est centré dans la
-   boîte; le libellé garde son alignement vers la pensée. */
-@media(min-width:621px){
-  .daily-thought{
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    gap:8px!important;
-    flex-wrap:nowrap!important;
-    text-align:center!important;
-  }
-  .daily-thought-label{
-    flex:0 0 auto!important;
-    margin:0!important;
-    text-align:right!important;
-    white-space:nowrap!important;
-  }
-  .daily-thought-text{
-    flex:0 1 auto!important;
-    min-width:0!important;
-    width:auto!important;
-    margin:0!important;
-    text-align:center!important;
-    white-space:nowrap!important;
-  }
-}
+/* La pensée du jour n'est plus un bloc permanent : daily-thought.js garde les
+   données à jour et daily-thought-popover.js les présente dans une pastille. */
+#daily-thought.daily-thought{display:none!important}
 
 .school-news-ticker{
   min-height:38px!important;
@@ -169,14 +139,12 @@
   }
   .school-mark .official-logo{width:138px;height:55px}
   .search-stage{padding:14px 0 18px!important}
-  .search-guidance-row{
-    gap:9px;
-  }
+  .search-guidance-row{gap:9px}
   .search-guidance-row p{font-size:.82rem!important}
 }
 
-/* Mobile / iOS : quand la largeur ne permet plus de garder le long texte et le
-   bouton sur la même ligne sans les écraser, on les empile proprement. */
+/* Mobile / iOS : le texte et les favoris peuvent se resserrer proprement sans
+   débordement; la pastille de pensée est gérée par son composant dédié. */
 @media(max-width:620px){
   .masthead{
     min-height:auto;
@@ -185,24 +153,6 @@
   .school-mark .official-logo{width:126px;height:50px}
   .masthead-copy h1{font-size:1.85rem}
   .search-stage{padding:13px 0 17px!important}
-
-  .daily-thought{
-    display:block!important;
-    padding:7px 9px!important;
-    text-align:center!important;
-  }
-  .daily-thought-label{
-    display:block!important;
-    margin-bottom:3px!important;
-    text-align:center!important;
-    white-space:normal!important;
-  }
-  .daily-thought-text{
-    display:block!important;
-    width:100%!important;
-    text-align:center!important;
-    white-space:normal!important;
-  }
 
   .school-news-ticker{
     min-height:0!important;
