@@ -40,6 +40,7 @@ test('la pensée du 8 septembre est à droite de la même ligne que Dates import
   const trigger = ticker.locator(':scope > .daily-thought-control .daily-thought-trigger');
   const popover = page.locator('#daily-thought-popover');
 
+  await expect(ticker).toHaveClass(/has-daily-thought/);
   await expect(badge).toBeVisible();
   await expect(trigger).toBeVisible();
   await expect(popover).toBeHidden();
@@ -67,15 +68,17 @@ test('la pensée du 8 septembre est à droite de la même ligne que Dates import
   expect(errors).toEqual([]);
 });
 
-test('un jour sans pensée, aucun bouton ne paraît', async ({ page }) => {
+test('un jour sans pensée, aucun bouton ni colonne réservée ne paraît', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await freezeTime(page, '2026-09-06T14:00:00Z');
   const errors = await openPortal(page);
 
+  const ticker = page.locator('#school-news-ticker');
   await expect(page.locator('#daily-thought')).toHaveCount(0);
   await expect(page.locator('#daily-thought-fallback')).toHaveCount(0);
   await expect(page.locator('.daily-thought-trigger')).toHaveCount(0);
   await expect(page.locator('#daily-thought-popover')).toHaveCount(0);
+  await expect(ticker).not.toHaveClass(/has-daily-thought/);
   expect(errors).toEqual([]);
 });
 
@@ -84,8 +87,10 @@ test('la pensée est complètement absente sur mobile', async ({ page }) => {
   await freezeTime(page, '2026-09-08T14:00:00Z');
   const errors = await openPortal(page);
 
+  const ticker = page.locator('#school-news-ticker');
   await expect(page.locator('.daily-thought-trigger')).toHaveCount(0);
   await expect(page.locator('#daily-thought-popover')).toHaveCount(0);
+  await expect(ticker).not.toHaveClass(/has-daily-thought/);
   expect(errors).toEqual([]);
 });
 
