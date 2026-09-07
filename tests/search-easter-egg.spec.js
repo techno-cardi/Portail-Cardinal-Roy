@@ -118,7 +118,7 @@ test('la prochaine semaine courte et les 10 prochaines semaines utilisent seulem
 
   const shortWeek = egg.locator('.search-short-week-summary');
   await expect(shortWeek).toContainText('Prochaine semaine courte');
-  await expect(shortWeek).toContainText('4 jours de cours (congé de la Fête du Travail)');
+  await expect(shortWeek).toContainText('4 jours de cours (congé de la Fête du Travail le lundi 7 septembre)');
   await expect(shortWeek).toContainText('semaine du 7 septembre 2026');
   await expect(shortWeek).toContainText('la semaine prochaine');
 
@@ -130,10 +130,10 @@ test('la prochaine semaine courte et les 10 prochaines semaines utilisent seulem
 
   const rows = details.locator('.search-week-row');
   await expect(rows.nth(0)).toContainText('Semaine du 7 septembre 2026');
-  await expect(rows.nth(0)).toContainText('4 jours de cours (congé de la Fête du Travail)');
+  await expect(rows.nth(0)).toContainText('4 jours de cours (congé de la Fête du Travail le lundi 7 septembre)');
   // La semaine du 14 septembre est également courte à cause de la pédagogique du 18.
   await expect(rows.nth(1)).toContainText('Semaine du 14 septembre 2026');
-  await expect(rows.nth(1)).toContainText('4 jours de cours (pédagogique du 18 septembre)');
+  await expect(rows.nth(1)).toContainText('4 jours de cours (journée pédagogique le vendredi 18 septembre)');
   await expect(rows.nth(2)).toContainText('Semaine du 21 septembre 2026');
   await expect(rows.nth(2)).toContainText('5 jours de cours');
   await expect(rows.nth(2)).not.toContainText('pédagogique');
@@ -149,8 +149,8 @@ test('une semaine avec deux pédagogiques nomme les deux journées', async ({ pa
 
   const shortWeek = egg.locator('.search-short-week-summary');
   await expect(shortWeek).toContainText('3 jours de cours');
-  await expect(shortWeek).toContainText('pédagogique du 19 novembre');
-  await expect(shortWeek).toContainText('pédagogique du 20 novembre');
+  await expect(shortWeek).toContainText('journée pédagogique le jeudi 19 novembre');
+  await expect(shortWeek).toContainText('journée pédagogique le vendredi 20 novembre');
   expect(errors).toEqual([]);
 });
 
