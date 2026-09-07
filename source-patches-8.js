@@ -190,11 +190,11 @@
   attach();
 })();
 
-/* Pensée du jour : un seul composant, un vrai bouton compact, aucune ancienne barre. */
+/* Pensée du jour : bouton compact autonome, toujours séparé des dates importantes. */
 (() => {
   if (document.querySelector('script[data-daily-thought]')) return;
   const script = document.createElement('script');
-  script.src = 'daily-thought.js?v=20260907-0908';
+  script.src = 'daily-thought.js?v=20260907-0920';
   script.dataset.dailyThought = 'true';
   document.body.appendChild(script);
 })();
