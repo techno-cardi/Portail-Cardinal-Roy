@@ -1,6 +1,6 @@
 (() => {
   const VERSION = '1.3';
-  const ASSET_VERSION = '20260907-1035';
+  const ASSET_VERSION = '20260907-1045';
   let scheduled = false;
 
   const ensureStyles = () => {
@@ -46,7 +46,7 @@
   const scheduleApply = () => {
     if (scheduled) return;
     scheduled = true;
-    queueMicrotask(() => {
+    Promise.resolve().then(() => {
       scheduled = false;
       applyLayout();
     });
@@ -56,9 +56,8 @@
   applyLayout();
 
   /* On observe uniquement les zones qui peuvent réellement modifier la mise en
-     page compacte. On n'observe plus tout le sous-arbre de search-stage-inner :
-     les rotations du ticker et les résultats de recherche ne déclenchent donc
-     plus inutilement applyLayout(). */
+     page compacte. Les rotations du ticker et les résultats de recherche ne
+     déclenchent donc plus inutilement applyLayout(). */
   const nav = document.querySelector('.section-nav-inner');
   const stage = document.querySelector('.search-stage-inner');
   const intro = stage?.querySelector('.search-intro');
