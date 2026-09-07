@@ -3,9 +3,12 @@
 
   const ENDPOINT = 'https://ojyswaxuqwnqilrvtjll.supabase.co/functions/v1/portal-analytics';
   const analytics = window.PORTAL_ANALYTICS;
-  if (!analytics || analytics.remoteEnabled) return;
+  if (!analytics || analytics.remoteAvailable) return;
+
+  const isProduction = location.origin === 'https://techno-cardi.github.io';
 
   const send = payload => {
+    if (!isProduction) return;
     try {
       fetch(ENDPOINT, {
         method: 'POST',
@@ -36,6 +39,7 @@
   };
 
   analytics.remoteSnapshot = async (days = 30) => {
+    if (!isProduction) throw new Error('Analytics Supabase désactivées hors du portail publié');
     const requested = Number(days);
     const safeDays = Number.isFinite(requested) ? Math.max(1, Math.min(365, Math.trunc(requested))) : 30;
     const response = await fetch(`${ENDPOINT}?days=${safeDays}`, {
@@ -49,7 +53,8 @@
     return response.json();
   };
 
-  analytics.remoteEnabled = true;
+  analytics.remoteAvailable = true;
+  analytics.remoteEnabled = isProduction;
   analytics.remoteEndpoint = ENDPOINT;
-  document.documentElement.dataset.portalAnalyticsRemote = 'supabase';
+  document.documentElement.dataset.portalAnalyticsRemote = isProduction ? 'supabase' : 'local-only';
 })();
