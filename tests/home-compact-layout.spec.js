@@ -20,11 +20,10 @@ async function openPortal(page) {
   await expect.poll(() => page.evaluate(() => window.PORTAL_SEARCH_ENGINE || '')).toBe('2.0');
   await expect.poll(() => page.evaluate(() => document.documentElement.dataset.homeCompact || '')).toBe('1.2');
   await expect(page.locator('#school-news-ticker')).toBeVisible();
-  await expect(page.locator('.daily-thought-trigger')).toBeVisible();
   return errors;
 }
 
-test('le haut de page desktop garde les dates et la pensée strictement séparées', async ({ page }) => {
+test('le haut de page desktop met Dates importantes à gauche et Pensée du jour à droite', async ({ page }) => {
   await page.setViewportSize({ width: 1797, height: 832 });
   const errors = await openPortal(page);
 
@@ -60,37 +59,37 @@ test('le haut de page desktop garde les dates et la pensée strictement séparé
 
   await expect(page.locator('#daily-thought')).toHaveCount(0);
   await expect(page.locator('#daily-thought-fallback')).toHaveCount(0);
-  await expect(page.locator('.daily-thought-button-row')).toHaveCount(0);
+  await expect(page.locator('.daily-thought-standalone')).toHaveCount(0);
   await expect(page.locator('.school-news-badges')).toHaveCount(0);
 
   const ticker = page.locator('#school-news-ticker');
   const dateBadge = ticker.locator(':scope > .school-news-badge');
-  const standalone = page.locator('.daily-thought-standalone');
-  const trigger = standalone.locator('.daily-thought-trigger');
+  const trigger = ticker.locator(':scope > .daily-thought-control .daily-thought-trigger');
 
   await expect(dateBadge).toBeVisible();
   await expect(dateBadge).toContainText('Dates importantes');
-  await expect(standalone).toBeVisible();
   await expect(trigger).toBeVisible();
 
-  const separation = await page.evaluate(() => {
+  const alignment = await page.evaluate(() => {
     const ticker = document.getElementById('school-news-ticker');
-    const standalone = document.querySelector('.daily-thought-standalone');
-    const trigger = document.querySelector('.daily-thought-trigger');
     const badge = ticker?.querySelector(':scope > .school-news-badge');
+    const trigger = ticker?.querySelector(':scope > .daily-thought-control .daily-thought-trigger');
     const tickerRect = ticker?.getBoundingClientRect();
     const badgeRect = badge?.getBoundingClientRect();
+    const triggerRect = trigger?.getBoundingClientRect();
     return {
       triggerInsideTicker: Boolean(ticker && trigger && ticker.contains(trigger)),
-      standaloneAfterTicker: Boolean(ticker && standalone && ticker.nextElementSibling === standalone),
-      badgeNearTickerTop: Boolean(tickerRect && badgeRect && Math.abs(badgeRect.top - tickerRect.top) <= 10),
-      badgeNearTickerLeft: Boolean(tickerRect && badgeRect && Math.abs(badgeRect.left - tickerRect.left) <= 12)
+      badgeNearTickerTop: Boolean(tickerRect && badgeRect && Math.abs(badgeRect.top - tickerRect.top) <= 12),
+      badgeNearTickerLeft: Boolean(tickerRect && badgeRect && Math.abs(badgeRect.left - tickerRect.left) <= 12),
+      triggerNearTickerRight: Boolean(tickerRect && triggerRect && Math.abs(tickerRect.right - triggerRect.right) <= 12),
+      sameLine: Boolean(badgeRect && triggerRect && Math.abs(badgeRect.top - triggerRect.top) <= 4)
     };
   });
-  expect(separation.triggerInsideTicker).toBe(false);
-  expect(separation.standaloneAfterTicker).toBe(true);
-  expect(separation.badgeNearTickerTop).toBe(true);
-  expect(separation.badgeNearTickerLeft).toBe(true);
+  expect(alignment.triggerInsideTicker).toBe(true);
+  expect(alignment.badgeNearTickerTop).toBe(true);
+  expect(alignment.badgeNearTickerLeft).toBe(true);
+  expect(alignment.triggerNearTickerRight).toBe(true);
+  expect(alignment.sameLine).toBe(true);
 
   const buttonLayout = await trigger.evaluate(node => {
     const rect = node.getBoundingClientRect();
@@ -115,11 +114,11 @@ test('le haut de page desktop garde les dates et la pensée strictement séparé
   await expect(page.locator('.daily-thought-trigger')).toHaveCount(1);
 
   const quickTop = await page.locator('.quick-area').evaluate(node => node.getBoundingClientRect().top);
-  expect(quickTop).toBeLessThan(880);
+  expect(quickTop).toBeLessThan(832);
   expect(errors).toEqual([]);
 });
 
-test('le bouton de pensée reste autonome et propre sur mobile et iOS', async ({ page }) => {
+test('sur mobile la pensée du jour disparaît complètement', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const errors = await openPortal(page);
 
@@ -127,49 +126,23 @@ test('le bouton de pensée reste autonome et propre sur mobile et iOS', async ({
   await expect(page.locator('#favorites-jump').locator('xpath=..')).toHaveClass(/search-guidance-row/);
   await expect(page.locator('#daily-thought')).toHaveCount(0);
   await expect(page.locator('.school-news-badges')).toHaveCount(0);
+  await expect(page.locator('.daily-thought-trigger')).toHaveCount(0);
+  await expect(page.locator('#daily-thought-popover')).toHaveCount(0);
 
   const ticker = page.locator('#school-news-ticker');
-  const standalone = page.locator('.daily-thought-standalone');
-  const trigger = standalone.locator('.daily-thought-trigger');
   await expect(ticker.locator(':scope > .school-news-badge')).toBeVisible();
-  await expect(trigger).toBeVisible();
-
-  const triggerSize = await trigger.evaluate(node => {
-    const rect = node.getBoundingClientRect();
-    return { width: rect.width, right: rect.right, viewportWidth: window.innerWidth };
-  });
-  expect(triggerSize.width).toBeLessThan(180);
-  expect(triggerSize.right).toBeLessThanOrEqual(triggerSize.viewportWidth + 1);
-
-  await trigger.click();
-  const popover = page.locator('#daily-thought-popover');
-  await expect(popover).toBeVisible();
 
   const layout = await page.evaluate(() => {
     const fav = document.getElementById('favorites-jump').getBoundingClientRect();
     const shell = document.querySelector('.search-shell').getBoundingClientRect();
-    const popover = document.getElementById('daily-thought-popover').getBoundingClientRect();
-    const ticker = document.getElementById('school-news-ticker');
-    const trigger = document.querySelector('.daily-thought-trigger');
     return {
       bodyOverflow: document.documentElement.scrollWidth - window.innerWidth,
-      favoriteRightDelta: Math.abs(fav.right - shell.right),
-      popoverLeft: popover.left,
-      popoverRight: popover.right,
-      viewportWidth: window.innerWidth,
-      triggerInsideTicker: Boolean(ticker && trigger && ticker.contains(trigger))
+      favoriteRightDelta: Math.abs(fav.right - shell.right)
     };
   });
 
   expect(layout.bodyOverflow).toBeLessThanOrEqual(1);
   expect(layout.favoriteRightDelta).toBeLessThanOrEqual(2);
-  expect(layout.popoverLeft).toBeGreaterThanOrEqual(0);
-  expect(layout.popoverRight).toBeLessThanOrEqual(layout.viewportWidth + 1);
-  expect(layout.triggerInsideTicker).toBe(false);
-
-  await page.keyboard.press('Escape');
-  await expect(popover).toBeHidden();
-  await expect(trigger).toBeFocused();
 
   const search = page.locator('#guide-search');
   await search.fill('reservation');
