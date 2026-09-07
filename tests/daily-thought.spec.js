@@ -50,10 +50,27 @@ test('la pensée du 8 septembre est affichée au-dessus des dates importantes', 
   expect(errors).toEqual([]);
 });
 
-test('aucune pensée ne prend de place un jour absent du calendrier', async ({ page }) => {
+test('une pensée de réserve reste visible un jour absent du calendrier', async ({ page }) => {
   await freezeTime(page, '2026-09-06T14:00:00Z');
   const errors = await openPortal(page);
+
+  const fallback = page.locator('#daily-thought-fallback');
+  await expect(fallback).toBeVisible();
+  await expect(fallback).toHaveAttribute('data-thought-date', '2026-09-06');
+  await expect(fallback).toHaveAttribute('data-thought-source', 'reserve');
+  await expect(fallback.locator('.daily-thought-label')).toContainText('Pensée du jour');
+  await expect(fallback.locator('.daily-thought-author')).toHaveText('- Auteur inconnu');
+  await expect(fallback.locator('.daily-thought-quote')).toHaveCSS('font-style', 'italic');
   await expect(page.locator('#daily-thought')).toHaveCount(0);
+
+  const ticker = page.locator('#school-news-ticker');
+  await expect(ticker).toBeAttached();
+  await expect.poll(() => page.evaluate(() => {
+    const fallback = document.getElementById('daily-thought-fallback');
+    const ticker = document.getElementById('school-news-ticker');
+    return Boolean(fallback && ticker && fallback.nextElementSibling === ticker);
+  })).toBe(true);
+
   expect(errors).toEqual([]);
 });
 
