@@ -34,33 +34,34 @@
 #daily-thought-fallback,
 .daily-thought-button-row{display:none!important}
 
-/* Dates importantes reste seul dans sa bande, ancré en haut à gauche. */
+/* Dates importantes : un seul bandeau compact, sans boîte imbriquée. */
 .school-news-ticker{
   width:min(820px,100%)!important;
-  min-height:54px!important;
-  margin:0 0 9px 0!important;
-  padding:6px 8px!important;
-  align-items:start!important;
+  min-height:44px!important;
+  margin:0 0 7px 0!important;
+  padding:4px 8px!important;
+  align-items:center!important;
   text-align:left!important;
 }
 .school-news-ticker>.school-news-badge{
-  align-self:start!important;
+  align-self:center!important;
   justify-self:start!important;
 }
 
-/* L'événement courant garde sa propre boîte et son contenu y est centré. */
+/* L'événement courant fait partie du bandeau lui-même : pas de second cadre. */
 .school-news-ticker>.school-news-track{
-  min-height:42px!important;
-  padding:6px 12px!important;
+  min-height:34px!important;
+  padding:2px 10px!important;
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
-  align-self:start!important;
+  align-self:center!important;
   justify-self:stretch!important;
   gap:8px!important;
-  border:1px solid rgba(255,255,255,.24)!important;
-  border-radius:8px!important;
-  background:rgba(255,255,255,.07)!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
   text-align:center!important;
 }
 .school-news-ticker>.school-news-track .school-news-date,
@@ -68,7 +69,7 @@
   text-align:center!important;
 }
 .school-news-ticker>.school-news-controls{
-  align-self:start!important;
+  align-self:center!important;
 }
 
 .search-intro{width:min(820px,100%)!important}
@@ -175,8 +176,7 @@
   .search-guidance-row p{font-size:.82rem!important}
 }
 
-/* Mobile / iOS : Dates importantes demeure en haut à gauche; l'événement reste
-   centré dans sa boîte et la pensée garde son petit bouton autonome dessous. */
+/* Mobile / iOS : le bandeau reste léger; l'événement se centre sans cadre interne. */
 @media(max-width:620px){
   .masthead{
     min-height:auto;
@@ -189,24 +189,28 @@
   .school-news-ticker{
     width:100%!important;
     min-height:0!important;
-    padding:9px 10px!important;
-    margin:0 0 9px 0!important;
-    align-items:stretch!important;
+    padding:6px 8px!important;
+    margin:0 0 8px 0!important;
+    align-items:center!important;
     text-align:left!important;
   }
   .school-news-ticker>.school-news-badge{
-    align-self:flex-start!important;
+    align-self:center!important;
     justify-self:start!important;
     margin:0!important;
   }
   .school-news-ticker>.school-news-track{
     width:100%!important;
-    min-height:0!important;
-    padding:8px 10px!important;
+    min-height:30px!important;
+    padding:3px 7px!important;
     flex-direction:column!important;
     align-items:center!important;
     justify-content:center!important;
-    gap:3px!important;
+    gap:2px!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
   }
   .school-news-ticker>.school-news-controls{
     align-self:center!important;
