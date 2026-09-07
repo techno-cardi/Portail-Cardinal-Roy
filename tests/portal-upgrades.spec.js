@@ -49,9 +49,12 @@ test('les ressources ouvertes apparaissent dans récemment consultés', async ({
   expect(errors).toEqual([]);
 });
 
-test('les documents datés affichent leur fraîcheur', async ({ page }) => {
+test('la fraîcheur reste cachée tant que la carte est fermée', async ({ page }) => {
   const errors = await openPortal(page);
-  const badge = page.locator('#horaire-enseignants-2026-2027 .portal-freshness');
+  const card = page.locator('#horaire-enseignants-2026-2027');
+  const badge = card.locator('.portal-freshness');
+  await expect(badge).toBeHidden();
+  await card.locator(':scope > summary').click();
   await expect(badge).toBeVisible();
   await expect(badge).toContainText(/Mis à jour|À vérifier/i);
   expect(errors).toEqual([]);
