@@ -4,9 +4,9 @@
   if (document.querySelector('link[data-home-compact]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = 'home-compact.css?v=20260907-1045';
+  link.href = 'home-compact.css?v=20260907-finalfix';
   link.dataset.homeCompact = 'true';
-  link.dataset.homeCompactVersion = '20260907-1045';
+  link.dataset.homeCompactVersion = '20260907-finalfix';
   document.head.appendChild(link);
 })();
 
@@ -160,7 +160,7 @@
     if (ready) {
       if (!document.querySelector('script[data-home-compact-layout]')) {
         const layoutScript = document.createElement('script');
-        layoutScript.src = 'home-compact.js?v=20260907-1045';
+        layoutScript.src = 'home-compact.js?v=20260907-finalfix';
         layoutScript.dataset.homeCompactLayout = 'true';
         document.body.appendChild(layoutScript);
       }
@@ -190,11 +190,11 @@
   attach();
 })();
 
-/* Pensée du jour : à droite de la ligne des dates, absente sur mobile et les jours sans pensée. */
+/* Pensée du jour : petit bouton autonome, toujours séparé de Dates importantes. */
 (() => {
   if (document.querySelector('script[data-daily-thought]')) return;
   const script = document.createElement('script');
-  script.src = 'daily-thought.js?v=20260907-1045';
+  script.src = 'daily-thought.js?v=20260907-finalfix';
   script.dataset.dailyThought = 'true';
   document.body.appendChild(script);
 })();
