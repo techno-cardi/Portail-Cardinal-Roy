@@ -30,6 +30,10 @@
     return map;
   };
 
+  const setText = (node, value) => {
+    if (node && node.textContent !== value) node.textContent = value;
+  };
+
   const ensureStyles = () => {
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
@@ -187,12 +191,12 @@
     const quote = popover.querySelector('.daily-thought-popover-quote');
     const author = popover.querySelector('.daily-thought-popover-author');
     if (item) {
-      quote.textContent = `« ${item.quote} »`;
-      author.textContent = `- ${item.author}`;
+      setText(quote, `« ${item.quote} »`);
+      setText(author, `- ${item.author}`);
       return;
     }
-    quote.textContent = 'Aucune pensée planifiée aujourd’hui.';
-    author.textContent = '';
+    setText(quote, 'Aucune pensée planifiée aujourd’hui.');
+    setText(author, '');
   };
 
   const createControl = () => {
@@ -276,8 +280,8 @@
       console.warn('Pensée du jour indisponible :', error);
       const popover = document.getElementById(POPOVER_ID);
       if (popover) {
-        popover.querySelector('.daily-thought-popover-quote').textContent = 'Pensée du jour indisponible.';
-        popover.querySelector('.daily-thought-popover-author').textContent = '';
+        setText(popover.querySelector('.daily-thought-popover-quote'), 'Pensée du jour indisponible.');
+        setText(popover.querySelector('.daily-thought-popover-author'), '');
       }
     }
   };
