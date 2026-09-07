@@ -1,6 +1,6 @@
 (() => {
   const VERSION = '1.2';
-  const ASSET_VERSION = '20260907-0824';
+  const ASSET_VERSION = '20260907-0900';
   let scheduled = false;
 
   const ensureStyles = () => {
@@ -23,9 +23,6 @@
     const nav = document.querySelector('.section-nav-inner');
     if (!stage || !intro || !searchShell || !favorites || !nav) return false;
 
-    // Sur desktop, le texte d'aide et « Mes favoris » partagent la même ligne.
-    // On déplace les éléments existants au lieu de les recréer pour conserver
-    // tous leurs écouteurs, leur contenu dynamique et leur accessibilité.
     const guidance = intro.querySelector('p');
     let guidanceRow = intro.querySelector('.search-guidance-row');
     if (!guidanceRow) {
@@ -36,14 +33,10 @@
     if (guidance && guidance.parentElement !== guidanceRow) guidanceRow.appendChild(guidance);
     if (favorites.parentElement !== guidanceRow) guidanceRow.appendChild(favorites);
 
-    // Nettoyage de la variante précédente, qui réservait une ligne entière
-    // juste pour les favoris.
     stage.querySelectorAll('.search-favorites-row').forEach(row => {
       if (!row.contains(favorites)) row.remove();
     });
 
-    // « Commencer » demeure une section du portail et reste trouvable par la
-    // recherche; on retire seulement son raccourci de la barre horizontale.
     nav.querySelectorAll('a[href="#section-commencer"]').forEach(link => link.remove());
 
     document.documentElement.dataset.homeCompact = VERSION;
@@ -70,7 +63,5 @@
     if (stage) observer.observe(stage, { childList: true, subtree: true });
   }
 
-  // Dernière passe pour WebKit/Safari et les scripts qui terminent leur rendu
-  // dans une microtâche ou juste après l'événement load.
   window.addEventListener('load', applyLayout, { once: true });
 })();
