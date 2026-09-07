@@ -18,7 +18,7 @@ async function openPortal(page) {
   await page.goto('/');
   await expect(page.locator('#guide-search')).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.PORTAL_SEARCH_ENGINE || '')).toBe('2.0');
-  await expect.poll(() => page.evaluate(() => document.documentElement.dataset.homeCompact || '')).toBe('1.1');
+  await expect.poll(() => page.evaluate(() => document.documentElement.dataset.homeCompact || '')).toBe('1.2');
   await expect(page.locator('#school-news-ticker')).toBeVisible();
   await expect(page.locator('.daily-thought-trigger')).toBeVisible();
   return errors;
@@ -59,6 +59,7 @@ test('le haut de page desktop garde la pensée discrète à côté des dates imp
   expect(guidanceLayout.verticalGap).toBeLessThanOrEqual(8);
 
   await expect(page.locator('#daily-thought')).toBeHidden();
+  await expect.poll(() => page.locator('#daily-thought').evaluate(node => getComputedStyle(node).display)).toBe('none');
   await expect(page.locator('.school-news-badges .school-news-badge')).toBeVisible();
   await expect(page.locator('.school-news-badges .daily-thought-trigger')).toBeVisible();
 
