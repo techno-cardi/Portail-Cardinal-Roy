@@ -1,6 +1,6 @@
 (() => {
-  const VERSION = '1.2';
-  const ASSET_VERSION = '20260907-1000';
+  const VERSION = '1.3';
+  const ASSET_VERSION = '20260907-1035';
   let scheduled = false;
 
   const ensureStyles = () => {
@@ -46,7 +46,7 @@
   const scheduleApply = () => {
     if (scheduled) return;
     scheduled = true;
-    Promise.resolve().then(() => {
+    queueMicrotask(() => {
       scheduled = false;
       applyLayout();
     });
@@ -55,13 +55,17 @@
   ensureStyles();
   applyLayout();
 
+  /* On observe uniquement les zones qui peuvent réellement modifier la mise en
+     page compacte. On n'observe plus tout le sous-arbre de search-stage-inner :
+     les rotations du ticker et les résultats de recherche ne déclenchent donc
+     plus inutilement applyLayout(). */
   const nav = document.querySelector('.section-nav-inner');
   const stage = document.querySelector('.search-stage-inner');
-  if (nav || stage) {
-    const observer = new MutationObserver(scheduleApply);
-    if (nav) observer.observe(nav, { childList: true });
-    if (stage) observer.observe(stage, { childList: true, subtree: true });
-  }
+  const intro = stage?.querySelector('.search-intro');
+  const observer = new MutationObserver(scheduleApply);
+  if (nav) observer.observe(nav, { childList: true });
+  if (stage) observer.observe(stage, { childList: true });
+  if (intro) observer.observe(intro, { childList: true, subtree: true });
 
   window.addEventListener('load', applyLayout, { once: true });
 })();
