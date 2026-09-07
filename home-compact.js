@@ -1,6 +1,6 @@
 (() => {
   const VERSION = '1.2';
-  const ASSET_VERSION = '20260907-0950';
+  const ASSET_VERSION = '20260907-1000';
   let scheduled = false;
 
   const ensureStyles = () => {
