@@ -11,7 +11,6 @@ on:
       - 'assets/**'
       - 'tests/**'
       - 'package.json'
-      - 'package-lock.json'
       - 'playwright.config.js'
       - '.github/workflows/portal-tests.yml'
   pull_request:
@@ -54,9 +53,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
       - name: Installer les dépendances
-        run: npm ci --no-audit --no-fund
+        run: npm install --no-audit --no-fund
       - name: Installer le navigateur de test
         run: npx playwright install --with-deps "${{ matrix.browser }}"
       - name: Tester ${{ matrix.label }}
