@@ -190,11 +190,19 @@
   attach();
 })();
 
-/* La pensée du jour attend le rendu du portail et se place juste au-dessus des dates importantes. */
+/* La pensée reste alimentée par son calendrier, mais s'affiche maintenant dans
+   une petite pastille cliquable plutôt que dans un bloc permanent. */
 (() => {
-  if (document.querySelector('script[data-daily-thought]')) return;
-  const script = document.createElement('script');
-  script.src = 'daily-thought.js';
-  script.dataset.dailyThought = 'true';
-  document.body.appendChild(script);
+  if (!document.querySelector('script[data-daily-thought]')) {
+    const script = document.createElement('script');
+    script.src = 'daily-thought.js';
+    script.dataset.dailyThought = 'true';
+    document.body.appendChild(script);
+  }
+  if (!document.querySelector('script[data-daily-thought-popover]')) {
+    const popoverScript = document.createElement('script');
+    popoverScript.src = 'daily-thought-popover.js';
+    popoverScript.dataset.dailyThoughtPopover = 'true';
+    document.body.appendChild(popoverScript);
+  }
 })();
