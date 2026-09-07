@@ -137,3 +137,27 @@
     'déclarer heures declarer heures inscrire heures paie payé paye paiement rémunération remuneration salaire temps supplémentaire temps supplementaire'
   ].join(' '));
 })();
+
+/*
+ * Charge l'easter egg seulement lorsque le moteur de recherche final est prêt.
+ * Il reste ainsi indépendant du moteur principal et ne peut pas perturber
+ * l'indexation normale des ressources.
+ */
+(() => {
+  let attempts = 0;
+  const attach = () => {
+    const ready = window.PORTAL_SEARCH_ENGINE === '2.0' && document.getElementById('guide-search');
+    if (ready) {
+      if (!document.querySelector('script[data-search-easter-egg]')) {
+        const script = document.createElement('script');
+        script.src = 'search-easter-egg.js';
+        script.dataset.searchEasterEgg = 'true';
+        document.body.appendChild(script);
+      }
+      return;
+    }
+    attempts += 1;
+    if (attempts < 120) window.setTimeout(attach, 100);
+  };
+  attach();
+})();
