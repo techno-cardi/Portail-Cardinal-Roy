@@ -48,6 +48,9 @@
   border-color:rgba(255,255,255,.5);
 }
 
+/* La date de fraîcheur est une métadonnée secondaire : elle ne surcharge pas
+   la carte fermée et devient visible uniquement lorsque la fiche est développée. */
+.procedure:not([open]) .portal-freshness{display:none!important}
 .portal-freshness{
   display:inline-flex;
   align-items:center;
