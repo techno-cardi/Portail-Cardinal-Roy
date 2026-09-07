@@ -4,8 +4,9 @@
   if (document.querySelector('link[data-home-compact]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = 'home-compact.css';
+  link.href = 'home-compact.css?v=20260907-0824';
   link.dataset.homeCompact = 'true';
+  link.dataset.homeCompactVersion = '20260907-0824';
   document.head.appendChild(link);
 })();
 
@@ -160,7 +161,7 @@
     if (ready) {
       if (!document.querySelector('script[data-home-compact-layout]')) {
         const layoutScript = document.createElement('script');
-        layoutScript.src = 'home-compact.js';
+        layoutScript.src = 'home-compact.js?v=20260907-0824';
         layoutScript.dataset.homeCompactLayout = 'true';
         document.body.appendChild(layoutScript);
       }
@@ -191,17 +192,18 @@
 })();
 
 /* La pensée reste alimentée par son calendrier, mais s'affiche maintenant dans
-   une petite pastille cliquable plutôt que dans un bloc permanent. */
+   une petite pastille cliquable plutôt que dans un bloc permanent. Les versions
+   sont explicites pour éviter qu'un navigateur conserve l'ancienne barre. */
 (() => {
   if (!document.querySelector('script[data-daily-thought]')) {
     const script = document.createElement('script');
-    script.src = 'daily-thought.js';
+    script.src = 'daily-thought.js?v=20260907-0824';
     script.dataset.dailyThought = 'true';
     document.body.appendChild(script);
   }
   if (!document.querySelector('script[data-daily-thought-popover]')) {
     const popoverScript = document.createElement('script');
-    popoverScript.src = 'daily-thought-popover.js';
+    popoverScript.src = 'daily-thought-popover.js?v=20260907-0824';
     popoverScript.dataset.dailyThoughtPopover = 'true';
     document.body.appendChild(popoverScript);
   }
