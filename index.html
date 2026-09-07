@@ -42,7 +42,7 @@ Promise.all(files.map(f=>fetch(f).then(r=>{if(!r.ok) throw new Error(f); return 
     await loadScript('source-patches-5.js');
     await loadScript('source-patches-6.js');
     await loadScript('source-patches-7.js');
-    await loadScript('source-patches-8.js');
+    await loadScript('source-patches-8.js?v=20260907-0920');
     await loadScript('ui-polish.js');
     await loadScript('after-ui.js');
     await loadScript('global-search-flash.js');
