@@ -11,6 +11,7 @@ on:
       - 'assets/**'
       - 'tests/**'
       - 'package.json'
+      - 'package-lock.json'
       - 'playwright.config.js'
       - '.github/workflows/portal-tests.yml'
   pull_request:
@@ -20,18 +21,43 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: portal-tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
+    name: ${{ matrix.label }}
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: desktop-chromium
+            browser: chromium
+            label: Chrome desktop
+          - project: desktop-firefox
+            browser: firefox
+            label: Firefox desktop
+          - project: desktop-webkit
+            browser: webkit
+            label: Safari / WebKit desktop
+          - project: mobile-chromium
+            browser: chromium
+            label: Android / Chromium
+          - project: mobile-webkit
+            browser: webkit
+            label: iOS / WebKit
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
       - name: Installer les dépendances
-        run: npm install --no-audit --no-fund
-      - name: Installer Chromium, Firefox et WebKit
-        run: npx playwright install --with-deps chromium firefox webkit
-      - name: Tester les parcours critiques sur desktop et mobile
-        run: npm run test:e2e
+        run: npm ci --no-audit --no-fund
+      - name: Installer le navigateur de test
+        run: npx playwright install --with-deps "${{ matrix.browser }}"
+      - name: Tester ${{ matrix.label }}
+        run: npx playwright test --project="${{ matrix.project }}"
