@@ -1,3 +1,14 @@
+/* Variante compacte du haut de page. La mise en page précédente est conservée
+   dans la branche backup-layout-before-compact-home-2026-09-07. */
+(() => {
+  if (document.querySelector('link[data-home-compact]')) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'home-compact.css';
+  link.dataset.homeCompact = 'true';
+  document.head.appendChild(link);
+})();
+
 (() => {
   const root = document.getElementById('legacy-source');
   if (!root) return;
