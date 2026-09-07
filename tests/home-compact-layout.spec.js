@@ -24,7 +24,7 @@ async function openPortal(page) {
   return errors;
 }
 
-test('le haut de page desktop affiche la pensée uniquement comme petit bouton', async ({ page }) => {
+test('le haut de page desktop garde les dates et la pensée strictement séparées', async ({ page }) => {
   await page.setViewportSize({ width: 1797, height: 832 });
   const errors = await openPortal(page);
 
@@ -58,14 +58,39 @@ test('le haut de page desktop affiche la pensée uniquement comme petit bouton',
   expect(guidanceLayout.verticalGap).toBeGreaterThanOrEqual(0);
   expect(guidanceLayout.verticalGap).toBeLessThanOrEqual(8);
 
-  // L'ancienne barre n'existe plus du tout dans le DOM.
   await expect(page.locator('#daily-thought')).toHaveCount(0);
+  await expect(page.locator('#daily-thought-fallback')).toHaveCount(0);
   await expect(page.locator('.daily-thought-button-row')).toHaveCount(0);
+  await expect(page.locator('.school-news-badges')).toHaveCount(0);
 
-  // Le seul contrôle visible est un petit bouton à côté de « Dates importantes ».
-  const trigger = page.locator('.school-news-badges .daily-thought-trigger');
+  const ticker = page.locator('#school-news-ticker');
+  const dateBadge = ticker.locator(':scope > .school-news-badge');
+  const standalone = page.locator('.daily-thought-standalone');
+  const trigger = standalone.locator('.daily-thought-trigger');
+
+  await expect(dateBadge).toBeVisible();
+  await expect(dateBadge).toContainText('Dates importantes');
+  await expect(standalone).toBeVisible();
   await expect(trigger).toBeVisible();
-  await expect(page.locator('.school-news-badges .school-news-badge')).toBeVisible();
+
+  const separation = await page.evaluate(() => {
+    const ticker = document.getElementById('school-news-ticker');
+    const standalone = document.querySelector('.daily-thought-standalone');
+    const trigger = document.querySelector('.daily-thought-trigger');
+    const badge = ticker?.querySelector(':scope > .school-news-badge');
+    const tickerRect = ticker?.getBoundingClientRect();
+    const badgeRect = badge?.getBoundingClientRect();
+    return {
+      triggerInsideTicker: Boolean(ticker && trigger && ticker.contains(trigger)),
+      standaloneAfterTicker: Boolean(ticker && standalone && ticker.nextElementSibling === standalone),
+      badgeNearTickerTop: Boolean(tickerRect && badgeRect && Math.abs(badgeRect.top - tickerRect.top) <= 10),
+      badgeNearTickerLeft: Boolean(tickerRect && badgeRect && Math.abs(badgeRect.left - tickerRect.left) <= 12)
+    };
+  });
+  expect(separation.triggerInsideTicker).toBe(false);
+  expect(separation.standaloneAfterTicker).toBe(true);
+  expect(separation.badgeNearTickerTop).toBe(true);
+  expect(separation.badgeNearTickerLeft).toBe(true);
 
   const buttonLayout = await trigger.evaluate(node => {
     const rect = node.getBoundingClientRect();
@@ -81,31 +106,34 @@ test('le haut de page desktop affiche la pensée uniquement comme petit bouton',
   await expect(popover).toContainText('Il est des portes sur la mer');
   await expect(popover).toContainText('Rafael Alberti');
 
-  const popoverBounds = await popover.evaluate(node => {
-    const rect = node.getBoundingClientRect();
-    return { left: rect.left, right: rect.right, top: rect.top, width: window.innerWidth };
-  });
-  expect(popoverBounds.left).toBeGreaterThanOrEqual(0);
-  expect(popoverBounds.right).toBeLessThanOrEqual(popoverBounds.width + 1);
-  expect(popoverBounds.top).toBeGreaterThanOrEqual(0);
-
   await page.locator('.search-intro h2').click();
   await expect(popover).toBeHidden();
 
+  const search = page.locator('#guide-search');
+  await search.fill('horaire');
+  await expect(search).toHaveValue('horaire');
+  await expect(page.locator('.daily-thought-trigger')).toHaveCount(1);
+
   const quickTop = await page.locator('.quick-area').evaluate(node => node.getBoundingClientRect().top);
-  expect(quickTop).toBeLessThan(832);
+  expect(quickTop).toBeLessThan(880);
   expect(errors).toEqual([]);
 });
 
-test('le bouton de pensée reste propre sur mobile et iOS', async ({ page }) => {
+test('le bouton de pensée reste autonome et propre sur mobile et iOS', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const errors = await openPortal(page);
 
   await expect(page.locator('.section-nav a[href="#section-commencer"]')).toHaveCount(0);
   await expect(page.locator('#favorites-jump').locator('xpath=..')).toHaveClass(/search-guidance-row/);
   await expect(page.locator('#daily-thought')).toHaveCount(0);
+  await expect(page.locator('.school-news-badges')).toHaveCount(0);
 
-  const trigger = page.locator('.daily-thought-trigger');
+  const ticker = page.locator('#school-news-ticker');
+  const standalone = page.locator('.daily-thought-standalone');
+  const trigger = standalone.locator('.daily-thought-trigger');
+  await expect(ticker.locator(':scope > .school-news-badge')).toBeVisible();
+  await expect(trigger).toBeVisible();
+
   const triggerSize = await trigger.evaluate(node => {
     const rect = node.getBoundingClientRect();
     return { width: rect.width, right: rect.right, viewportWidth: window.innerWidth };
@@ -121,12 +149,15 @@ test('le bouton de pensée reste propre sur mobile et iOS', async ({ page }) => 
     const fav = document.getElementById('favorites-jump').getBoundingClientRect();
     const shell = document.querySelector('.search-shell').getBoundingClientRect();
     const popover = document.getElementById('daily-thought-popover').getBoundingClientRect();
+    const ticker = document.getElementById('school-news-ticker');
+    const trigger = document.querySelector('.daily-thought-trigger');
     return {
       bodyOverflow: document.documentElement.scrollWidth - window.innerWidth,
       favoriteRightDelta: Math.abs(fav.right - shell.right),
       popoverLeft: popover.left,
       popoverRight: popover.right,
-      viewportWidth: window.innerWidth
+      viewportWidth: window.innerWidth,
+      triggerInsideTicker: Boolean(ticker && trigger && ticker.contains(trigger))
     };
   });
 
@@ -134,9 +165,14 @@ test('le bouton de pensée reste propre sur mobile et iOS', async ({ page }) => 
   expect(layout.favoriteRightDelta).toBeLessThanOrEqual(2);
   expect(layout.popoverLeft).toBeGreaterThanOrEqual(0);
   expect(layout.popoverRight).toBeLessThanOrEqual(layout.viewportWidth + 1);
+  expect(layout.triggerInsideTicker).toBe(false);
 
   await page.keyboard.press('Escape');
   await expect(popover).toBeHidden();
   await expect(trigger).toBeFocused();
+
+  const search = page.locator('#guide-search');
+  await search.fill('reservation');
+  await expect(search).toHaveValue('reservation');
   expect(errors).toEqual([]);
 });
