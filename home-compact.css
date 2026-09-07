@@ -1,0 +1,164 @@
+/*
+ * Variante compacte de l'accueil.
+ * Objectif : conserver exactement la même hiérarchie et les mêmes fonctions,
+ * mais réduire l'espace vertical perdu avant les accès rapides.
+ *
+ * Sauvegarde de la mise en page précédente :
+ * backup-layout-before-compact-home-2026-09-07
+ */
+
+/* En-tête blanc : même composition, densité légèrement accrue. */
+.masthead{
+  min-height:94px;
+  gap:22px;
+  padding-block:12px;
+}
+.school-mark .official-logo{
+  width:150px;
+  height:60px;
+}
+.masthead-copy h1{
+  margin-bottom:3px;
+  font-size:clamp(1.95rem,3.3vw,2.65rem);
+}
+.masthead-copy p{font-size:.9rem}
+.techno-contact{
+  padding:9px 13px!important;
+}
+
+/*
+ * Le plus gros gain vient d'ici : styles.css donnait déjà du padding à
+ * .search-stage-inner, puis guide-updates.css en ajoutait aussi au parent.
+ * On garde un seul niveau d'espacement autour de la zone bourgogne.
+ */
+.search-stage{
+  padding:14px 0 18px!important;
+}
+.search-stage-inner{
+  padding-block:0!important;
+}
+
+/* Les deux informations utiles du haut restent bien présentes, simplement
+   plus denses. Les !important sont nécessaires puisque leurs styles sont
+   injectés dynamiquement après les feuilles CSS statiques. */
+.daily-thought{
+  min-height:34px!important;
+  margin-bottom:6px!important;
+  padding:6px 10px!important;
+}
+.school-news-ticker{
+  min-height:38px!important;
+  margin-bottom:9px!important;
+  padding:5px 8px!important;
+}
+
+.search-intro h2{
+  font-size:clamp(1.45rem,2.45vw,1.95rem)!important;
+  line-height:1.08!important;
+}
+.search-intro p{
+  margin:4px auto 12px!important;
+  font-size:.9rem!important;
+  line-height:1.38;
+}
+.search-shell{
+  min-height:54px!important;
+}
+#guide-search{
+  padding:12px 8px!important;
+  font-size:1rem!important;
+}
+.search-under{
+  min-height:31px!important;
+  margin-top:6px!important;
+}
+.favorites-jump{
+  min-height:30px;
+  padding:4px 9px;
+}
+.app-ribbon{
+  margin-top:8px!important;
+  gap:6px;
+}
+.app-chip{
+  min-height:34px;
+  padding:4px 9px 4px 5px;
+}
+.app-chip-icon{
+  width:25px;
+  height:25px;
+}
+
+/* Navigation et début du contenu légèrement remontés. */
+.section-nav-inner,
+.section-nav a{
+  min-height:48px;
+}
+.main-layout{
+  padding-top:24px;
+}
+
+/* Sur les écrans intermédiaires on conserve un peu d'air pour éviter l'effet tassé. */
+@media(max-width:900px){
+  .masthead{
+    min-height:88px;
+    gap:18px;
+    padding-block:11px;
+  }
+  .school-mark .official-logo{
+    width:138px;
+    height:55px;
+  }
+  .search-stage{
+    padding:14px 0 18px!important;
+  }
+  .search-intro p{
+    margin-bottom:11px!important;
+  }
+}
+
+/* Mobile : compact, mais sans réduire les cibles tactiles ni serrer les blocs. */
+@media(max-width:620px){
+  .masthead{
+    min-height:auto;
+    padding-block:12px;
+  }
+  .school-mark .official-logo{
+    width:126px;
+    height:50px;
+  }
+  .masthead-copy h1{
+    font-size:1.85rem;
+  }
+  .search-stage{
+    padding:13px 0 17px!important;
+  }
+  .daily-thought{
+    padding:7px 9px!important;
+  }
+  .school-news-ticker{
+    min-height:0!important;
+    padding:9px 10px!important;
+    margin-bottom:9px!important;
+  }
+  .search-intro h2{
+    font-size:1.55rem!important;
+  }
+  .search-intro p{
+    margin:5px auto 12px!important;
+    font-size:.88rem!important;
+  }
+  .search-shell{
+    min-height:54px!important;
+  }
+  #guide-search{
+    padding-block:13px!important;
+  }
+  .section-nav-inner,
+  .section-nav a{
+    min-height:50px;
+  }
+  .main-layout{
+    padding-top:24px;
+  }
+}
