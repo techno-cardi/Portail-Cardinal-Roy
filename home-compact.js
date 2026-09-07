@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '1.0';
+  const VERSION = '1.1';
   let scheduled = false;
 
   const ensureStyles = () => {
@@ -13,21 +13,30 @@
 
   const applyLayout = () => {
     const stage = document.querySelector('.search-stage-inner');
+    const intro = stage?.querySelector('.search-intro');
     const searchShell = stage?.querySelector('.search-shell');
     const favorites = document.getElementById('favorites-jump');
     const nav = document.querySelector('.section-nav-inner');
-    if (!stage || !searchShell || !favorites || !nav) return false;
+    if (!stage || !intro || !searchShell || !favorites || !nav) return false;
 
-    // Le bouton « Mes favoris » reste le même élément DOM : ses écouteurs et
-    // son compteur continuent donc de fonctionner après le déplacement.
-    let favoriteRow = stage.querySelector('.search-favorites-row');
-    if (!favoriteRow) {
-      favoriteRow = document.createElement('div');
-      favoriteRow.className = 'search-favorites-row';
-      favoriteRow.setAttribute('aria-label', 'Accès aux favoris');
-      searchShell.insertAdjacentElement('beforebegin', favoriteRow);
+    // Sur desktop, le texte d'aide et « Mes favoris » partagent la même ligne.
+    // On déplace les éléments existants au lieu de les recréer pour conserver
+    // tous leurs écouteurs, leur contenu dynamique et leur accessibilité.
+    const guidance = intro.querySelector('p');
+    let guidanceRow = intro.querySelector('.search-guidance-row');
+    if (!guidanceRow) {
+      guidanceRow = document.createElement('div');
+      guidanceRow.className = 'search-guidance-row';
+      intro.querySelector('h2')?.insertAdjacentElement('afterend', guidanceRow);
     }
-    if (favorites.parentElement !== favoriteRow) favoriteRow.appendChild(favorites);
+    if (guidance && guidance.parentElement !== guidanceRow) guidanceRow.appendChild(guidance);
+    if (favorites.parentElement !== guidanceRow) guidanceRow.appendChild(favorites);
+
+    // Nettoyage de la variante précédente, qui réservait une ligne entière
+    // juste pour les favoris.
+    stage.querySelectorAll('.search-favorites-row').forEach(row => {
+      if (!row.contains(favorites)) row.remove();
+    });
 
     // « Commencer » demeure une section du portail et reste trouvable par la
     // recherche; on retire seulement son raccourci de la barre horizontale.
@@ -54,10 +63,10 @@
   if (nav || stage) {
     const observer = new MutationObserver(scheduleApply);
     if (nav) observer.observe(nav, { childList: true });
-    if (stage) observer.observe(stage, { childList: true });
+    if (stage) observer.observe(stage, { childList: true, subtree: true });
   }
 
-  // Une dernière passe couvre WebKit/Safari et les scripts qui terminent leur
-  // rendu dans une microtâche ou juste après l'événement load.
+  // Dernière passe pour WebKit/Safari et les scripts qui terminent leur rendu
+  // dans une microtâche ou juste après l'événement load.
   window.addEventListener('load', applyLayout, { once: true });
 })();
