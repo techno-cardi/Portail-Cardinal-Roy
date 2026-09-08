@@ -1,15 +1,7 @@
 {
-  "generated_at": "2026-09-04T14:22:02.097660-04:00",
+  "generated_at": "2026-09-08T01:19:53.043369-04:00",
   "source": "Google Calendar - Cardinal-Roy",
   "items": [
-    {
-      "title": "CONGÉ - Fête du Travail",
-      "start": "2026-09-07T00:00:00-04:00",
-      "end": "2026-09-08T00:00:00-04:00",
-      "all_day": true,
-      "kind": "conge",
-      "icon": "🏖️"
-    },
     {
       "title": "Portes ouvertes - secteur SAÉ",
       "start": "2026-09-08T18:30:00-04:00",
@@ -97,6 +89,14 @@
       "all_day": false,
       "kind": "evenement",
       "icon": "🎉"
+    },
+    {
+      "title": "Fin de la 1re étape",
+      "start": "2026-11-06T00:00:00-05:00",
+      "end": "2026-11-07T00:00:00-05:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "📅"
     }
   ]
 }
