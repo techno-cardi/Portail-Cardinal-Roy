@@ -82,7 +82,7 @@
   if (!card) return;
   const primary = card.querySelector('.links a.btn.primary');
   if (primary) {
-    primary.href = 'https://appsp.ca/formulaire/envoi.php?id=5';
+    primary.href = 'https://drive.google.com/file/d/1nBvc822ZTQ-xs5-g5a1LOAoC0y1W1_b2/view';
     primary.textContent = 'Formulaire — sortie éducative ou activité spéciale';
   }
 })();
