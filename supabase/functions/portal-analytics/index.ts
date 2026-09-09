@@ -1,3 +1,5 @@
+const VERSION = '2026-09-09.1';
+
 const ALLOWED_ORIGINS = new Set([
   'https://techno-cardi.github.io'
 ]);
@@ -10,7 +12,8 @@ const corsHeaders = (origin: string) => ({
   'Access-Control-Allow-Headers': 'content-type',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Cache-Control': 'no-store',
-  'Vary': 'Origin'
+  'Vary': 'Origin',
+  'X-Portal-Analytics-Version': VERSION
 });
 
 const normalizeQuery = (value: unknown) => {
@@ -55,6 +58,14 @@ Deno.serve(async (req: Request) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
   const secretKey = getSecretKey();
+
+  if (req.method === 'GET') {
+    const url = new URL(req.url);
+    if (url.searchParams.get('health') === '1') {
+      return Response.json({ ok: true, version: VERSION, backendConfigured: Boolean(supabaseUrl && secretKey) }, { status: 200, headers });
+    }
+  }
+
   if (!supabaseUrl || !secretKey) {
     console.error('Supabase environment is incomplete');
     return Response.json({ error: 'backend_not_configured' }, { status: 500, headers });
@@ -96,7 +107,7 @@ Deno.serve(async (req: Request) => {
     return Response.json({ error: 'invalid_json' }, { status: 400, headers });
   }
 
-  const eventType = body.type === 'search' || body.type === 'open' ? body.type : '';
+  const eventType = body.type === 'search' || body.type === 'open' || body.type === 'visit' ? body.type : '';
   if (!eventType) return Response.json({ error: 'invalid_event_type' }, { status: 400, headers });
 
   const row: Record<string, unknown> = {
@@ -112,7 +123,7 @@ Deno.serve(async (req: Request) => {
     row.query = query;
     const count = Number(body.resultCount);
     row.result_count = Number.isFinite(count) ? Math.max(0, Math.min(100, Math.trunc(count))) : 0;
-  } else {
+  } else if (eventType === 'open') {
     const resourceId = String(body.resourceId ?? '').trim().slice(0, 120);
     if (!/^[a-z0-9][a-z0-9-]{0,119}$/i.test(resourceId)) {
       return Response.json({ error: 'invalid_resource_id' }, { status: 400, headers });
