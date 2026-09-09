@@ -1,4 +1,6 @@
-project_id = "portail-cardinal-roy"
+project_id = "ojyswaxuqwnqilrvtjll"
 
 [functions.portal-analytics]
+enabled = true
 verify_jwt = false
+entrypoint = "./functions/portal-analytics/index.ts"
