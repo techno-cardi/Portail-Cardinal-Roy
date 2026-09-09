@@ -2,24 +2,27 @@
   'use strict';
 
   const ENDPOINT = 'https://ojyswaxuqwnqilrvtjll.supabase.co/functions/v1/portal-analytics';
+  const VISIT_KEY = 'cardi-portal-visit-v1';
+  const VISIT_WINDOW_MS = 30 * 60 * 1000;
   const analytics = window.PORTAL_ANALYTICS;
   if (!analytics || analytics.remoteAvailable) return;
 
   const isProduction = location.origin === 'https://techno-cardi.github.io';
+  const searchCooldown = new Map();
 
   const send = payload => {
-    if (!isProduction) return;
+    if (!isProduction) return Promise.resolve(false);
     try {
-      fetch(ENDPOINT, {
+      return fetch(ENDPOINT, {
         method: 'POST',
         mode: 'cors',
         credentials: 'omit',
         keepalive: true,
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload)
-      }).catch(() => {});
+      }).then(response => response.ok).catch(() => false);
     } catch {
-      // Les statistiques distantes ne doivent jamais nuire au portail.
+      return Promise.resolve(false);
     }
   };
 
@@ -28,7 +31,13 @@
 
   analytics.recordSearch = (rawQuery, resultCount) => {
     const result = localRecordSearch(rawQuery, resultCount);
-    send({ type: 'search', query: rawQuery, resultCount });
+    const key = String(rawQuery || '').trim().toLowerCase();
+    const now = Date.now();
+    const last = searchCooldown.get(key) || 0;
+    if (key.length >= 2 && now - last >= 10000) {
+      searchCooldown.set(key, now);
+      send({ type: 'search', query: rawQuery, resultCount });
+    }
     return result;
   };
 
@@ -36,6 +45,18 @@
     const result = localRecordOpen(id);
     send({ type: 'open', resourceId: id });
     return result;
+  };
+
+  analytics.remoteHealth = async () => {
+    const response = await fetch(`${ENDPOINT}?health=1`, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-store',
+      headers: { 'accept': 'application/json' }
+    });
+    if (!response.ok) throw new Error(`Analytics Supabase indisponibles (${response.status})`);
+    return response.json();
   };
 
   analytics.remoteSnapshot = async (days = 30) => {
@@ -57,4 +78,14 @@
   analytics.remoteEnabled = isProduction;
   analytics.remoteEndpoint = ENDPOINT;
   document.documentElement.dataset.portalAnalyticsRemote = isProduction ? 'supabase' : 'local-only';
+
+  if (isProduction) {
+    let lastVisit = 0;
+    try { lastVisit = Number(localStorage.getItem(VISIT_KEY) || 0); } catch {}
+    const now = Date.now();
+    if (!Number.isFinite(lastVisit) || now - lastVisit >= VISIT_WINDOW_MS) {
+      try { localStorage.setItem(VISIT_KEY, String(now)); } catch {}
+      send({ type: 'visit' });
+    }
+  }
 })();
