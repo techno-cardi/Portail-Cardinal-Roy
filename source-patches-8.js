@@ -190,12 +190,12 @@
   attach();
 })();
 
-/* Registre central, recherche intelligente, récents, fraîcheur et analytics locaux + globaux. */
+/* Registre central, recherche intelligente, fraîcheur et analytics locaux + globaux. */
 (() => {
   if (!document.querySelector('link[data-portal-upgrades]')) {
     const style = document.createElement('link');
     style.rel = 'stylesheet';
-    style.href = 'portal-upgrades.css?v=20260907-1455';
+    style.href = 'portal-upgrades.css?v=20260909-1115';
     style.dataset.portalUpgrades = 'true';
     document.head.appendChild(style);
   }
@@ -223,9 +223,9 @@
       return;
     }
     try {
-      await loadOnce('portal-registry.js?v=20260907-1455', 'data-portal-registry-script');
-      await loadOnce('portal-upgrades.js?v=20260907-1455', 'data-portal-upgrades-script');
-      await loadOnce('portal-analytics-remote.js?v=20260907-1510', 'data-portal-analytics-remote-script');
+      await loadOnce('portal-registry.js?v=20260909-1115', 'data-portal-registry-script');
+      await loadOnce('portal-upgrades.js?v=20260909-1115', 'data-portal-upgrades-script');
+      await loadOnce('portal-analytics-remote.js?v=20260909-1115', 'data-portal-analytics-remote-script');
     } catch (error) {
       console.error('Impossible de charger les upgrades du portail', error);
     }
