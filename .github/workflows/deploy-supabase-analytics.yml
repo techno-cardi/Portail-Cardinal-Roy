@@ -53,3 +53,5 @@ jobs:
           curl --fail-with-body --silent --show-error \
             "https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/portal-analytics?days=1" \
             -H 'Accept: application/json'
+
+# Relance manuelle après ajout du secret GitHub le 2026-09-09.
