@@ -47,9 +47,9 @@
     section.innerHTML = '<h2>Consultation du portail</h2><p class="muted">Chargement des statistiques globales anonymes…</p>';
 
     if (!existing) {
-      const footer = [...host.children].find(node => node.matches?.('p.muted'));
-      if (footer) host.insertBefore(section, footer);
-      else host.appendChild(section);
+      const firstSection = host.querySelector('.section');
+      if (firstSection) host.insertBefore(section, firstSection);
+      else host.prepend(section);
     }
 
     try {
