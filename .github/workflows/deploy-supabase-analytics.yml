@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - 'supabase/functions/portal-analytics/**'
+      - 'supabase/migrations/*portal_analytics*.sql'
       - 'supabase/config.toml'
       - '.github/workflows/deploy-supabase-analytics.yml'
 
@@ -29,7 +30,7 @@ jobs:
         shell: bash
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
-            echo "::error::Le secret GitHub SUPABASE_ACCESS_TOKEN est absent. Crée un Personal Access Token dans Supabase, puis ajoute-le dans Settings > Secrets and variables > Actions du dépôt GitHub sous le nom SUPABASE_ACCESS_TOKEN."
+            echo "::error::Le secret GitHub SUPABASE_ACCESS_TOKEN est absent."
             exit 1
           fi
 
@@ -43,6 +44,27 @@ jobs:
         with:
           version: latest
 
+      - name: Appliquer les migrations analytics
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(supabase/migrations/*portal_analytics*.sql)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "Aucune migration analytics à appliquer."
+            exit 0
+          fi
+
+          for file in "${files[@]}"; do
+            echo "Application de $file"
+            payload=$(jq -Rs '{query: .}' < "$file")
+            curl --fail-with-body --silent --show-error \
+              -X POST "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_ID}/database/query" \
+              -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+              -H 'Content-Type: application/json' \
+              --data-binary "$payload" >/dev/null
+          done
+
       - name: Déployer portal-analytics
         run: supabase functions deploy portal-analytics --project-ref "$SUPABASE_PROJECT_ID" --use-api --no-verify-jwt
 
@@ -53,5 +75,3 @@ jobs:
           curl --fail-with-body --silent --show-error \
             "https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/portal-analytics?days=1" \
             -H 'Accept: application/json'
-
-# Relance manuelle après ajout du secret GitHub le 2026-09-09.
