@@ -17,7 +17,6 @@ test('les ressources importantes ouvrent leurs liens exacts depuis la recherche'
     bibliotheque: 'https://drive.google.com/file/d/1Ab0FRhEVKkGBBICstsxE0IT_0sLwLsB8/view?usp=drivesdk'
   };
 
-  // Les destinations d'horaire doivent être exactement celles des boutons déjà présents dans le portail.
   const existing = await page.evaluate(() => {
     const findHref = (id, text) => {
       const node = document.getElementById(id);
@@ -38,20 +37,21 @@ test('les ressources importantes ouvrent leurs liens exacts depuis la recherche'
   expect(existing).toEqual(exactLinks);
 
   const singleCases = [
-    ['nature', 'Nature et moments des évaluations', /1LTgKPbES9IixST2V-jolWxA7s6SMV6jT/],
-    ['attentes', 'Attentes et exigences', /18URlr-7b2TmnzZqL4TdOOGlNI2V7TfJW/],
-    ['planification', 'Planification annuelle', /15dleRqnqz8ZldCzWrogMAJONlVBta3IY/],
-    ['locaux', 'Horaire des locaux', exactLinks.locaux],
-    ['enseignants', 'Horaire des enseignants', exactLinks.enseignants],
-    ['dîneurs', 'Surveillance des dîneurs', exactLinks.dineurs],
-    ['bibliothèque', 'Surveillance bibliothèque', exactLinks.bibliotheque]
+    ['nature', 'Nature et moments des évaluations', /1LTgKPbES9IixST2V-jolWxA7s6SMV6jT/, '📁'],
+    ['attentes', 'Attentes et exigences', /18URlr-7b2TmnzZqL4TdOOGlNI2V7TfJW/, '📁'],
+    ['planification', 'Planification annuelle', /15dleRqnqz8ZldCzWrogMAJONlVBta3IY/, '📁'],
+    ['locaux', 'Horaire des locaux', exactLinks.locaux, '🏫'],
+    ['enseignants', 'Horaire des enseignants', exactLinks.enseignants, '🧑‍🏫'],
+    ['dîneurs', 'Surveillance des dîneurs', exactLinks.dineurs, '👀'],
+    ['bibliothèque', 'Surveillance bibliothèque', exactLinks.bibliotheque, '👀']
   ];
 
-  for (const [query, title, href] of singleCases) {
+  for (const [query, title, href, icon] of singleCases) {
     await input.fill(query);
     const direct = suggestions.locator('[data-direct-search-resource]');
     await expect(direct).toHaveCount(1);
     await expect(direct.locator('strong')).toHaveText(title);
+    await expect(direct.locator('.suggestion-visual')).toHaveText(icon);
     await expect(direct).toHaveAttribute('href', href);
     await expect(direct).toHaveAttribute('target', '_blank');
     await expect(direct).not.toContainText(/ouverture directe/i);
@@ -60,6 +60,7 @@ test('les ressources importantes ouvrent leurs liens exacts depuis la recherche'
   await input.fill('surveillance');
   let direct = suggestions.locator('[data-direct-search-resource]');
   await expect(direct).toHaveCount(2);
+  await expect(direct.locator('.suggestion-visual')).toHaveText(['👀', '👀']);
   await expect(suggestions).toContainText('Surveillance des dîneurs');
   await expect(suggestions).toContainText('Surveillance bibliothèque');
   await expect(suggestions).not.toContainText(/ouverture directe/i);
