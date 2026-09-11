@@ -11,12 +11,15 @@ test('Drive commun affiche les trois dossiers d’évaluation et de planificatio
   await card.locator(':scope > summary').click();
 
   const content = card.locator('.procedure-content');
-  await expect(content).toContainText('Dossiers — évaluation et planification');
-  await expect(content.getByRole('link', { name: /Nature et moments d’évaluation/i })).toHaveAttribute('href', /1LTgKPbES9IixST2V-jolWxA7s6SMV6jT/);
+  await expect(content).toContainText('Dossiers - évaluation et planification');
+  await expect(content.getByRole('link', { name: /Normes et modalités d’évaluation/i })).toHaveAttribute('href', /1ILYhek0U8IJwa7LTlx6JgaT2cwZ9gKfM/);
   await expect(content.getByRole('link', { name: /Attentes et exigences/i })).toHaveAttribute('href', /18URlr-7b2TmnzZqL4TdOOGlNI2V7TfJW/);
   await expect(content.getByRole('link', { name: /Planification annuelle/i })).toHaveAttribute('href', /15dleRqnqz8ZldCzWrogMAJONlVBta3IY/);
 
-  await page.locator('#guide-search').fill('planif annuelle');
-  await expect(page.locator('#search-suggestions')).toContainText(/Drive commun|planification/i);
+  for (const query of ['normes modalités', 'attentes exigences', 'planif annuelle']) {
+    await page.locator('#guide-search').fill(query);
+    await expect(page.locator('#search-suggestions')).toContainText(/Drive commun|évaluation|planification/i);
+  }
+
   expect(errors).toEqual([]);
 });
