@@ -1,103 +1,68 @@
 const { test, expect } = require('@playwright/test');
-const fs = require('fs');
 
-test('les ressources importantes s’ouvrent depuis la recherche avec les bons liens', async ({ page }) => {
+test('les ressources importantes ouvrent leurs liens exacts depuis la recherche', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
+
   const input = page.locator('#guide-search');
   const suggestions = page.locator('#search-suggestions');
   await expect(input).toBeVisible();
-  await page.waitForFunction(() => Boolean(window.PORTAL_REGISTRY?.search));
 
-  const registryDebug = await page.evaluate(() => {
-    const compact = resource => ({
-      id: resource.id,
-      title: resource.title,
-      subtitle: resource.subtitle,
-      links: resource.links,
-      searchText: resource.searchText
-    });
-    return {
-      locaux: (window.PORTAL_REGISTRY.search('locaux', 20) || []).map(compact),
-      enseignants: (window.PORTAL_REGISTRY.search('enseignants', 20) || []).map(compact),
-      surveillance: (window.PORTAL_REGISTRY.search('surveillance', 20) || []).map(compact),
-      horaires: (window.PORTAL_REGISTRY.search('horaire', 30) || []).map(compact)
-    };
-  });
-  fs.writeFileSync('schedule-registry-debug.json', JSON.stringify(registryDebug, null, 2));
-
-  const existingScheduleLinks = await page.evaluate(() => {
-    const normalize = value => String(value || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/[’']/g, ' ')
-      .replace(/[^a-z0-9+ -]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    const isFolderUrl = href => /drive\.google\.com\/drive\/folders\//i.test(href || '');
-    const resolve = (query, words) => {
-      const wanted = words.map(normalize);
-      const results = window.PORTAL_REGISTRY.search(query, 20) || [];
-      const candidates = results.map(resource => {
-        const label = normalize(`${resource.id || ''} ${resource.title || ''} ${resource.subtitle || ''} ${resource.searchText || ''}`);
-        if (!wanted.every(word => label.includes(word))) return null;
-        const scheduleBoost = /horaire/.test(label) ? 1000 : 0;
-        const titleBoost = wanted.reduce((sum, word) => sum + (normalize(resource.title || '').includes(word) ? 100 : 0), 0);
-        return { resource, score: scheduleBoost + titleBoost + (resource.score || 0) };
-      }).filter(Boolean).sort((a, b) => b.score - a.score);
-      for (const { resource } of candidates) {
-        const link = (resource.links || []).find(link => /^https?:\/\//i.test(link.href || '') && !isFolderUrl(link.href));
-        if (link) return { href: link.href, id: resource.id, title: resource.title };
-      }
-      return { href: '', id: '', title: '' };
+  const exactLinks = await page.evaluate(() => {
+    const hrefByText = (id, text) => {
+      const node = document.getElementById(id);
+      const wanted = text.toLowerCase();
+      const link = [...(node?.querySelectorAll('.procedure-content a[href^="http"]') || [])]
+        .find(a => a.textContent.toLowerCase().includes(wanted));
+      return link?.href || '';
     };
     return {
-      locaux: resolve('locaux', ['locaux']),
-      enseignants: resolve('enseignants', ['enseignant']),
-      surveillance: resolve('surveillance', ['surveill'])
+      locaux: hrefByText('horaire-locaux-2026-2027', 'horaire des locaux'),
+      enseignants: hrefByText('horaire-enseignants-2026-2027', 'horaire des enseignants'),
+      dineurs: hrefByText('horaires-surveillance-2026-2027', 'surveillance des dîneurs'),
+      bibliotheque: hrefByText('horaires-surveillance-2026-2027', 'surveillance bibliothèque')
     };
   });
 
-  for (const item of Object.values(existingScheduleLinks)) {
-    expect(item.href).toBeTruthy();
-    expect(item.href).not.toMatch(/drive\.google\.com\/drive\/folders\//i);
-  }
+  expect(exactLinks.locaux).toBe('https://drive.google.com/file/d/13dpfWN2_Jws3V4bwptfamOe-VSahZvCd/view?usp=drivesdk');
+  expect(exactLinks.enseignants).toBe('https://drive.google.com/file/d/1ptDonxP2Dx4FVUmY36PlppBYDc0HVRG5/view?usp=drivesdk');
+  expect(exactLinks.dineurs).toBe('https://drive.google.com/file/d/1CWkHvJRbFQMjYAkBs26e5vMPf83FbGVJ/view?usp=drivesdk');
+  expect(exactLinks.bibliotheque).toBe('https://drive.google.com/file/d/1Ab0FRhEVKkGBBICstsxE0IT_0sLwLsB8/view?usp=drivesdk');
 
-  const evaluationCases = [
+  const singleCases = [
     ['nature', 'Nature et moments des évaluations', /1LTgKPbES9IixST2V-jolWxA7s6SMV6jT/],
     ['attentes', 'Attentes et exigences', /18URlr-7b2TmnzZqL4TdOOGlNI2V7TfJW/],
-    ['planification', 'Planification annuelle', /15dleRqnqz8ZldCzWrogMAJONlVBta3IY/]
+    ['planification', 'Planification annuelle', /15dleRqnqz8ZldCzWrogMAJONlVBta3IY/],
+    ['locaux', 'Horaire des locaux', exactLinks.locaux],
+    ['enseignants', 'Horaire des enseignants', exactLinks.enseignants],
+    ['dîneurs', 'Surveillance des dîneurs', exactLinks.dineurs],
+    ['bibliothèque', 'Surveillance bibliothèque', exactLinks.bibliotheque]
   ];
-  for (const [query, title, hrefPattern] of evaluationCases) {
+
+  for (const [query, title, href] of singleCases) {
     await input.fill(query);
     const direct = suggestions.locator('[data-direct-search-resource]');
     await expect(direct).toHaveCount(1);
     await expect(direct.locator('strong')).toHaveText(title);
-    await expect(direct).toHaveAttribute('href', hrefPattern);
+    await expect(direct).toHaveAttribute('href', href);
     await expect(direct).toHaveAttribute('target', '_blank');
     await expect(direct).not.toContainText(/ouverture directe/i);
   }
 
-  const schedules = [
-    ['locaux', 'Horaires des locaux', existingScheduleLinks.locaux.href],
-    ['enseignants', 'Horaires des enseignants', existingScheduleLinks.enseignants.href],
-    ['surveillance', 'Horaires de surveillance', existingScheduleLinks.surveillance.href]
-  ];
-  for (const [query, title, expectedHref] of schedules) {
-    await input.fill(query);
-    const direct = suggestions.locator('[data-direct-search-resource]');
-    await expect(direct).toHaveCount(1);
-    await expect(direct.locator('strong')).toHaveText(title);
-    await expect(direct).toHaveAttribute('href', expectedHref);
-    await expect(direct).toHaveAttribute('target', '_blank');
-    await expect(direct).not.toContainText(/ouverture directe/i);
-    await expect(direct).not.toHaveAttribute('href', /drive\.google\.com\/drive\/folders\//i);
-  }
+  await input.fill('surveillance');
+  let direct = suggestions.locator('[data-direct-search-resource]');
+  await expect(direct).toHaveCount(2);
+  await expect(suggestions).toContainText('Surveillance des dîneurs');
+  await expect(suggestions).toContainText('Surveillance bibliothèque');
 
   await input.fill('horaire');
-  const horaires = suggestions.locator('[data-direct-search-resource]');
-  await expect(horaires).toHaveCount(3);
+  direct = suggestions.locator('[data-direct-search-resource]');
+  await expect(direct).toHaveCount(4);
+  await expect(suggestions).toContainText('Horaire des locaux');
+  await expect(suggestions).toContainText('Horaire des enseignants');
+  await expect(suggestions).toContainText('Surveillance des dîneurs');
+  await expect(suggestions).toContainText('Surveillance bibliothèque');
+
   expect(errors).toEqual([]);
 });
