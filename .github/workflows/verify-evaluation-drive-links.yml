@@ -6,6 +6,7 @@ on:
     paths:
       - 'index.html'
       - 'evaluation-drive-links.js'
+      - 'evaluation-search-direct.js'
       - 'tests/evaluation-drive-links.spec.js'
       - '.github/workflows/verify-evaluation-drive-links.yml'
   workflow_dispatch:
@@ -24,5 +25,5 @@ jobs:
         run: npm install
       - name: Installer Chromium
         run: npx playwright install --with-deps chromium
-      - name: Vérifier les trois liens dans le rendu final
+      - name: Vérifier les ressources directes dans le rendu final
         run: npx playwright test tests/evaluation-drive-links.spec.js --project=desktop-chromium --reporter=line
