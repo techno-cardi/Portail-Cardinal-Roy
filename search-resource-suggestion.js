@@ -1,8 +1,10 @@
 (() => {
-  const VERSION = '1.1';
+  const VERSION = '1.2';
   const FAILURE_THRESHOLD = 3;
   const FAILURE_DELAY_MS = 900;
   const MAIL_SUBJECT = 'Suggestion d’ajout d’une ressource sur le Portail Cardinal-Roy';
+  const SURVEILLANCE_DINEURS_URL = 'https://drive.google.com/file/d/1CWkHvJRbFQMjYAkBs26e5vMPf83FbGVJ/view?usp=drivesdk';
+  const SURVEILLANCE_BIBLIOTHEQUE_URL = 'https://drive.google.com/file/d/1Ab0FRhEVKkGBBICstsxE0IT_0sLwLsB8/view?usp=drivesdk';
 
   const normalize = value => (value || '')
     .normalize('NFD')
@@ -33,6 +35,19 @@
         'calendrier scolaire 2026 2027 année annee rentrée rentree congé conge congés conges',
         'journée pédagogique journee pedagogique journées pédagogiques journees pedagogiques pédago pedago',
         'relâche relache vacances noël noel pâques paques fin étape fin etape bulletin rencontre parents'
+      ].join(' ')
+    },
+    {
+      id: 'horaires-surveillance-2026-2027',
+      category: 'Organisation scolaire',
+      icon: '👀',
+      keywords: [
+        'horaire horaires surveillance surveillances surveiller supervision surveillant surveillante 2026 2027',
+        'dîner diner dîneur dineur dîneurs dineurs midi cafétéria cafeteria gradins',
+        'bibliothèque bibliotheque biblio caa matin période 3 periode 3 sae saé jour cycle jours cycle',
+        '7h30 8h00 11h15 11h30 12h30 13h00',
+        'james gilbert louis simoneau mathieu morin stéphane stephane trudel jérémie jeremie laflamme allard ghyslain lafrance gilles savard josée josee couture william rocheleau',
+        'marie-josée marie-josee gravel nathalie poirier maxime gagnon audrey falardeau sonia galarneau ludovic bourassa francoeur marie-léo marie-leo guy sophie lachance'
       ].join(' ')
     }
   ];
@@ -67,10 +82,47 @@
     document.head.appendChild(style);
   };
 
+  const ensureSurveillanceCard = () => {
+    const existing = document.querySelector('.procedure#horaires-surveillance-2026-2027');
+    if (existing) return true;
+
+    const list = document.querySelector('#section-organisation-scolaire .procedure-list');
+    if (!list) return false;
+
+    const details = document.createElement('details');
+    details.className = 'procedure';
+    details.id = 'horaires-surveillance-2026-2027';
+    details.dataset.search = MOVED_RESOURCES.find(resource => resource.id === details.id)?.keywords || '';
+    details.innerHTML = `
+      <summary>
+        <span class="procedure-visual emoji-visual" aria-hidden="true">👀</span>
+        <span class="procedure-labels">
+          <span class="procedure-title">Horaires de surveillance 2026-2027</span>
+          <span class="procedure-subtitle">Dîneurs et bibliothèque</span>
+        </span>
+      </summary>
+      <div class="procedure-content">
+        <p>Consultez les horaires de surveillance selon le jour du cycle : <strong>dîneurs</strong> (gradins et cafétéria) et <strong>bibliothèque</strong> (CAA matin et surveillance du midi).</p>
+        <div class="callout"><strong>Mise à jour : 10 septembre 2026.</strong></div>
+        <div class="links">
+          <a class="btn primary" href="${SURVEILLANCE_DINEURS_URL}" target="_blank" rel="noopener noreferrer">Surveillance des dîneurs</a>
+          <a class="btn" href="${SURVEILLANCE_BIBLIOTHEQUE_URL}" target="_blank" rel="noopener noreferrer">Surveillance bibliothèque</a>
+        </div>
+      </div>`;
+
+    const anchor = list.querySelector('#horaire-locaux-2026-2027');
+    if (anchor) anchor.insertAdjacentElement('afterend', details);
+    else list.appendChild(details);
+
+    window.PORTAL_REGISTRY?.refresh?.();
+    return true;
+  };
+
   const attach = () => {
     const input = document.getElementById('guide-search');
     const suggestions = document.getElementById('search-suggestions');
     if (!input || !suggestions || window.PORTAL_SEARCH_ENGINE !== '2.0') return false;
+    if (!ensureSurveillanceCard()) return false;
     if (input.dataset.resourceSuggestionBound === 'true') return true;
 
     input.dataset.resourceSuggestionBound = 'true';
