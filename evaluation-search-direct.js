@@ -24,6 +24,24 @@
       title: 'Planification annuelle',
       url: 'https://drive.google.com/drive/folders/15dleRqnqz8ZldCzWrogMAJONlVBta3IY',
       keywords: 'planification annuelle planif globale enseignant enseignants progression apprentissages repartition répartition sequence séquence contenu année annee plan cours'
+    },
+    {
+      id: 'horaires-locaux',
+      title: 'Horaires des locaux',
+      url: 'https://drive.google.com/drive/folders/1lh_fe1ywFHNkK0g4xhVlYm5k7Q2wY67L',
+      keywords: 'horaire horaires local locaux salle salles classe classes occupation disponibilite disponibilité réservation reservation local libre locaux libres'
+    },
+    {
+      id: 'horaires-enseignants',
+      title: 'Horaires des enseignants',
+      url: 'https://drive.google.com/drive/folders/1f7UVm1etsisBX_WNgF9MAwa7bX0gqBGl',
+      keywords: 'horaire horaires enseignant enseignants prof profs professeur professeurs personnel grille grilles cours emploi du temps'
+    },
+    {
+      id: 'horaires-surveillance',
+      title: 'Horaires de surveillance',
+      url: 'https://drive.google.com/drive/folders/1z1TVIWOHQn1ODLUL-Wo1Mcum0XCHHL0z',
+      keywords: 'horaire horaires surveillance surveillances surveillant surveillants diner dîner dineurs dîneurs bibliotheque bibliothèque pause pauses midi'
     }
   ];
 
@@ -101,7 +119,7 @@
         <span class="suggestion-visual emoji-visual" aria-hidden="true">📁</span>
         <span class="suggestion-copy">
           <strong>${escapeHtml(resource.title)}</strong>
-          <small>Dossier du Drive commun</small>
+          <small>Dossier du Drive commun · ouverture directe</small>
         </span>
         <span class="suggestion-arrow" aria-hidden="true">↗</span>
       </a>`).join('');
@@ -145,5 +163,6 @@
     syncActive();
   });
 
-  window.PORTAL_EVALUATION_SEARCH_RESOURCES = resources.map(({id, title, url}) => ({id, title, url}));
+  window.PORTAL_DIRECT_SEARCH_RESOURCES = resources.map(({id, title, url}) => ({id, title, url}));
+  window.PORTAL_EVALUATION_SEARCH_RESOURCES = window.PORTAL_DIRECT_SEARCH_RESOURCES;
 })();
