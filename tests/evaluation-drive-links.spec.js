@@ -6,6 +6,12 @@ test('la fiche evaluation affiche les trois dossiers du Drive commun', async ({ 
   await page.goto('/');
   await expect(page.locator('#guide-search')).toBeVisible();
 
+  const cards = await page.locator('#app .procedure').evaluateAll(nodes => nodes.map(node => ({
+    id: node.id,
+    title: node.querySelector(':scope > summary')?.textContent?.replace(/\s+/g, ' ').trim() || ''
+  })));
+  console.log('PORTAL_CARDS=' + JSON.stringify(cards));
+
   const card = page.locator('#app .procedure').filter({ has: page.locator(':scope > summary', { hasText: /Évaluation.*bulletin.*planification/i }) });
   await expect(card, 'La fiche Évaluation, bulletin et planification doit exister dans le rendu final').toHaveCount(1);
   await card.locator(':scope > summary').click();
