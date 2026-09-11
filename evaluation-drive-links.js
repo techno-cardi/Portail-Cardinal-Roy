@@ -1,10 +1,10 @@
 (() => {
   'use strict';
 
-  const VERSION = '2.0';
+  const VERSION = '2.1';
   const KEYWORDS = [
-    'nature et moments des évaluations nature et moments evaluation nature évaluations nature evaluations moments évaluations moments evaluations',
-    'quand évaluer quand evaluer dates évaluations dates evaluations calendrier évaluations calendrier evaluations période évaluation periode evaluation périodes évaluations periodes evaluations',
+    'normes et modalités normes et modalites normes modalités normes modalites modalités évaluation modalites evaluation normes évaluation normes evaluation',
+    'nature et moments des évaluations nature et moments evaluation nature évaluations nature evaluations moments évaluations moments evaluations quand évaluer quand evaluer',
     'attentes et exigences attentes exigences attentes pédagogiques attentes pedagogiques exigences pédagogiques exigences pedagogiques attentes élèves attentes eleves exigences élèves exigences eleves',
     'consignes critères criteres critères de réussite criteres de reussite travaux remise travaux exigences de cours attentes de cours règles de cours regles de cours',
     'planification annuelle planification globale planification globale annuelle planification des enseignants planification enseignant planif annuelle planif globale',
@@ -23,9 +23,9 @@
     block.className = 'callout';
     block.dataset.evaluationDriveFolders = 'true';
     block.innerHTML = `
-      <strong>Dossiers — évaluation et planification :</strong>
+      <strong>Dossiers - évaluation et planification :</strong>
       <div class="links">
-        <a class="btn primary" href="https://drive.google.com/drive/folders/1LTgKPbES9IixST2V-jolWxA7s6SMV6jT" target="_blank" rel="noopener noreferrer">Nature et moments d’évaluation</a>
+        <a class="btn primary" href="https://drive.google.com/drive/folders/1ILYhek0U8IJwa7LTlx6JgaT2cwZ9gKfM" target="_blank" rel="noopener noreferrer">Normes et modalités d’évaluation</a>
         <a class="btn" href="https://drive.google.com/drive/folders/18URlr-7b2TmnzZqL4TdOOGlNI2V7TfJW" target="_blank" rel="noopener noreferrer">Attentes et exigences</a>
         <a class="btn" href="https://drive.google.com/drive/folders/15dleRqnqz8ZldCzWrogMAJONlVBta3IY" target="_blank" rel="noopener noreferrer">Planification annuelle</a>
       </div>`;
