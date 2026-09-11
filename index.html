@@ -9,16 +9,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20260911-1751">
-<link rel="stylesheet" href="logo.css?v=20260911-1751">
-<link rel="stylesheet" href="guide-updates.css?v=20260911-1751">
+<link rel="stylesheet" href="styles.css?v=20260911-1758">
+<link rel="stylesheet" href="logo.css?v=20260911-1758">
+<link rel="stylesheet" href="guide-updates.css?v=20260911-1758">
 </head>
 <body>
 <div id="legacy-source" hidden aria-hidden="true"></div>
 <div id="app"></div>
 <noscript><main class="page"><h1>Portail Cardinal-Roy</h1><p>JavaScript doit être activé pour consulter ce guide.</p></main></noscript>
 <script>
-const PORTAL_BUILD='20260911-1751';
+const PORTAL_BUILD='20260911-1758';
 const files=['body-part-00.txt','body-part-01.txt','body-part-02.txt','body-part-03.txt','body-part-04.txt','body-part-05.txt'];
 const versioned=src=>`${src}${src.includes('?')?'&':'?'}v=${PORTAL_BUILD}`;
 const decodeUtf8Base64=b64=>{
@@ -44,6 +44,7 @@ Promise.all(files.map(f=>fetch(versioned(f)).then(r=>{if(!r.ok) throw new Error(
     await loadScript('source-patches-6.js');
     await loadScript('source-patches-7.js');
     await loadScript('source-patches-8.js');
+    await loadScript('source-patches-9.js');
     await loadScript('ui-polish.js');
     await loadScript('after-ui.js');
     await loadScript('evaluation-drive-links.js');
