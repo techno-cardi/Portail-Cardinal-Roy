@@ -6,8 +6,8 @@ test('la fiche evaluation affiche les trois dossiers du Drive commun', async ({ 
   await page.goto('/');
   await expect(page.locator('#guide-search')).toBeVisible();
 
-  const card = page.locator('#evaluation-bulletin-planification');
-  await expect(card, 'La fiche evaluation-bulletin-planification doit exister').toHaveCount(1);
+  const card = page.locator('#app .procedure').filter({ has: page.locator(':scope > summary', { hasText: /Évaluation.*bulletin.*planification/i }) });
+  await expect(card, 'La fiche Évaluation, bulletin et planification doit exister dans le rendu final').toHaveCount(1);
   await card.locator(':scope > summary').click();
 
   const content = card.locator('.procedure-content');
