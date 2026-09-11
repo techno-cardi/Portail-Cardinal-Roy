@@ -31,19 +31,19 @@
     {
       id: 'horaires-locaux',
       title: 'Horaires des locaux',
-      sourceTitleWords: ['horaire', 'locaux'],
+      sourceMatchWords: ['horaire', 'locaux'],
       keywords: 'horaire horaires local locaux salle salles classe classes occupation disponibilite disponibilité réservation reservation local libre locaux libres'
     },
     {
       id: 'horaires-enseignants',
       title: 'Horaires des enseignants',
-      sourceTitleWords: ['horaire', 'enseignant'],
+      sourceMatchWords: ['horaire', 'enseignant'],
       keywords: 'horaire horaires enseignant enseignants prof profs professeur professeurs personnel grille grilles cours emploi du temps'
     },
     {
       id: 'horaires-surveillance',
       title: 'Horaires de surveillance',
-      sourceTitleWords: ['horaire', 'surveillance'],
+      sourceMatchWords: ['horaire', 'surveillance'],
       keywords: 'horaire horaires surveillance surveillances surveillant surveillants diner dîner dineurs dîneurs bibliotheque bibliothèque pause pauses midi'
     }
   ];
@@ -63,23 +63,50 @@
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
-  const existingLinkFor = titleWords => {
-    if (!Array.isArray(titleWords) || !titleWords.length) return '';
-    const words = titleWords.map(normalize);
-    const procedure = [...document.querySelectorAll('.procedure')].find(node => {
-      const title = normalize(node.querySelector('.procedure-title')?.textContent || '');
-      return words.every(word => title.includes(word));
-    });
-    if (!procedure) return '';
-    const link = procedure.querySelector(
-      '.procedure-content a.btn.primary[href^="http"], .procedure-content a.btn[href^="http"], .procedure-content a[href^="http"]'
-    );
-    return link?.href || '';
+  const isFolderUrl = href => /drive\.google\.com\/drive\/folders\//i.test(href || '');
+
+  const existingFileLinkFor = matchWords => {
+    if (!Array.isArray(matchWords) || !matchWords.length) return '';
+    const words = matchWords.map(normalize);
+
+    const candidates = [...document.querySelectorAll('.procedure')]
+      .map(node => {
+        const title = normalize(node.querySelector('.procedure-title')?.textContent || '');
+        const subtitle = normalize(node.querySelector('.procedure-subtitle')?.textContent || '');
+        const search = normalize(node.dataset.search || '');
+        const content = normalize(node.querySelector('.procedure-content')?.textContent || '');
+        const haystack = `${title} ${subtitle} ${search} ${content}`;
+        if (!words.every(word => haystack.includes(word))) return null;
+
+        let score = 0;
+        words.forEach(word => {
+          if (title.includes(word)) score += 100;
+          else if (subtitle.includes(word)) score += 60;
+          else if (search.includes(word)) score += 35;
+          else score += 10;
+        });
+        return { node, score };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.score - a.score);
+
+    for (const { node } of candidates) {
+      const anchors = [...node.querySelectorAll('.procedure-content a[href^="http"]')]
+        .filter(link => !isFolderUrl(link.href));
+      if (!anchors.length) continue;
+
+      const primary = anchors.find(link => link.matches('.btn.primary'));
+      const button = anchors.find(link => link.matches('.btn'));
+      const chosen = primary || button || anchors[0];
+      if (chosen?.href) return chosen.href;
+    }
+
+    return '';
   };
 
   resources.forEach(resource => {
-    if (!resource.url && resource.sourceTitleWords) {
-      resource.url = existingLinkFor(resource.sourceTitleWords);
+    if (!resource.url && resource.sourceMatchWords) {
+      resource.url = existingFileLinkFor(resource.sourceMatchWords);
     }
     resource.titleNorm = normalize(resource.title);
     resource.searchText = normalize(`${resource.title} ${resource.keywords}`);
