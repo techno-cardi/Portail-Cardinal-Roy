@@ -31,19 +31,22 @@
     {
       id: 'horaires-locaux',
       title: 'Horaires des locaux',
-      sourceMatchWords: ['horaire', 'locaux'],
+      registryQuery: 'locaux',
+      registryWords: ['locaux'],
       keywords: 'horaire horaires local locaux salle salles classe classes occupation disponibilite disponibilité réservation reservation local libre locaux libres'
     },
     {
       id: 'horaires-enseignants',
       title: 'Horaires des enseignants',
-      sourceMatchWords: ['horaire', 'enseignant'],
+      registryQuery: 'enseignants',
+      registryWords: ['enseignant'],
       keywords: 'horaire horaires enseignant enseignants prof profs professeur professeurs personnel grille grilles cours emploi du temps'
     },
     {
       id: 'horaires-surveillance',
       title: 'Horaires de surveillance',
-      sourceMatchWords: ['horaire', 'surveillance'],
+      registryQuery: 'surveillance',
+      registryWords: ['surveill'],
       keywords: 'horaire horaires surveillance surveillances surveillant surveillants diner dîner dineurs dîneurs bibliotheque bibliothèque pause pauses midi'
     }
   ];
@@ -65,48 +68,33 @@
 
   const isFolderUrl = href => /drive\.google\.com\/drive\/folders\//i.test(href || '');
 
-  const existingFileLinkFor = matchWords => {
-    if (!Array.isArray(matchWords) || !matchWords.length) return '';
-    const words = matchWords.map(normalize);
+  const registryFileLinkFor = (query, requiredWords = []) => {
+    const registry = window.PORTAL_REGISTRY;
+    if (!registry?.search) return '';
+    const words = requiredWords.map(normalize);
+    const results = registry.search(query, 20) || [];
 
-    const candidates = [...document.querySelectorAll('.procedure')]
-      .map(node => {
-        const title = normalize(node.querySelector('.procedure-title')?.textContent || '');
-        const subtitle = normalize(node.querySelector('.procedure-subtitle')?.textContent || '');
-        const search = normalize(node.dataset.search || '');
-        const content = normalize(node.querySelector('.procedure-content')?.textContent || '');
-        const haystack = `${title} ${subtitle} ${search} ${content}`;
-        if (!words.every(word => haystack.includes(word))) return null;
-
-        let score = 0;
-        words.forEach(word => {
-          if (title.includes(word)) score += 100;
-          else if (subtitle.includes(word)) score += 60;
-          else if (search.includes(word)) score += 35;
-          else score += 10;
-        });
-        return { node, score };
+    const candidates = results
+      .map(resource => {
+        const label = normalize(`${resource.id || ''} ${resource.title || ''} ${resource.subtitle || ''} ${resource.searchText || ''}`);
+        if (!words.every(word => label.includes(word))) return null;
+        const scheduleBoost = /horaire/.test(label) ? 1000 : 0;
+        const titleBoost = words.reduce((sum, word) => sum + (normalize(resource.title || '').includes(word) ? 100 : 0), 0);
+        return { resource, score: scheduleBoost + titleBoost + (resource.score || 0) };
       })
       .filter(Boolean)
       .sort((a, b) => b.score - a.score);
 
-    for (const { node } of candidates) {
-      const anchors = [...node.querySelectorAll('.procedure-content a[href^="http"]')]
-        .filter(link => !isFolderUrl(link.href));
-      if (!anchors.length) continue;
-
-      const primary = anchors.find(link => link.matches('.btn.primary'));
-      const button = anchors.find(link => link.matches('.btn'));
-      const chosen = primary || button || anchors[0];
-      if (chosen?.href) return chosen.href;
+    for (const { resource } of candidates) {
+      const links = (resource.links || []).filter(link => /^https?:\/\//i.test(link.href || '') && !isFolderUrl(link.href));
+      if (links.length) return links[0].href;
     }
-
     return '';
   };
 
   resources.forEach(resource => {
-    if (!resource.url && resource.sourceMatchWords) {
-      resource.url = existingFileLinkFor(resource.sourceMatchWords);
+    if (!resource.url && resource.registryQuery) {
+      resource.url = registryFileLinkFor(resource.registryQuery, resource.registryWords);
     }
     resource.titleNorm = normalize(resource.title);
     resource.searchText = normalize(`${resource.title} ${resource.keywords}`);
