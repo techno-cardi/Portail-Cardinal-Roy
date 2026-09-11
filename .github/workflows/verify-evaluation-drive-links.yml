@@ -20,9 +20,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
       - name: Installer les dépendances
-        run: npm ci
+        run: npm install
       - name: Installer Chromium
         run: npx playwright install --with-deps chromium
       - name: Vérifier les trois liens dans le rendu final
