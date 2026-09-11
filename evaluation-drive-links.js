@@ -1,8 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.0';
-  const CARD_ID = 'evaluation-bulletin-planification';
+  const VERSION = '1.1';
   const KEYWORDS = [
     'nature et moments des évaluations nature et moments evaluation nature évaluations nature evaluations moments évaluations moments evaluations',
     'quand évaluer quand evaluer dates évaluations dates evaluations calendrier évaluations calendrier evaluations période évaluation periode evaluation périodes évaluations periodes evaluations',
@@ -13,8 +12,25 @@
     'évaluation evaluation évaluations evaluations bulletin bulletins planification enseignement enseignant enseignants drive commun dossier dossiers'
   ].join(' ');
 
+  const normalize = value => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+  const findRenderedCard = () => Array.from(document.querySelectorAll('#app .procedure')).find(card => {
+    const title = normalize(card.querySelector(':scope > summary')?.textContent);
+    return title.includes('evaluation') && title.includes('bulletin') && title.includes('planification');
+  });
+
+  const findSourceCard = () => Array.from(document.querySelectorAll('#legacy-source .procedure')).find(card => {
+    const title = normalize(card.querySelector(':scope > summary')?.textContent);
+    return title.includes('evaluation') && title.includes('bulletin') && title.includes('planification');
+  });
+
   const mount = () => {
-    const card = document.querySelector(`#app #${CARD_ID}`);
+    const card = findRenderedCard();
     const content = card?.querySelector('.procedure-content');
     if (!card || !content) return false;
 
@@ -34,7 +50,7 @@
     content.appendChild(block);
     card.dataset.search = `${card.dataset.search || ''} ${KEYWORDS}`.replace(/\s+/g, ' ').trim();
 
-    const sourceCard = document.querySelector(`#legacy-source #${CARD_ID}`);
+    const sourceCard = findSourceCard();
     if (sourceCard) {
       sourceCard.dataset.keywords = `${sourceCard.dataset.keywords || ''} ${KEYWORDS}`.replace(/\s+/g, ' ').trim();
     }
