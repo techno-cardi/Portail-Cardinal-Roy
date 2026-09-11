@@ -11,36 +11,39 @@
       id: 'nature-moments-evaluations',
       title: 'Nature et moments des évaluations',
       url: 'https://drive.google.com/drive/folders/1LTgKPbES9IixST2V-jolWxA7s6SMV6jT',
+      subtitle: 'Drive commun',
       keywords: 'nature moment moments evaluation evaluations évaluation évaluations evaluer évaluer quand dates calendrier periode périodes période'
     },
     {
       id: 'attentes-exigences',
       title: 'Attentes et exigences',
       url: 'https://drive.google.com/drive/folders/18URlr-7b2TmnzZqL4TdOOGlNI2V7TfJW',
+      subtitle: 'Drive commun',
       keywords: 'attente attentes exigence exigences pedagogique pédagogiques consigne consignes criteres critères reussite réussite travaux remise cours regles règles'
     },
     {
       id: 'planification-annuelle',
       title: 'Planification annuelle',
       url: 'https://drive.google.com/drive/folders/15dleRqnqz8ZldCzWrogMAJONlVBta3IY',
+      subtitle: 'Drive commun',
       keywords: 'planification annuelle planif globale progression apprentissages repartition répartition sequence séquence contenu année annee plan cours'
     },
     {
       id: 'horaires-locaux',
       title: 'Horaires des locaux',
-      url: 'https://drive.google.com/drive/folders/1lh_fe1ywFHNkK0g4xhVlYm5k7Q2wY67L',
+      sourceTitleWords: ['horaire', 'locaux'],
       keywords: 'horaire horaires local locaux salle salles classe classes occupation disponibilite disponibilité réservation reservation local libre locaux libres'
     },
     {
       id: 'horaires-enseignants',
       title: 'Horaires des enseignants',
-      url: 'https://drive.google.com/drive/folders/1f7UVm1etsisBX_WNgF9MAwa7bX0gqBGl',
+      sourceTitleWords: ['horaire', 'enseignant'],
       keywords: 'horaire horaires enseignant enseignants prof profs professeur professeurs personnel grille grilles cours emploi du temps'
     },
     {
       id: 'horaires-surveillance',
       title: 'Horaires de surveillance',
-      url: 'https://drive.google.com/drive/folders/1z1TVIWOHQn1ODLUL-Wo1Mcum0XCHHL0z',
+      sourceTitleWords: ['horaire', 'surveillance'],
       keywords: 'horaire horaires surveillance surveillances surveillant surveillants diner dîner dineurs dîneurs bibliotheque bibliothèque pause pauses midi'
     }
   ];
@@ -60,10 +63,29 @@
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
+  const existingLinkFor = titleWords => {
+    if (!Array.isArray(titleWords) || !titleWords.length) return '';
+    const words = titleWords.map(normalize);
+    const procedure = [...document.querySelectorAll('.procedure')].find(node => {
+      const title = normalize(node.querySelector('.procedure-title')?.textContent || '');
+      return words.every(word => title.includes(word));
+    });
+    if (!procedure) return '';
+    const link = procedure.querySelector(
+      '.procedure-content a.btn.primary[href^="http"], .procedure-content a.btn[href^="http"], .procedure-content a[href^="http"]'
+    );
+    return link?.href || '';
+  };
+
   resources.forEach(resource => {
+    if (!resource.url && resource.sourceTitleWords) {
+      resource.url = existingLinkFor(resource.sourceTitleWords);
+    }
     resource.titleNorm = normalize(resource.title);
     resource.searchText = normalize(`${resource.title} ${resource.keywords}`);
   });
+
+  const usableResources = resources.filter(resource => resource.url);
 
   let activeIndex = -1;
   let current = [];
@@ -74,7 +96,7 @@
     const tokens = query.split(' ').filter(token => token.length > 1);
     if (!tokens.length) return [];
 
-    return resources
+    return usableResources
       .map(resource => {
         if (!tokens.every(token => resource.searchText.includes(token))) return null;
         let score = 0;
@@ -95,7 +117,7 @@
   };
 
   const syncActive = () => {
-    const links = [...suggestions.querySelectorAll('[data-drive-search-resource]')];
+    const links = [...suggestions.querySelectorAll('[data-direct-search-resource]')];
     links.forEach((link, index) => {
       const active = index === activeIndex;
       link.classList.toggle('is-active', active);
@@ -114,12 +136,12 @@
 
     suggestions.innerHTML = current.map(resource => `
       <a class="suggestion" role="option" aria-selected="false"
-         data-drive-search-resource="${escapeHtml(resource.id)}"
+         data-direct-search-resource="${escapeHtml(resource.id)}"
          href="${escapeHtml(resource.url)}" target="_blank" rel="noopener noreferrer">
         <span class="suggestion-visual emoji-visual" aria-hidden="true">📁</span>
         <span class="suggestion-copy">
           <strong>${escapeHtml(resource.title)}</strong>
-          <small>Dossier du Drive commun · ouverture directe</small>
+          ${resource.subtitle ? `<small>${escapeHtml(resource.subtitle)}</small>` : ''}
         </span>
         <span class="suggestion-arrow" aria-hidden="true">↗</span>
       </a>`).join('');
@@ -156,13 +178,13 @@
   }, true);
 
   suggestions.addEventListener('mousemove', event => {
-    const link = event.target.closest('[data-drive-search-resource]');
+    const link = event.target.closest('[data-direct-search-resource]');
     if (!link) return;
-    const links = [...suggestions.querySelectorAll('[data-drive-search-resource]')];
+    const links = [...suggestions.querySelectorAll('[data-direct-search-resource]')];
     activeIndex = links.indexOf(link);
     syncActive();
   });
 
-  window.PORTAL_DIRECT_SEARCH_RESOURCES = resources.map(({id, title, url}) => ({id, title, url}));
+  window.PORTAL_DIRECT_SEARCH_RESOURCES = usableResources.map(({id, title, url}) => ({id, title, url}));
   window.PORTAL_EVALUATION_SEARCH_RESOURCES = window.PORTAL_DIRECT_SEARCH_RESOURCES;
 })();
