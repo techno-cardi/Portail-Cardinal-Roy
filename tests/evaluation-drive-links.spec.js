@@ -7,6 +7,7 @@ test('les ressources importantes s’ouvrent depuis la recherche avec les bons l
   const input = page.locator('#guide-search');
   const suggestions = page.locator('#search-suggestions');
   await expect(input).toBeVisible();
+  await page.waitForFunction(() => Boolean(window.PORTAL_REGISTRY?.search));
 
   const existingScheduleLinks = await page.evaluate(() => {
     const normalize = value => String(value || '')
@@ -14,58 +15,45 @@ test('les ressources importantes s’ouvrent depuis la recherche avec les bons l
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .replace(/[’']/g, ' ')
-      .replace(/[^a-z0-9 -]/g, ' ')
+      .replace(/[^a-z0-9+ -]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
 
     const isFolderUrl = href => /drive\.google\.com\/drive\/folders\//i.test(href || '');
 
-    const hrefFor = words => {
+    const resolve = (query, words) => {
       const wanted = words.map(normalize);
-      const candidates = [...document.querySelectorAll('.procedure')]
-        .map(node => {
-          const title = normalize(node.querySelector('.procedure-title')?.textContent || '');
-          const subtitle = normalize(node.querySelector('.procedure-subtitle')?.textContent || '');
-          const search = normalize(node.dataset.search || '');
-          const content = normalize(node.querySelector('.procedure-content')?.textContent || '');
-          const haystack = `${title} ${subtitle} ${search} ${content}`;
-          if (!wanted.every(word => haystack.includes(word))) return null;
-          let score = 0;
-          wanted.forEach(word => {
-            if (title.includes(word)) score += 100;
-            else if (subtitle.includes(word)) score += 60;
-            else if (search.includes(word)) score += 35;
-            else score += 10;
-          });
-          return { node, score };
+      const results = window.PORTAL_REGISTRY.search(query, 20) || [];
+      const candidates = results
+        .map(resource => {
+          const label = normalize(`${resource.id || ''} ${resource.title || ''} ${resource.subtitle || ''} ${resource.searchText || ''}`);
+          if (!wanted.every(word => label.includes(word))) return null;
+          const scheduleBoost = /horaire/.test(label) ? 1000 : 0;
+          const titleBoost = wanted.reduce((sum, word) => sum + (normalize(resource.title || '').includes(word) ? 100 : 0), 0);
+          return { resource, score: scheduleBoost + titleBoost + (resource.score || 0) };
         })
         .filter(Boolean)
         .sort((a, b) => b.score - a.score);
 
-      for (const { node } of candidates) {
-        const anchors = [...node.querySelectorAll('.procedure-content a[href^="http"]')]
-          .filter(link => !isFolderUrl(link.href));
-        if (!anchors.length) continue;
-        const primary = anchors.find(link => link.matches('.btn.primary'));
-        const button = anchors.find(link => link.matches('.btn'));
-        return (primary || button || anchors[0]).href;
+      for (const { resource } of candidates) {
+        const link = (resource.links || []).find(link => /^https?:\/\//i.test(link.href || '') && !isFolderUrl(link.href));
+        if (link) return { href: link.href, id: resource.id, title: resource.title };
       }
-      return '';
+      return { href: '', id: '', title: '' };
     };
 
     return {
-      locaux: hrefFor(['horaire', 'locaux']),
-      enseignants: hrefFor(['horaire', 'enseignant']),
-      surveillance: hrefFor(['horaire', 'surveillance'])
+      locaux: resolve('locaux', ['locaux']),
+      enseignants: resolve('enseignants', ['enseignant']),
+      surveillance: resolve('surveillance', ['surveill'])
     };
   });
 
-  expect(existingScheduleLinks.locaux).toBeTruthy();
-  expect(existingScheduleLinks.enseignants).toBeTruthy();
-  expect(existingScheduleLinks.surveillance).toBeTruthy();
-  expect(existingScheduleLinks.locaux).not.toMatch(/drive\.google\.com\/drive\/folders\//i);
-  expect(existingScheduleLinks.enseignants).not.toMatch(/drive\.google\.com\/drive\/folders\//i);
-  expect(existingScheduleLinks.surveillance).not.toMatch(/drive\.google\.com\/drive\/folders\//i);
+  for (const item of Object.values(existingScheduleLinks)) {
+    expect(item.href).toBeTruthy();
+    expect(item.href).not.toMatch(/drive\.google\.com\/drive\/folders\//i);
+    expect(`${item.id} ${item.title}`.toLowerCase()).toMatch(/horaire/);
+  }
 
   const evaluationCases = [
     ['nature', 'Nature et moments des évaluations', /1LTgKPbES9IixST2V-jolWxA7s6SMV6jT/],
@@ -84,9 +72,9 @@ test('les ressources importantes s’ouvrent depuis la recherche avec les bons l
   }
 
   const schedules = [
-    ['locaux', 'Horaires des locaux', existingScheduleLinks.locaux],
-    ['enseignants', 'Horaires des enseignants', existingScheduleLinks.enseignants],
-    ['surveillance', 'Horaires de surveillance', existingScheduleLinks.surveillance]
+    ['locaux', 'Horaires des locaux', existingScheduleLinks.locaux.href],
+    ['enseignants', 'Horaires des enseignants', existingScheduleLinks.enseignants.href],
+    ['surveillance', 'Horaires de surveillance', existingScheduleLinks.surveillance.href]
   ];
 
   for (const [query, title, expectedHref] of schedules) {
