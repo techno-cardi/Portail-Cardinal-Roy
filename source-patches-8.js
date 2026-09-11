@@ -144,8 +144,8 @@
   ].join(' ');
   card.dataset.keywords = `${card.dataset.keywords || ''} ${extraKeywords}`.replace(/\s+/g, ' ').trim();
 
-  const body = card.querySelector('.card-body');
-  if (!body || body.querySelector('[data-evaluation-drive-folders]')) return;
+  const body = card.querySelector('.card-body') || card;
+  if (body.querySelector('[data-evaluation-drive-folders]')) return;
 
   const block = document.createElement('div');
   block.className = 'callout';
