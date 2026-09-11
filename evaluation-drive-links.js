@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.1';
+  const VERSION = '2.0';
   const KEYWORDS = [
     'nature et moments des évaluations nature et moments evaluation nature évaluations nature evaluations moments évaluations moments evaluations',
     'quand évaluer quand evaluer dates évaluations dates evaluations calendrier évaluations calendrier evaluations période évaluation periode evaluation périodes évaluations periodes evaluations',
@@ -12,25 +12,8 @@
     'évaluation evaluation évaluations evaluations bulletin bulletins planification enseignement enseignant enseignants drive commun dossier dossiers'
   ].join(' ');
 
-  const normalize = value => String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-
-  const findRenderedCard = () => Array.from(document.querySelectorAll('#app .procedure')).find(card => {
-    const title = normalize(card.querySelector(':scope > summary')?.textContent);
-    return title.includes('evaluation') && title.includes('bulletin') && title.includes('planification');
-  });
-
-  const findSourceCard = () => Array.from(document.querySelectorAll('#legacy-source .procedure')).find(card => {
-    const title = normalize(card.querySelector(':scope > summary')?.textContent);
-    return title.includes('evaluation') && title.includes('bulletin') && title.includes('planification');
-  });
-
   const mount = () => {
-    const card = findRenderedCard();
+    const card = document.querySelector('#app #drive');
     const content = card?.querySelector('.procedure-content');
     if (!card || !content) return false;
 
@@ -40,7 +23,7 @@
     block.className = 'callout';
     block.dataset.evaluationDriveFolders = 'true';
     block.innerHTML = `
-      <strong>Dossiers du Drive commun :</strong>
+      <strong>Dossiers — évaluation et planification :</strong>
       <div class="links">
         <a class="btn primary" href="https://drive.google.com/drive/folders/1LTgKPbES9IixST2V-jolWxA7s6SMV6jT" target="_blank" rel="noopener noreferrer">Nature et moments d’évaluation</a>
         <a class="btn" href="https://drive.google.com/drive/folders/18URlr-7b2TmnzZqL4TdOOGlNI2V7TfJW" target="_blank" rel="noopener noreferrer">Attentes et exigences</a>
@@ -50,7 +33,7 @@
     content.appendChild(block);
     card.dataset.search = `${card.dataset.search || ''} ${KEYWORDS}`.replace(/\s+/g, ' ').trim();
 
-    const sourceCard = findSourceCard();
+    const sourceCard = document.querySelector('#legacy-source #drive');
     if (sourceCard) {
       sourceCard.dataset.keywords = `${sourceCard.dataset.keywords || ''} ${KEYWORDS}`.replace(/\s+/g, ' ').trim();
     }
