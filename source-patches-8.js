@@ -87,6 +87,46 @@
   }
 })();
 
+/* Infographie de gestion de classe : intervenir lorsqu’un élève arrive en retard. */
+(() => {
+  const root = document.getElementById('legacy-source');
+  if (!root || root.querySelector('#intervention-retards')) return;
+
+  const card = document.createElement('section');
+  card.className = 'card searchable';
+  card.id = 'intervention-retards';
+  card.dataset.title = 'Intervenir lorsqu’un élève arrive en retard';
+  card.dataset.icon = '⏰';
+  card.dataset.keywords = [
+    'retard retards en retard retardataire retardataires ponctualité ponctualite ponctuel ponctuelle arriver arrivée arrivee',
+    'élève en retard eleve en retard élève arrive en retard eleve arrive en retard arrive après la cloche arrive apres la cloche sonnerie début cours debut cours',
+    'gestion classe gestion de classe intervention intervenir intervention retard intervenir retard comportement discipline encadrement',
+    'saluer accueil accueillir relation positive dialogue attentes clarté attentes clarte attentes rappeler attentes',
+    'fin cours rester en classe rester après cours rester apres cours pause conséquence consequence annoncer conséquence annoncer consequence',
+    'recherche solutions impliquer élève impliquer eleve solution solutions amélioration amelioration reconnaître reconnaitre progrès progres valoriser efforts'
+  ].join(' ');
+  card.innerHTML = `
+    <div class="card-head">
+      <div class="card-icon" aria-hidden="true">⏰</div>
+      <div>
+        <h3>Intervenir lorsqu’un élève arrive en retard</h3>
+        <div class="card-sub">Infographie — interventions immédiates et positives</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <p>Cette infographie propose des interventions simples pour gérer un retard tout en favorisant la relation avec l’élève et un changement de comportement.</p>
+      <ul>
+        <li>Saluer l’élève à son arrivée.</li>
+        <li>À la fin du cours, lui demander de rester et rappeler clairement les attentes de ponctualité.</li>
+        <li>Impliquer l’élève dans la recherche de solutions.</li>
+        <li>Annoncer à l’avance la conséquence prévue, par exemple le garder plus longtemps à la pause pour terminer des travaux.</li>
+        <li>Reconnaître les améliorations lorsqu’elles surviennent.</li>
+      </ul>
+      <div class="links"><a class="btn primary" href="https://drive.google.com/file/d/1cNdNt3yZWGB93I0JGyrGlXXKkfLvl6Bx/view?usp=drivesdk" target="_blank" rel="noopener noreferrer">Voir l’infographie sur les retards</a></div>
+    </div>`;
+  root.appendChild(card);
+})();
+
 /*
  * Icônes originales générées et approuvées pour le portail.
  * On les branche sur les fiches AVANT ui-polish afin que le moteur de rendu
