@@ -6,6 +6,34 @@
   const status = document.getElementById('search-status');
   if (!input || !suggestions) return;
 
+  const normalize = value => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[’']/g, ' ')
+    .replace(/[^a-z0-9+ -]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const escapeHtml = value => String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+  const linkFromProcedure = (procedureId, linkText = '') => {
+    const procedure = document.getElementById(procedureId);
+    if (!procedure) return '';
+    const links = [...procedure.querySelectorAll('.procedure-content a[href^="http"]')];
+    if (!links.length) return '';
+    if (linkText) {
+      const wanted = normalize(linkText);
+      const match = links.find(link => normalize(link.textContent).includes(wanted));
+      if (match?.href) return match.href;
+    }
+    return links[0]?.href || '';
+  };
+
   const resources = [
     {
       id: 'nature-moments-evaluations',
@@ -29,79 +57,37 @@
       keywords: 'planification annuelle planif globale progression apprentissages repartition répartition sequence séquence contenu année annee plan cours'
     },
     {
-      id: 'horaires-locaux',
-      title: 'Horaires des locaux',
-      registryQuery: 'locaux',
-      registryWords: ['locaux'],
+      id: 'horaire-locaux-direct',
+      title: 'Horaire des locaux',
+      url: linkFromProcedure('horaire-locaux-2026-2027', 'horaire des locaux'),
       keywords: 'horaire horaires local locaux salle salles classe classes occupation disponibilite disponibilité réservation reservation local libre locaux libres'
     },
     {
-      id: 'horaires-enseignants',
-      title: 'Horaires des enseignants',
-      registryQuery: 'enseignants',
-      registryWords: ['enseignant'],
+      id: 'horaire-enseignants-direct',
+      title: 'Horaire des enseignants',
+      url: linkFromProcedure('horaire-enseignants-2026-2027', 'horaire des enseignants'),
       keywords: 'horaire horaires enseignant enseignants prof profs professeur professeurs personnel grille grilles cours emploi du temps'
     },
     {
-      id: 'horaires-surveillance',
-      title: 'Horaires de surveillance',
-      registryQuery: 'surveillance',
-      registryWords: ['surveill'],
-      keywords: 'horaire horaires surveillance surveillances surveillant surveillants diner dîner dineurs dîneurs bibliotheque bibliothèque pause pauses midi'
+      id: 'surveillance-dineurs-direct',
+      title: 'Surveillance des dîneurs',
+      url: linkFromProcedure('horaires-surveillance-2026-2027', 'surveillance des dîneurs'),
+      keywords: 'horaire horaires surveillance surveillances surveillant surveillants diner dîner dineur dîneur dineurs dîneurs midi'
+    },
+    {
+      id: 'surveillance-bibliotheque-direct',
+      title: 'Surveillance bibliothèque',
+      url: linkFromProcedure('horaires-surveillance-2026-2027', 'surveillance bibliothèque'),
+      keywords: 'horaire horaires surveillance surveillances surveillant surveillants bibliotheque bibliothèque pause pauses midi'
     }
   ];
 
-  const normalize = value => String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[’']/g, ' ')
-    .replace(/[^a-z0-9+ -]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  const escapeHtml = value => String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-
-  const isFolderUrl = href => /drive\.google\.com\/drive\/folders\//i.test(href || '');
-
-  const registryFileLinkFor = (query, requiredWords = []) => {
-    const registry = window.PORTAL_REGISTRY;
-    if (!registry?.search) return '';
-    const words = requiredWords.map(normalize);
-    const results = registry.search(query, 20) || [];
-
-    const candidates = results
-      .map(resource => {
-        const label = normalize(`${resource.id || ''} ${resource.title || ''} ${resource.subtitle || ''} ${resource.searchText || ''}`);
-        if (!words.every(word => label.includes(word))) return null;
-        const scheduleBoost = /horaire/.test(label) ? 1000 : 0;
-        const titleBoost = words.reduce((sum, word) => sum + (normalize(resource.title || '').includes(word) ? 100 : 0), 0);
-        return { resource, score: scheduleBoost + titleBoost + (resource.score || 0) };
-      })
-      .filter(Boolean)
-      .sort((a, b) => b.score - a.score);
-
-    for (const { resource } of candidates) {
-      const links = (resource.links || []).filter(link => /^https?:\/\//i.test(link.href || '') && !isFolderUrl(link.href));
-      if (links.length) return links[0].href;
-    }
-    return '';
-  };
-
   resources.forEach(resource => {
-    if (!resource.url && resource.registryQuery) {
-      resource.url = registryFileLinkFor(resource.registryQuery, resource.registryWords);
-    }
     resource.titleNorm = normalize(resource.title);
     resource.searchText = normalize(`${resource.title} ${resource.keywords}`);
   });
 
-  const usableResources = resources.filter(resource => resource.url);
-
+  const usableResources = resources.filter(resource => /^https?:\/\//i.test(resource.url || ''));
   let activeIndex = -1;
   let current = [];
 
