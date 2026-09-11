@@ -40,6 +40,7 @@
       title: 'Nature et moments des évaluations',
       url: 'https://drive.google.com/drive/folders/1LTgKPbES9IixST2V-jolWxA7s6SMV6jT',
       subtitle: 'Drive commun',
+      icon: '📁',
       keywords: 'nature moment moments evaluation evaluations évaluation évaluations evaluer évaluer quand dates calendrier periode périodes période'
     },
     {
@@ -47,6 +48,7 @@
       title: 'Attentes et exigences',
       url: 'https://drive.google.com/drive/folders/18URlr-7b2TmnzZqL4TdOOGlNI2V7TfJW',
       subtitle: 'Drive commun',
+      icon: '📁',
       keywords: 'attente attentes exigence exigences pedagogique pédagogiques consigne consignes criteres critères reussite réussite travaux remise cours regles règles'
     },
     {
@@ -54,6 +56,7 @@
       title: 'Planification annuelle',
       url: 'https://drive.google.com/drive/folders/15dleRqnqz8ZldCzWrogMAJONlVBta3IY',
       subtitle: 'Drive commun',
+      icon: '📁',
       keywords: 'planification annuelle planif globale progression apprentissages repartition répartition sequence séquence contenu année annee plan cours'
     },
     {
@@ -61,6 +64,7 @@
       title: 'Horaire des locaux',
       procedureId: 'horaire-locaux-2026-2027',
       linkText: 'horaire des locaux',
+      icon: '🏫',
       keywords: 'horaire horaires local locaux salle salles classe classes occupation disponibilite disponibilité réservation reservation local libre locaux libres'
     },
     {
@@ -68,6 +72,7 @@
       title: 'Horaire des enseignants',
       procedureId: 'horaire-enseignants-2026-2027',
       linkText: 'horaire des enseignants',
+      icon: '🧑‍🏫',
       keywords: 'horaire horaires enseignant enseignants prof profs professeur professeurs personnel grille grilles cours emploi du temps'
     },
     {
@@ -75,6 +80,7 @@
       title: 'Surveillance des dîneurs',
       procedureId: 'horaires-surveillance-2026-2027',
       linkText: 'surveillance des dîneurs',
+      icon: '👀',
       keywords: 'horaire horaires surveillance surveillances surveillant surveillants diner dîner dineur dîneur dineurs dîneurs midi'
     },
     {
@@ -82,6 +88,7 @@
       title: 'Surveillance bibliothèque',
       procedureId: 'horaires-surveillance-2026-2027',
       linkText: 'surveillance bibliothèque',
+      icon: '👀',
       keywords: 'horaire horaires surveillance surveillances surveillant surveillants bibliotheque bibliothèque pause pauses midi'
     }
   ].map(resource => ({
@@ -152,7 +159,7 @@
       <a class="suggestion" role="option" aria-selected="false"
          data-direct-search-resource="${escapeHtml(resource.id)}"
          href="${escapeHtml(resource.url)}" target="_blank" rel="noopener noreferrer">
-        <span class="suggestion-visual emoji-visual" aria-hidden="true">📁</span>
+        <span class="suggestion-visual emoji-visual" aria-hidden="true">${escapeHtml(resource.icon || '📁')}</span>
         <span class="suggestion-copy">
           <strong>${escapeHtml(resource.title)}</strong>
           ${resource.subtitle ? `<small>${escapeHtml(resource.subtitle)}</small>` : ''}
