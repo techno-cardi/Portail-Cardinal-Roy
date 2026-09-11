@@ -23,7 +23,7 @@
       id: 'planification-annuelle',
       title: 'Planification annuelle',
       url: 'https://drive.google.com/drive/folders/15dleRqnqz8ZldCzWrogMAJONlVBta3IY',
-      keywords: 'planification annuelle planif globale enseignant enseignants progression apprentissages repartition répartition sequence séquence contenu année annee plan cours'
+      keywords: 'planification annuelle planif globale progression apprentissages repartition répartition sequence séquence contenu année annee plan cours'
     },
     {
       id: 'horaires-locaux',
