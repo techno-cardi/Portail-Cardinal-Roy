@@ -34,7 +34,7 @@
     return links[0]?.href || '';
   };
 
-  const resources = [
+  const templates = [
     {
       id: 'nature-moments-evaluations',
       title: 'Nature et moments des évaluations',
@@ -59,35 +59,44 @@
     {
       id: 'horaire-locaux-direct',
       title: 'Horaire des locaux',
-      url: linkFromProcedure('horaire-locaux-2026-2027', 'horaire des locaux'),
+      procedureId: 'horaire-locaux-2026-2027',
+      linkText: 'horaire des locaux',
       keywords: 'horaire horaires local locaux salle salles classe classes occupation disponibilite disponibilité réservation reservation local libre locaux libres'
     },
     {
       id: 'horaire-enseignants-direct',
       title: 'Horaire des enseignants',
-      url: linkFromProcedure('horaire-enseignants-2026-2027', 'horaire des enseignants'),
+      procedureId: 'horaire-enseignants-2026-2027',
+      linkText: 'horaire des enseignants',
       keywords: 'horaire horaires enseignant enseignants prof profs professeur professeurs personnel grille grilles cours emploi du temps'
     },
     {
       id: 'surveillance-dineurs-direct',
       title: 'Surveillance des dîneurs',
-      url: linkFromProcedure('horaires-surveillance-2026-2027', 'surveillance des dîneurs'),
+      procedureId: 'horaires-surveillance-2026-2027',
+      linkText: 'surveillance des dîneurs',
       keywords: 'horaire horaires surveillance surveillances surveillant surveillants diner dîner dineur dîneur dineurs dîneurs midi'
     },
     {
       id: 'surveillance-bibliotheque-direct',
       title: 'Surveillance bibliothèque',
-      url: linkFromProcedure('horaires-surveillance-2026-2027', 'surveillance bibliothèque'),
+      procedureId: 'horaires-surveillance-2026-2027',
+      linkText: 'surveillance bibliothèque',
       keywords: 'horaire horaires surveillance surveillances surveillant surveillants bibliotheque bibliothèque pause pauses midi'
     }
-  ];
+  ].map(resource => ({
+    ...resource,
+    titleNorm: normalize(resource.title),
+    searchText: normalize(`${resource.title} ${resource.keywords}`)
+  }));
 
-  resources.forEach(resource => {
-    resource.titleNorm = normalize(resource.title);
-    resource.searchText = normalize(`${resource.title} ${resource.keywords}`);
-  });
+  const resolvedResources = () => templates
+    .map(resource => ({
+      ...resource,
+      url: resource.url || linkFromProcedure(resource.procedureId, resource.linkText)
+    }))
+    .filter(resource => /^https?:\/\//i.test(resource.url || ''));
 
-  const usableResources = resources.filter(resource => /^https?:\/\//i.test(resource.url || ''));
   let activeIndex = -1;
   let current = [];
 
@@ -97,7 +106,11 @@
     const tokens = query.split(' ').filter(token => token.length > 1);
     if (!tokens.length) return [];
 
-    return usableResources
+    const resources = resolvedResources();
+    window.PORTAL_DIRECT_SEARCH_RESOURCES = resources.map(({id, title, url}) => ({id, title, url}));
+    window.PORTAL_EVALUATION_SEARCH_RESOURCES = window.PORTAL_DIRECT_SEARCH_RESOURCES;
+
+    return resources
       .map(resource => {
         if (!tokens.every(token => resource.searchText.includes(token))) return null;
         let score = 0;
@@ -186,6 +199,8 @@
     syncActive();
   });
 
-  window.PORTAL_DIRECT_SEARCH_RESOURCES = usableResources.map(({id, title, url}) => ({id, title, url}));
+  // Expose au moins les ressources déjà disponibles; la liste se met à jour à chaque recherche.
+  const initial = resolvedResources();
+  window.PORTAL_DIRECT_SEARCH_RESOURCES = initial.map(({id, title, url}) => ({id, title, url}));
   window.PORTAL_EVALUATION_SEARCH_RESOURCES = window.PORTAL_DIRECT_SEARCH_RESOURCES;
 })();
