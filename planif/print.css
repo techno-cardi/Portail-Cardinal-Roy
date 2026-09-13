@@ -1,0 +1,52 @@
+/* Impression propre de la semaine sur une feuille Lettre 8,5 x 11 en paysage. */
+.print-week-heading{display:none}
+.agenda-password-dialog label{font-size:.82rem;font-weight:800;margin-top:2px}
+.agenda-password-dialog input{width:100%;border:1px solid #bfcdd5;border-radius:11px;padding:11px 12px;outline:0;font:inherit;color:#153247}
+.agenda-password-dialog input:focus{border-color:#0b6b96;box-shadow:0 0 0 3px rgba(11,107,150,.12)}
+.agenda-dialog-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px}
+
+@page{size:Letter landscape;margin:.28in}
+
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  html,body{background:#fff!important;color:#111!important;margin:0!important;padding:0!important;width:auto!important;min-height:0!important}
+  body{font-family:Arial,Helvetica,sans-serif!important}
+  .topbar,.toolbar,.footer,.toast,dialog,.drag-hud,.drag-edge{display:none!important}
+  main{padding:0!important;margin:0!important}
+  .print-week-heading{display:flex!important;align-items:flex-end;justify-content:space-between;gap:.25in;margin:0 0 .12in;padding:0 0 .08in;border-bottom:1.2px solid #50606a;color:#17242c}
+  .print-week-heading>div{display:flex;align-items:baseline;gap:.16in}
+  .print-week-heading strong{font-size:17pt;line-height:1}
+  .print-week-heading span{font-size:10pt;font-weight:700;color:#3f515c}
+  .print-week-heading small{font-size:8pt;color:#61717a;white-space:nowrap}
+  .planner{max-width:none!important;width:100%!important;margin:0!important}
+  .week-wrap{overflow:visible!important;box-shadow:none!important;border:1px solid #909aa0!important;border-radius:0!important;background:#fff!important;width:100%!important}
+  .week-grid{min-width:0!important;width:100%!important;grid-template-columns:.72in repeat(5,minmax(0,1fr))!important;background:#fff!important;font-size:8pt!important}
+  .grid-corner{min-height:.53in!important;background:#e9eef1!important}
+  .day-head{min-height:.53in!important;padding:4px 3px!important;gap:2px!important;background:#f1f4f6!important}
+  .day-name{font-size:8.8pt!important}
+  .day-date{font-size:7.3pt!important}
+  .cycle-diamond{height:18px!important;min-width:46px!important;border-radius:4px!important;padding:0 6px!important;margin:0!important}
+  .cycle-diamond span{font-size:6.8pt!important}
+  .special-label{font-size:6.8pt!important;padding:3px 5px!important}
+  .period-side{min-height:.48in!important;padding:5px 4px!important;background:#eef1f3!important}
+  .period-side strong{font-size:7.6pt!important}
+  .period-side span{font-size:6.6pt!important}
+  .plan-cell{min-height:.48in!important;overflow:visible!important;background:#fff!important}
+  .course-strip{min-height:20px!important;height:20px!important;flex-basis:20px!important;padding:2px 5px!important;font-size:7.2pt!important;border-bottom:1px solid rgba(0,0,0,.15)!important}
+  .course-strip-name{max-width:calc(100% - 48px)!important;font-size:7.1pt!important}
+  .course-strip-number{right:5px!important;font-size:6.6pt!important}
+  .block-editor{min-height:0!important;padding:4px 5px!important;gap:1px!important;background:none!important;overflow:visible!important}
+  .editor-block{break-inside:avoid!important;page-break-inside:avoid!important}
+  .numbered-block,.plain-block{display:grid!important;grid-template-columns:16px minmax(0,1fr)!important;align-items:start!important;gap:2px!important;padding:1px 0!important;margin:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+  .plain-block{grid-template-columns:minmax(0,1fr)!important}
+  .number-badge{font-size:7.1pt!important;color:#111!important;padding:0!important;line-height:1.22!important}
+  .block-text{font-size:7.1pt!important;line-height:1.22!important;min-height:0!important;padding:0!important;color:#111!important;background:transparent!important;box-shadow:none!important}
+  .block-text:empty::before{content:''!important}
+  .dirty-dot{display:none!important}
+  .plan-cell.special,.day-head.special{background:#d9dde0!important}
+  .plan-cell.special .course-strip{background:#c9ced2!important}
+  .special-fill{min-height:.38in!important}
+  .week-grid>*{break-inside:avoid!important;page-break-inside:avoid!important}
+}
+
+@media(max-width:600px){.agenda-dialog-actions{grid-template-columns:1fr}}
