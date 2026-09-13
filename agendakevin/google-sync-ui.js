@@ -3,6 +3,8 @@
 
   const API_URL = 'https://ojyswaxuqwnqilrvtjll.supabase.co/functions/v1/planner-api';
   const ACCESS_STORAGE = 'cr-planner-access-v1';
+  const SCHOOL_START = '2026-08-24';
+  const SCHOOL_END = '2027-06-24';
   const $ = (s, root = document) => root.querySelector(s);
 
   function escapeHtml(s) {
@@ -39,7 +41,7 @@
       .google-sync-dialog::backdrop{background:rgba(3,31,49,.60);backdrop-filter:blur(5px)}
       .gs-shell{padding:24px;display:grid;gap:15px}.gs-head{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.gs-head h2{margin:0;font-size:1.35rem}.gs-head p{margin:4px 0 0;color:#667d89;line-height:1.4}.gs-close{border:0;border-radius:10px;background:#edf3f6;color:#173246;padding:8px 11px;font-weight:850;cursor:pointer}
       .gs-status{padding:10px 12px;border-radius:11px;background:#f1f5f7;border:1px solid #d9e2e7;font-size:.84rem;font-weight:750}.gs-status.on{background:#edf8f1;border-color:#b9dec7;color:#26633f}
-      .gs-steps{margin:0;padding-left:22px;display:grid;gap:8px;line-height:1.42;font-size:.9rem}.gs-field{display:grid;gap:6px}.gs-field label{font-size:.8rem;font-weight:850}.gs-field input{width:100%;border:1px solid #bdccd5;border-radius:10px;padding:10px 11px;outline:0;font:inherit}.gs-field input:focus{border-color:#0b6b96;box-shadow:0 0 0 3px rgba(11,107,150,.11)}.gs-secret-row{display:grid;grid-template-columns:1fr auto;gap:7px}.gs-secret-row button,.gs-copy-code,.gs-save,.gs-disable{border:1px solid #bfd0d9;border-radius:10px;background:#fff;color:#173246;padding:9px 11px;font-weight:800;cursor:pointer}.gs-copy-code{justify-self:start}.gs-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}.gs-save{background:#07577f;color:#fff;border-color:#07577f}.gs-disable{color:#8c3434}.gs-note{font-size:.78rem;color:#6f818c;line-height:1.4}.gs-link{color:#07577f;font-weight:800}.gs-error{min-height:1em;color:#a13737;font-size:.82rem;font-weight:700}
+      .gs-steps{margin:0;padding-left:22px;display:grid;gap:8px;line-height:1.42;font-size:.9rem}.gs-field{display:grid;gap:6px}.gs-field label{font-size:.8rem;font-weight:850}.gs-field input{width:100%;border:1px solid #bdccd5;border-radius:10px;padding:10px 11px;outline:0;font:inherit}.gs-field input:focus{border-color:#0b6b96;box-shadow:0 0 0 3px rgba(11,107,150,.11)}.gs-secret-row{display:grid;grid-template-columns:1fr auto;gap:7px}.gs-secret-row button,.gs-copy-code,.gs-save,.gs-disable,.gs-backfill{border:1px solid #bfd0d9;border-radius:10px;background:#fff;color:#173246;padding:9px 11px;font-weight:800;cursor:pointer}.gs-copy-code{justify-self:start}.gs-backfill{background:#f3f8fa;border-color:#b6cbd6}.gs-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}.gs-save{background:#07577f;color:#fff;border-color:#07577f}.gs-disable{color:#8c3434}.gs-note{font-size:.78rem;color:#6f818c;line-height:1.4}.gs-link{color:#07577f;font-weight:800}.gs-error{min-height:1em;color:#a13737;font-size:.82rem;font-weight:700}
       @media(max-width:600px){.gs-shell{padding:19px 16px}.gs-secret-row{grid-template-columns:1fr}.gs-actions{display:grid;grid-template-columns:1fr}.gs-actions button{width:100%}}
     `;
     document.head.appendChild(style);
@@ -62,6 +64,32 @@
       toast(success);
     } catch {
       toast('Copie impossible automatiquement. Sélectionne le texte manuellement.', 3500);
+    }
+  }
+
+  async function syncExisting(button, errorEl) {
+    button.disabled = true;
+    errorEl.textContent = '';
+    try {
+      const data = await api(`?action=year_plan&from=${SCHOOL_START}&to=${SCHOOL_END}`);
+      const notes = (data.notes || []).filter(n => /^p[1-5]$/.test(n.period_key) && String(n.body || '').trim());
+      if (!notes.length) { toast('Aucune planification existante à synchroniser.'); return; }
+      let done = 0;
+      for (let i = 0; i < notes.length; i += 4) {
+        const batch = notes.slice(i, i + 4);
+        await Promise.all(batch.map(n => api('', {
+          method: 'POST',
+          body: JSON.stringify({ action: 'save_note', plan_date: n.plan_date, period_key: n.period_key, body: n.body }),
+        })));
+        done += batch.length;
+        button.textContent = `Synchronisation… ${done}/${notes.length}`;
+      }
+      toast(`${notes.length} cours existants envoyés vers Google Agenda.`, 4200);
+      button.textContent = 'Planif existante synchronisée';
+    } catch (err) {
+      errorEl.textContent = err.message || 'Synchronisation initiale impossible.';
+      button.disabled = false;
+      button.textContent = 'Synchroniser la planif déjà inscrite';
     }
   }
 
@@ -99,9 +127,10 @@
           </div>
           <div class="gs-field"><label for="gsUrl">URL du déploiement Apps Script</label><input id="gsUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off"></div>
           <div class="gs-error" id="gsError"></div>
+          ${status.enabled ? '<button type="button" class="gs-backfill" id="gsBackfill">Synchroniser la planif déjà inscrite</button>' : ''}
           <div class="gs-actions">
             ${status.enabled ? '<button type="button" class="gs-disable" id="gsDisable">Désactiver</button>' : ''}
-            <button type="button" class="gs-save" id="gsSave">Activer la synchronisation</button>
+            <button type="button" class="gs-save" id="gsSave">${status.enabled ? 'Remplacer le déploiement' : 'Activer la synchronisation'}</button>
           </div>
           <div class="gs-note">Le secret n’est jamais placé dans GitHub. Il est conservé dans Supabase et dans les propriétés privées de ton projet Apps Script.</div>
         </div>`;
@@ -115,6 +144,7 @@
           await copyText(await res.text(), 'Code Apps Script copié.');
         } catch { toast('Impossible de charger le code Apps Script.', 3500); }
       });
+      $('#gsBackfill', dialog)?.addEventListener('click', e => syncExisting(e.currentTarget, $('#gsError', dialog)));
       $('#gsSave', dialog).addEventListener('click', async e => {
         const url = $('#gsUrl', dialog).value.trim();
         const error = $('#gsError', dialog);
@@ -129,7 +159,7 @@
         } catch (err) {
           error.textContent = err.message || 'Activation impossible.';
           e.currentTarget.disabled = false;
-          e.currentTarget.textContent = 'Activer la synchronisation';
+          e.currentTarget.textContent = status.enabled ? 'Remplacer le déploiement' : 'Activer la synchronisation';
         }
       });
       $('#gsDisable', dialog)?.addEventListener('click', async e => {
