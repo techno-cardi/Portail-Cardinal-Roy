@@ -11,7 +11,7 @@
   <meta name="description" content="Planification hebdomadaire 2026-2027, adaptée à l'horaire de Cardinal-Roy.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="app.css?v=20260913-1">
+  <link rel="stylesheet" href="app.css?v=20260913-3">
 </head>
 <body>
   <div class="app-shell" id="appShell" hidden>
@@ -39,7 +39,11 @@
 
         <div class="period-heading">
           <div class="period-title" id="periodTitle">—</div>
-          <div class="save-status" id="saveStatus" aria-live="polite">Prêt</div>
+          <div class="status-row">
+            <button class="history-button" id="undoBtn" type="button" aria-label="Annuler" disabled>↶ <span>Annuler</span></button>
+            <button class="history-button" id="redoBtn" type="button" aria-label="Rétablir" disabled>↷ <span>Rétablir</span></button>
+            <div class="save-status" id="saveStatus" aria-live="polite">Prêt</div>
+          </div>
         </div>
 
         <div class="segmented" role="group" aria-label="Mode d'affichage">
@@ -83,7 +87,6 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-  <script src="app.js?v=20260913-2" defer></script>
+  <script src="app.js?v=20260913-3" defer></script>
 </body>
 </html>
