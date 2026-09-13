@@ -1,0 +1,19 @@
+{
+  "name": "Ma planification — Cardinal-Roy",
+  "short_name": "Ma planif",
+  "description": "Planification hebdomadaire 2026-2027",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7f9",
+  "theme_color": "#07577f",
+  "lang": "fr-CA",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
