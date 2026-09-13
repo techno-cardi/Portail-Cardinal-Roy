@@ -112,6 +112,7 @@
       .pt-item:hover{background:#f2f8fb;border-color:#a9c7d6}.pt-item-num{font-weight:900;color:#07577f}.pt-item-text{line-height:1.35}
       .pt-history{display:grid;gap:8px;max-height:52vh;overflow:auto}.pt-version{border:1px solid #d3dde2;border-radius:12px;padding:10px 11px;background:#fff;display:grid;gap:6px}.pt-version-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.pt-version-label{font-weight:850;font-size:.82rem}.pt-version-time{font-size:.75rem;color:#71838e}.pt-version-preview{font-size:.84rem;color:#415b69;line-height:1.35;white-space:pre-wrap;max-height:76px;overflow:hidden}.pt-restore{justify-self:end;border:1px solid #b9ccd6;background:#f5f9fb;border-radius:9px;padding:7px 10px;font-weight:800;color:#16455f;cursor:pointer}
       .pt-choice-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pt-choice-row button{min-height:44px;border:1px solid #bfd0d9;border-radius:10px;background:#fff;font-weight:800;color:#173246;cursor:pointer}.pt-choice-row button.primary{background:#07577f;color:#fff;border-color:#07577f}
+      .pt-checklist{display:grid;gap:7px;max-height:50vh;overflow:auto}.pt-check{display:grid;grid-template-columns:auto auto 1fr;gap:9px;align-items:start;border:1px solid #d1dce2;border-radius:11px;padding:10px 11px;background:#fff}.pt-check input{width:18px;height:18px;margin:1px 0 0}.pt-check-num{font-weight:900;color:#07577f}.pt-check-text{line-height:1.35}.pt-check-note{font-size:.77rem;color:#71838e;margin-top:2px}.pt-primary-wide{min-height:45px;border:0;border-radius:11px;background:#07577f;color:#fff;font-weight:850;cursor:pointer;padding:0 16px}
       @media(max-width:600px){.planner-tools-dialog form,.planner-tools-dialog .pt-shell{padding:20px}.pt-choice-row{grid-template-columns:1fr}.course-strip-number{min-width:34px;text-align:right}}
     `;
     document.head.appendChild(style);
@@ -165,12 +166,14 @@
     body.innerHTML = `
       <div class="pt-course-head"><strong>${escapeHtml(ctx.group)}</strong><span>${escapeHtml(ctx.courseNo)} · ${escapeHtml(formatDate(ctx.planDate))}</span></div>
       <div class="pt-actions">
-        <button class="pt-action" data-act="carry" ${numbered.length ? '' : 'disabled'}>Reporter un élément au prochain cours<small>Déplace une ligne numérotée vers la prochaine rencontre de ce groupe.</small></button>
+        <button class="pt-action" data-act="finish" ${numbered.length ? '' : 'disabled'}>Fin du cours…<small>Coche ce qui a été fait; ce qui reste peut être reporté d’un coup au prochain cours.</small></button>
+        <button class="pt-action" data-act="carry" ${numbered.length ? '' : 'disabled'}>Reporter un élément au prochain cours<small>Déplace une seule ligne numérotée vers la prochaine rencontre de ce groupe.</small></button>
         ${paired ? `<button class="pt-action" data-act="pair">Copier la planif vers ${escapeHtml(paired)}<small>Copie cette période vers la prochaine rencontre du groupe parallèle.</small></button>` : ''}
         <button class="pt-action" data-act="checkpoint">Créer un point de restauration<small>Garde volontairement l’état actuel dans l’historique synchronisé.</small></button>
         <button class="pt-action" data-act="history">Voir l’historique de cette période<small>Versions enregistrées dans Supabase, donc accessibles sur tes autres appareils.</small></button>
       </div>`;
 
+    $('[data-act="finish"]', body)?.addEventListener('click', () => finishCourse(ctx));
     $('[data-act="carry"]', body)?.addEventListener('click', () => chooseCarry(ctx));
     $('[data-act="pair"]', body)?.addEventListener('click', () => copyToPaired(ctx));
     $('[data-act="checkpoint"]', body)?.addEventListener('click', async () => {
@@ -182,6 +185,62 @@
     });
     $('[data-act="history"]', body)?.addEventListener('click', () => showHistory(ctx));
     return dialog;
+  }
+
+  async function finishCourse(ctx) {
+    try {
+      const meta = await ensureMeta();
+      const destination = await meta.nextCourse(ctx.group, ctx.planDate);
+      const bodyNow = bodyFromCell(ctx.cell);
+      const blocks = parseBody(bodyNow);
+      const numbered = blocks.map((b, i) => ({ ...b, blockIndex: i })).filter(b => b.kind === 'numbered');
+      if (!numbered.length) { toast('Aucun élément numéroté dans ce cours.'); return; }
+
+      const { body } = shell('Fin du cours');
+      body.innerHTML = `<p>Coche les éléments réellement faits. Les éléments décochés seront ${destination ? `reportés au <strong>${escapeHtml(formatDate(destination.date))}</strong> · ${escapeHtml(ctx.group)} · #${destination.courseNumber ?? '?'}` : 'laissés ici, puisqu’aucun prochain cours n’a été trouvé'}.</p>
+        <div class="pt-checklist">${numbered.map((b, i) => `<label class="pt-check"><input type="checkbox" checked data-block-index="${b.blockIndex}"><span class="pt-check-num">${i + 1}.</span><span><span class="pt-check-text">${escapeHtml(b.text)}</span><div class="pt-check-note">Fait</div></span></label>`).join('')}</div>
+        <button type="button" class="pt-primary-wide" id="ptFinishCourse">Terminer le cours</button>`;
+
+      $('#ptFinishCourse', body).addEventListener('click', async e => {
+        e.currentTarget.disabled = true;
+        try {
+          await saveCellNow(ctx.cell);
+          const latestBody = bodyFromCell(ctx.cell);
+          const latestBlocks = parseBody(latestBody);
+          const unchecked = new Set($$('.pt-check input:not(:checked)', body).map(input => Number(input.dataset.blockIndex)));
+          if (!unchecked.size) {
+            await api('', { method: 'POST', body: JSON.stringify({ action: 'checkpoint', plan_date: ctx.planDate, period_key: ctx.periodKey, label: 'Fin du cours — tout fait' }) });
+            toast('Cours terminé · tout a été fait.');
+            ensureDialog().close();
+            return;
+          }
+          if (!destination) throw new Error('Aucun prochain cours trouvé pour reporter les éléments.');
+
+          const carry = [];
+          const sourceBlocks = latestBlocks.filter((b, i) => {
+            if (unchecked.has(i) && b.kind === 'numbered') { carry.push({ kind: 'numbered', text: b.text }); return false; }
+            return true;
+          });
+          const destBody = await fetchNote(destination.date, destination.periodKey);
+          const destBlocks = parseBody(destBody);
+          if (destBlocks.length === 1 && destBlocks[0].kind === 'plain' && !destBlocks[0].text.trim()) destBlocks.length = 0;
+          destBlocks.push(...carry);
+          await api('', { method: 'POST', body: JSON.stringify({
+            action: 'bulk_save',
+            label: `Fin du cours ${ctx.group} ${ctx.courseNo}`,
+            changes: [
+              { plan_date: ctx.planDate, period_key: ctx.periodKey, body: serializeBlocks(sourceBlocks) },
+              { plan_date: destination.date, period_key: destination.periodKey, body: serializeBlocks(destBlocks) },
+            ],
+          }) });
+          toast(`${carry.length} élément${carry.length > 1 ? 's' : ''} reporté${carry.length > 1 ? 's' : ''}.`);
+          setTimeout(() => location.reload(), 500);
+        } catch (err) {
+          e.currentTarget.disabled = false;
+          toast(err.message || 'Impossible de terminer le cours.', 3500);
+        }
+      });
+    } catch (e) { toast(e.message || 'Impossible d’ouvrir le bilan du cours.', 3500); }
   }
 
   async function chooseCarry(ctx) {
