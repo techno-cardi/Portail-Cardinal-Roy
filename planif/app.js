@@ -73,6 +73,8 @@
     saveTimers: new Map(),
     loading: false,
     installPrompt: null,
+    dragPayload: null,
+    movePayload: null,
   };
 
   function localDate(y, m, d) { return new Date(y, m - 1, d, 12, 0, 0, 0); }
@@ -238,19 +240,23 @@
     const course = courseFor(rec, period.key);
     const id = noteId(d, period.key);
     const value = state.notes.get(id) || '';
+    const moveButton = special ? '' : `<button type="button" class="move-note-btn" title="Déplacer la sélection" aria-label="Déplacer la sélection">↗</button>`;
+    const readOnly = special ? ' readonly tabindex="-1"' : '';
     if (mode === 'week') {
       return `<div class="plan-cell ${special?'special':''} ${period.compact?'compact':''}" data-note-cell="${id}">
         <span class="dirty-dot" aria-hidden="true"></span>
+        ${moveButton}
         <div class="course-strip ${course?'has-course':''}">${course ? escapeHtml(course) : '&nbsp;'}</div>
-        <textarea class="note-area" data-date="${d}" data-period="${period.key}" aria-label="${escapeHtml(period.label)} — ${escapeHtml(dateFr(date,{weekday:'long',day:'numeric',month:'long'}))}">${escapeHtml(value)}</textarea>
+        <textarea class="note-area" data-date="${d}" data-period="${period.key}" aria-label="${escapeHtml(period.label)} — ${escapeHtml(dateFr(date,{weekday:'long',day:'numeric',month:'long'}))}"${readOnly}>${escapeHtml(value)}</textarea>
       </div>`;
     }
     return `<article class="day-card ${special?'special':''}" data-note-cell="${id}">
       <div class="day-period"><strong>${escapeHtml(period.label)}</strong><span>${escapeHtml(period.time)}</span></div>
       <div class="day-card-main">
         <span class="dirty-dot" aria-hidden="true"></span>
+        ${moveButton}
         <div class="course-strip ${course?'has-course':''}">${course ? escapeHtml(course) : '&nbsp;'}</div>
-        <textarea class="note-area" data-date="${d}" data-period="${period.key}" aria-label="${escapeHtml(period.label)} — ${escapeHtml(dateFr(date,{weekday:'long',day:'numeric',month:'long'}))}">${escapeHtml(value)}</textarea>
+        <textarea class="note-area" data-date="${d}" data-period="${period.key}" aria-label="${escapeHtml(period.label)} — ${escapeHtml(dateFr(date,{weekday:'long',day:'numeric',month:'long'}))}"${readOnly}>${escapeHtml(value)}</textarea>
       </div>
     </article>`;
   }
@@ -298,6 +304,125 @@
     requestAnimationFrame(autosizeAll);
   }
 
+  function lineBounds(value, pos) {
+    const start = value.lastIndexOf('\n', Math.max(0,pos-1)) + 1;
+    const next = value.indexOf('\n', pos);
+    const end = next === -1 ? value.length : next;
+    return { start, end, text: value.slice(start,end) };
+  }
+
+  function latestNumberBefore(value, lineStart) {
+    const lines = value.slice(0, lineStart).split('\n');
+    let last = null;
+    for (const line of lines) {
+      const m = line.match(/^\s*(\d+)\.\s*/);
+      if (m) last = Number(m[1]);
+    }
+    return last;
+  }
+
+  function renumberNumberedLines(body) {
+    let n = 0;
+    return String(body).split('\n').map(line => {
+      const m = line.match(/^\s*\d+\.\s*(.*)$/);
+      if (!m) return line;
+      n += 1;
+      return `${n}. ${m[1]}`.trimEnd();
+    }).join('\n');
+  }
+
+  function replaceRange(area, start, end, replacement, caretOffset = replacement.length) {
+    area.value = area.value.slice(0,start) + replacement + area.value.slice(end);
+    const pos = start + caretOffset;
+    area.setSelectionRange(pos,pos);
+  }
+
+  function smartKeydown(area, event) {
+    if (area.readOnly) return;
+    if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const start = area.selectionStart;
+      const end = area.selectionEnd;
+      const bounds = lineBounds(area.value, start);
+      const current = bounds.text.match(/^\s*(\d+)\.\s*(.*)$/);
+      let next = current ? Number(current[1]) + 1 : null;
+      if (!next) {
+        const previous = latestNumberBefore(area.value, bounds.start);
+        if (previous) next = previous + 1;
+      }
+      if (next) {
+        event.preventDefault();
+        replaceRange(area, start, end, `\n${next}. `);
+        syncArea(area);
+      }
+      return;
+    }
+
+    if (event.key === 'Backspace' && area.selectionStart === area.selectionEnd) {
+      const pos = area.selectionStart;
+      const bounds = lineBounds(area.value, pos);
+      const prefix = area.value.slice(bounds.start, pos);
+      if (/^\s*\d+\.\s?$/.test(prefix)) {
+        event.preventDefault();
+        replaceRange(area, bounds.start, pos, '', 0);
+        syncArea(area);
+      }
+    }
+  }
+
+  function autoSpaceNumber(area) {
+    const pos = area.selectionStart;
+    if (pos !== area.selectionEnd) return false;
+    const bounds = lineBounds(area.value, pos);
+    const beforeCaret = area.value.slice(bounds.start, pos);
+    if (/^\s*\d+\.$/.test(beforeCaret)) {
+      replaceRange(area, pos, pos, ' ');
+      return true;
+    }
+    return false;
+  }
+
+  function markSelection(area) {
+    const cell = area.closest('[data-note-cell]');
+    const has = area.selectionStart !== area.selectionEnd && area.value.slice(area.selectionStart,area.selectionEnd).trim();
+    area.draggable = !!has;
+    cell?.classList.toggle('has-selection', !!has);
+  }
+
+  function selectionPayload(area, allowLineFallback=false) {
+    let start = area.selectionStart;
+    let end = area.selectionEnd;
+    if (start === end && allowLineFallback) {
+      const b = lineBounds(area.value, start);
+      start = b.start;
+      end = b.end;
+    }
+    const text = area.value.slice(start,end);
+    if (!text.trim()) return null;
+    return {
+      sourceDate: area.dataset.date,
+      sourcePeriod: area.dataset.period,
+      sourceBody: area.value,
+      start,
+      end,
+      text,
+    };
+  }
+
+  function syncArea(area) {
+    const id = noteId(area.dataset.date, area.dataset.period);
+    let body = area.value;
+    state.notes.set(id, body);
+    localStorage.setItem(`${DRAFT_PREFIX}${id}`, body);
+    area.closest('[data-note-cell]')?.classList.add('dirty');
+    setSaveStatus('Modification…', 'saving');
+    if (state.view === 'day') {
+      area.style.height = 'auto';
+      area.style.height = `${Math.max(93,area.scrollHeight)}px`;
+    }
+    clearTimeout(state.saveTimers.get(id));
+    state.saveTimers.set(id, setTimeout(() => saveNote(area.dataset.date, area.dataset.period, body, id), 700));
+  }
+
   function bindPlannerEvents() {
     el.planner.querySelectorAll('[data-open-day]').forEach(btn => btn.addEventListener('click', () => {
       state.focusDate = parseISO(btn.dataset.openDay);
@@ -307,19 +432,62 @@
     }));
 
     el.planner.querySelectorAll('.note-area').forEach(area => {
+      if (area.readOnly) return;
+      area.addEventListener('keydown', e => smartKeydown(area,e));
       area.addEventListener('input', () => {
-        const id = noteId(area.dataset.date, area.dataset.period);
-        const body = area.value;
-        state.notes.set(id, body);
-        localStorage.setItem(`${DRAFT_PREFIX}${id}`, body);
-        area.closest('[data-note-cell]')?.classList.add('dirty');
-        setSaveStatus('Modification…', 'saving');
-        if (state.view === 'day') {
-          area.style.height = 'auto'; area.style.height = `${Math.max(93,area.scrollHeight)}px`;
-        }
-        clearTimeout(state.saveTimers.get(id));
-        state.saveTimers.set(id, setTimeout(() => saveNote(area.dataset.date, area.dataset.period, body, id), 700));
+        autoSpaceNumber(area);
+        syncArea(area);
       });
+      area.addEventListener('select', () => markSelection(area));
+      area.addEventListener('mouseup', () => setTimeout(() => markSelection(area),0));
+      area.addEventListener('keyup', () => markSelection(area));
+      area.addEventListener('blur', () => setTimeout(() => {
+        if (document.activeElement !== area) area.closest('[data-note-cell]')?.classList.remove('has-selection');
+      },120));
+
+      area.addEventListener('dragstart', e => {
+        const payload = selectionPayload(area,false);
+        if (!payload) { e.preventDefault(); return; }
+        state.dragPayload = payload;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', payload.text);
+        document.body.classList.add('moving-plan-item');
+      });
+      area.addEventListener('dragend', () => {
+        state.dragPayload = null;
+        document.body.classList.remove('moving-plan-item');
+        document.querySelectorAll('.drop-target').forEach(n => n.classList.remove('drop-target'));
+      });
+    });
+
+    el.planner.querySelectorAll('[data-note-cell]').forEach(cell => {
+      const area = cell.querySelector('.note-area');
+      if (!area || area.readOnly) return;
+      cell.addEventListener('dragover', e => {
+        if (!state.dragPayload) return;
+        const targetId = noteId(area.dataset.date,area.dataset.period);
+        const sourceId = noteId(state.dragPayload.sourceDate,state.dragPayload.sourcePeriod);
+        if (targetId === sourceId) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        cell.classList.add('drop-target');
+      });
+      cell.addEventListener('dragleave', e => {
+        if (!cell.contains(e.relatedTarget)) cell.classList.remove('drop-target');
+      });
+      cell.addEventListener('drop', async e => {
+        if (!state.dragPayload) return;
+        e.preventDefault();
+        cell.classList.remove('drop-target');
+        const payload = state.dragPayload;
+        state.dragPayload = null;
+        document.body.classList.remove('moving-plan-item');
+        await movePayload(payload, area.dataset.date, area.dataset.period);
+      });
+
+      const moveBtn = cell.querySelector('.move-note-btn');
+      moveBtn?.addEventListener('mousedown', e => e.preventDefault());
+      moveBtn?.addEventListener('click', () => openMoveDialog(area));
     });
   }
 
@@ -337,6 +505,144 @@
       setSaveStatus('Sauvegardé', 'saved');
     } catch {
       setSaveStatus('À resynchroniser', 'error');
+    }
+  }
+
+  async function persistBody(planDate, periodKey, body) {
+    const id = noteId(planDate,periodKey);
+    body = renumberNumberedLines(body).replace(/^\s+|\s+$/g,'');
+    state.notes.set(id,body);
+    localStorage.setItem(`${DRAFT_PREFIX}${id}`,body);
+    const visible = document.querySelector(`.note-area[data-date="${CSS.escape(planDate)}"][data-period="${CSS.escape(periodKey)}"]`);
+    if (visible) {
+      visible.value = body;
+      visible.closest('[data-note-cell]')?.classList.add('dirty');
+      if (state.view === 'day') {
+        visible.style.height='auto';
+        visible.style.height=`${Math.max(93,visible.scrollHeight)}px`;
+      }
+    }
+    if (!navigator.onLine) {
+      setSaveStatus('Hors ligne · gardé sur cet appareil','error');
+      return;
+    }
+    try {
+      await api('',{method:'POST',body:JSON.stringify({action:'save_note',plan_date:planDate,period_key:periodKey,body})});
+      localStorage.removeItem(`${DRAFT_PREFIX}${id}`);
+      visible?.closest('[data-note-cell]')?.classList.remove('dirty');
+      setSaveStatus('Sauvegardé','saved');
+    } catch {
+      setSaveStatus('À resynchroniser','error');
+      throw new Error('save failed');
+    }
+  }
+
+  async function movePayload(payload, targetDate, targetPeriod) {
+    const sourceId = noteId(payload.sourceDate,payload.sourcePeriod);
+    const targetId = noteId(targetDate,targetPeriod);
+    if (sourceId === targetId) return;
+
+    const currentSource = state.notes.get(sourceId) ?? payload.sourceBody;
+    let sourceBody = payload.sourceBody;
+    if (currentSource === payload.sourceBody) {
+      sourceBody = currentSource.slice(0,payload.start) + currentSource.slice(payload.end);
+    } else {
+      const needle = payload.text;
+      const idx = currentSource.indexOf(needle);
+      sourceBody = idx >= 0 ? currentSource.slice(0,idx) + currentSource.slice(idx+needle.length) : currentSource;
+    }
+    sourceBody = renumberNumberedLines(sourceBody.replace(/\n{3,}/g,'\n\n').trim());
+
+    let targetBody = state.notes.get(targetId);
+    if (targetBody === undefined) {
+      try {
+        const data = await api(`?from=${targetDate}&to=${targetDate}`);
+        const note = (data.notes || []).find(n => n.period_key === targetPeriod);
+        targetBody = note?.body || '';
+      } catch { targetBody = ''; }
+    }
+    const movedText = payload.text.trim();
+    targetBody = targetBody.trim() ? `${targetBody.trimEnd()}\n${movedText}` : movedText;
+    targetBody = renumberNumberedLines(targetBody);
+
+    setSaveStatus('Déplacement…','saving');
+    try {
+      await Promise.all([
+        persistBody(payload.sourceDate,payload.sourcePeriod,sourceBody),
+        persistBody(targetDate,targetPeriod,targetBody),
+      ]);
+      toast('Élément déplacé et numérotation ajustée.');
+    } catch {
+      toast('Le déplacement est gardé localement; il sera resynchronisé.');
+    }
+  }
+
+  function ensureMoveDialog() {
+    if (document.getElementById('moveDialog')) return;
+    const dialog = document.createElement('dialog');
+    dialog.id = 'moveDialog';
+    dialog.className = 'move-dialog';
+    dialog.innerHTML = `<form method="dialog" id="moveForm">
+      <h2>Déplacer cet élément</h2>
+      <p class="move-preview" id="movePreview"></p>
+      <label for="moveTarget">Destination</label>
+      <select id="moveTarget" required></select>
+      <div class="move-help">Sur ordinateur, tu peux aussi sélectionner du texte et le glisser directement vers une autre case visible.</div>
+      <div class="move-actions">
+        <button type="button" class="secondary-button" id="cancelMove">Annuler</button>
+        <button type="submit" class="primary-button">Déplacer</button>
+      </div>
+    </form>`;
+    document.body.appendChild(dialog);
+    dialog.querySelector('#cancelMove').addEventListener('click',()=>dialog.close());
+    dialog.querySelector('#moveForm').addEventListener('submit',async e=>{
+      e.preventDefault();
+      const value = dialog.querySelector('#moveTarget').value;
+      if (!value || !state.movePayload) return;
+      const [date,period] = value.split('|');
+      dialog.close();
+      const payload = state.movePayload;
+      state.movePayload = null;
+      await movePayload(payload,date,period);
+    });
+  }
+
+  async function openMoveDialog(area) {
+    const payload = selectionPayload(area,true);
+    if (!payload) { toast('Sélectionne une ligne ou place le curseur dans l’élément à déplacer.'); return; }
+    state.movePayload = payload;
+    ensureMoveDialog();
+    const dialog = document.getElementById('moveDialog');
+    const select = dialog.querySelector('#moveTarget');
+    const preview = dialog.querySelector('#movePreview');
+    preview.textContent = payload.text.trim().replace(/\s+/g,' ').slice(0,180);
+    select.innerHTML = '<option value="">Chargement des destinations…</option>';
+    if (!dialog.open) dialog.showModal();
+
+    const center = parseISO(payload.sourceDate);
+    let from = addDays(center,-14);
+    let to = addDays(center,35);
+    if (iso(from) < SCHOOL_START) from = parseISO(SCHOOL_START);
+    if (iso(to) > SCHOOL_END) to = parseISO(SCHOOL_END);
+    try {
+      const data = await api(`?from=${iso(from)}&to=${iso(to)}`);
+      const options = [];
+      for (const rec of data.calendar || []) {
+        if (rec.day_kind !== 'school') continue;
+        const date = parseISO(rec.plan_date);
+        for (const p of PERIODS) {
+          const course = courseFor(rec,p.key);
+          if (!course) continue;
+          if (rec.plan_date === payload.sourceDate && p.key === payload.sourcePeriod) continue;
+          options.push({
+            value:`${rec.plan_date}|${p.key}`,
+            label:`${capitalize(dateFr(date,{weekday:'short',day:'numeric',month:'short'}))} · ${course} · ${p.label}`,
+          });
+        }
+      }
+      select.innerHTML = '<option value="">Choisir une case…</option>' + options.map(o=>`<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`).join('');
+    } catch {
+      select.innerHTML = '<option value="">Impossible de charger les destinations</option>';
     }
   }
 
@@ -405,6 +711,32 @@
     toast(isiOS ? 'Sur iPhone/iPad : Partager → Sur l’écran d’accueil.' : 'Dans le navigateur : menu → Installer l’application / Ajouter à l’écran d’accueil.', 4500);
   }
 
+  function injectEnhancementStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+      .move-note-btn{position:absolute;right:7px;top:35px;z-index:7;width:27px;height:27px;border:1px solid rgba(7,87,127,.2);border-radius:8px;background:rgba(255,255,255,.92);color:#07577f;font-weight:900;cursor:pointer;opacity:0;transform:translateY(-2px);transition:.15s ease;box-shadow:0 2px 8px rgba(20,55,75,.08)}
+      [data-note-cell]:hover .move-note-btn,[data-note-cell]:focus-within .move-note-btn,[data-note-cell].has-selection .move-note-btn{opacity:1;transform:none}
+      .day-card .move-note-btn{top:36px;right:8px}
+      .drop-target{box-shadow:inset 0 0 0 3px rgba(11,107,150,.55)!important;background:#eef9fd!important}
+      .drop-target .course-strip{filter:saturate(1.1)}
+      .moving-plan-item .plan-cell:not(.special),.moving-plan-item .day-card:not(.special){transition:box-shadow .12s ease,background .12s ease}
+      .move-dialog{width:min(92vw,520px);border:0;border-radius:20px;padding:0;color:#153247;box-shadow:0 28px 80px rgba(5,40,60,.28)}
+      .move-dialog::backdrop{background:rgba(3,31,49,.62);backdrop-filter:blur(5px)}
+      .move-dialog form{padding:26px;display:grid;gap:13px}
+      .move-dialog h2{margin:0;font-size:1.35rem}
+      .move-dialog label{font-size:.82rem;font-weight:800}
+      .move-dialog select{width:100%;border:1px solid #bfcdd5;border-radius:11px;padding:11px 12px;background:#fff;color:#153247}
+      .move-preview{margin:0;padding:10px 12px;border-radius:10px;background:#f1f6f8;color:#4d6472;font-size:.86rem;line-height:1.4;max-height:90px;overflow:auto}
+      .move-help{font-size:.78rem;color:#71838e;line-height:1.4}
+      .move-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:2px}
+      .move-actions button{padding:0 16px}
+      .note-area[readonly]{cursor:default}
+      @media(max-width:700px){.move-note-btn{opacity:.72}.move-dialog form{padding:21px}.move-actions{display:grid;grid-template-columns:1fr 1fr}.move-actions button{width:100%}}
+      @media print{.move-note-btn{display:none!important}}
+    `;
+    document.head.appendChild(style);
+  }
+
   function wireUi() {
     el.prev.addEventListener('click',()=>shift(-1));
     el.next.addEventListener('click',()=>shift(1));
@@ -433,6 +765,8 @@
   }
 
   async function boot() {
+    injectEnhancementStyles();
+    ensureMoveDialog();
     wireUi(); updateNetwork();
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
     if (!state.key) { showAccess(); return; }
