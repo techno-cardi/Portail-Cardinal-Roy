@@ -48,14 +48,17 @@
   }
 
   async function loadTitle(el) {
+    if (!localStorage.getItem(ACCESS_STORAGE)) return false;
     try {
       const data = await api();
       const title = normalize(data.title) || DEFAULT_TITLE;
       el.textContent = title;
       el.dataset.savedTitle = title;
       el.title = 'Cliquer pour modifier ce titre';
+      return true;
     } catch {
       el.dataset.savedTitle = normalize(el.textContent) || DEFAULT_TITLE;
+      return false;
     }
   }
 
@@ -95,6 +98,7 @@
     title.setAttribute('role', 'textbox');
     title.setAttribute('aria-label', 'Titre de l’Agenda');
     title.setAttribute('aria-multiline', 'false');
+    title.dataset.savedTitle = normalize(title.textContent) || DEFAULT_TITLE;
 
     title.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
@@ -112,7 +116,15 @@
       document.execCommand('insertText', false, text);
     });
     title.addEventListener('blur', () => saveTitle(title));
-    loadTitle(title);
+
+    loadTitle(title).then(loaded => {
+      if (loaded) return;
+      let tries = 0;
+      const timer = setInterval(async () => {
+        tries += 1;
+        if (await loadTitle(title) || tries >= 120) clearInterval(timer);
+      }, 500);
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
