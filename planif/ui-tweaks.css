@@ -1,0 +1,30 @@
+/* Ajustements visuels légers qui gardent l'agenda compact. */
+.day-head{
+  min-height:82px;
+  padding:9px 8px 8px;
+  gap:5px;
+}
+.grid-corner{min-height:82px;}
+.cycle-diamond{
+  width:auto;
+  min-width:62px;
+  height:27px;
+  transform:none;
+  border-radius:7px;
+  padding:0 10px;
+  margin-top:0;
+  background:#c9dfec;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.cycle-diamond span{
+  transform:none;
+  font-size:.75rem;
+  line-height:1;
+  white-space:nowrap;
+}
+.mobile-day-head .cycle-diamond{
+  min-width:66px;
+  height:29px;
+}
