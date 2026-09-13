@@ -5,7 +5,7 @@
   const ACCESS_STORAGE = 'cr-planner-access-v1';
   const SCHOOL_START = '2026-08-24';
   const SCHOOL_END = '2027-06-24';
-  const CAL_CACHE = 'cr-planif-course-calendar-v1';
+  const CAL_CACHE = 'cr-planif-course-calendar-v2';
   const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
 
   // Couleurs exactes des événements Google Agenda « Horaire Cardinal-Roy ».
@@ -42,60 +42,44 @@
   let applyQueued = false;
   const numberCache = new Map();
 
-  function parseISO(s) {
-    const [y, m, d] = s.split('-').map(Number);
-    return new Date(y, m - 1, d, 12, 0, 0, 0);
-  }
-  function iso(date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }
-  function addDays(date, n) {
-    const d = new Date(date);
-    d.setDate(d.getDate() + n);
-    return d;
-  }
-  function groupOnDay(rec, group) {
-    if (!rec || rec.day_kind !== 'school' || !rec.cycle_day) return false;
-    return Object.values(COURSES[rec.cycle_day] || {}).includes(group);
+  function groupSlot(rec, group) {
+    if (!rec || rec.day_kind !== 'school' || !rec.cycle_day) return null;
+    const entries = Object.entries(COURSES[rec.cycle_day] || {});
+    const hit = entries.find(([, value]) => value === group);
+    return hit ? hit[0] : null;
   }
 
-  async function fetchCalendarChunk(from, to, key) {
-    const res = await fetch(`${API_URL}?from=${from}&to=${to}`, {
+  function groupOnDay(rec, group) {
+    return !!groupSlot(rec, group);
+  }
+
+  async function fetchWholeSchoolCalendar(key) {
+    const url = new URL(API_URL);
+    url.searchParams.set('action', 'calendar');
+    url.searchParams.set('from', SCHOOL_START);
+    url.searchParams.set('to', SCHOOL_END);
+    const res = await fetch(url, {
       headers: { 'x-planner-key': key },
       cache: 'no-store',
     });
     if (!res.ok) throw new Error(`Calendrier indisponible (${res.status})`);
     const data = await res.json();
-    return data.calendar || [];
+    return (data.calendar || []).sort((a, b) => a.plan_date.localeCompare(b.plan_date));
   }
 
-  async function fetchWholeSchoolCalendar(key) {
-    const rows = [];
-    let cursor = parseISO(SCHOOL_START);
-    const last = parseISO(SCHOOL_END);
-    while (cursor <= last) {
-      const chunkEnd = addDays(cursor, 59) < last ? addDays(cursor, 59) : last;
-      rows.push(...await fetchCalendarChunk(iso(cursor), iso(chunkEnd), key));
-      cursor = addDays(chunkEnd, 1);
-    }
-    const unique = new Map(rows.map(r => [r.plan_date, r]));
-    return [...unique.values()].sort((a, b) => a.plan_date.localeCompare(b.plan_date));
-  }
-
-  async function ensureCalendar() {
-    if (calendar.length) return calendar;
+  async function ensureCalendar({ force = false } = {}) {
+    if (calendar.length && !force) return calendar;
     if (loadingCalendar) return loadingCalendar;
 
-    try {
-      const cached = JSON.parse(localStorage.getItem(CAL_CACHE) || 'null');
-      if (cached?.savedAt && Date.now() - cached.savedAt < CACHE_MAX_AGE && Array.isArray(cached.rows) && cached.rows.length) {
-        calendar = cached.rows;
-        return calendar;
-      }
-    } catch { /* cache invalide : on recharge */ }
+    if (!force) {
+      try {
+        const cached = JSON.parse(localStorage.getItem(CAL_CACHE) || 'null');
+        if (cached?.savedAt && Date.now() - cached.savedAt < CACHE_MAX_AGE && Array.isArray(cached.rows) && cached.rows.length) {
+          calendar = cached.rows;
+          return calendar;
+        }
+      } catch { /* cache invalide : on recharge */ }
+    }
 
     const key = localStorage.getItem(ACCESS_STORAGE) || '';
     if (!key) return [];
@@ -134,23 +118,92 @@
     return number;
   }
 
+  async function nextCourse(group, afterDateISO, { includeSame = false } = {}) {
+    await ensureCalendar();
+    const start = String(afterDateISO || SCHOOL_START);
+    for (const rec of calendar) {
+      if (includeSame ? rec.plan_date < start : rec.plan_date <= start) continue;
+      const periodKey = groupSlot(rec, group);
+      if (!periodKey) continue;
+      return {
+        group,
+        date: rec.plan_date,
+        periodKey,
+        cycleDay: rec.cycle_day,
+        courseNumber: courseNumber(group, rec.plan_date),
+      };
+    }
+    return null;
+  }
+
+  async function previousCourse(group, beforeDateISO) {
+    await ensureCalendar();
+    for (let i = calendar.length - 1; i >= 0; i -= 1) {
+      const rec = calendar[i];
+      if (rec.plan_date >= beforeDateISO) continue;
+      const periodKey = groupSlot(rec, group);
+      if (!periodKey) continue;
+      return {
+        group,
+        date: rec.plan_date,
+        periodKey,
+        cycleDay: rec.cycle_day,
+        courseNumber: courseNumber(group, rec.plan_date),
+      };
+    }
+    return null;
+  }
+
+  function courseAt(dateISO, periodKey) {
+    const rec = calendar.find(r => r.plan_date === dateISO);
+    if (!rec || rec.day_kind !== 'school' || !rec.cycle_day) return '';
+    return COURSES[rec.cycle_day]?.[periodKey] || '';
+  }
+
+  function pairedSec3(group) {
+    if (group === 'FRA3SE-31') return 'FRA3SE-32';
+    if (group === 'FRA3SE-32') return 'FRA3SE-31';
+    return '';
+  }
+
   function injectStyles() {
     if (document.getElementById('courseMetaStyles')) return;
     const style = document.createElement('style');
     style.id = 'courseMetaStyles';
     style.textContent = `
       .course-strip.has-course.course-meta-strip{
+        position:relative!important;
         background:var(--course-color)!important;
         color:#1d1d1d!important;
-        justify-content:space-between!important;
-        gap:8px;
+        justify-content:center!important;
         padding-left:10px!important;
         padding-right:10px!important;
         text-shadow:none!important;
       }
-      .course-strip-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-      .course-strip-number{margin-left:auto;white-space:nowrap;font-size:.78em;font-weight:900;opacity:.78;letter-spacing:.01em}
-      .day-card .course-strip.has-course.course-meta-strip{justify-content:space-between!important;padding-left:12px!important;padding-right:12px!important}
+      .course-strip-name{
+        position:absolute;
+        left:50%;
+        transform:translateX(-50%);
+        max-width:calc(100% - 76px);
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+        text-align:center;
+      }
+      .course-strip-number{
+        position:absolute;
+        right:10px;
+        margin:0;
+        white-space:nowrap;
+        font-size:.78em;
+        font-weight:900;
+        opacity:.78;
+        letter-spacing:.01em;
+        cursor:pointer;
+      }
+      .course-strip-number:hover{opacity:1;text-decoration:underline;text-underline-offset:2px}
+      .day-card .course-strip.has-course.course-meta-strip{justify-content:center!important;padding-left:12px!important;padding-right:12px!important}
+      .day-card .course-strip-number{right:12px}
     `;
     document.head.appendChild(style);
   }
@@ -180,7 +233,7 @@
     strip.dataset.courseMetaSignature = signature;
     strip.classList.add('course-meta-strip');
     strip.style.setProperty('--course-color', COURSE_META[group].color);
-    strip.innerHTML = `<span class="course-strip-name">${group}</span><span class="course-strip-number">${number == null ? '' : `#${number}`}</span>`;
+    strip.innerHTML = `<span class="course-strip-name">${group}</span><span class="course-strip-number" role="button" tabindex="0" title="Options du cours">${number == null ? '' : `#${number}`}</span>`;
   }
 
   function applyAll() {
@@ -201,6 +254,17 @@
     applyAll();
   }
 
+  window.CRPlannerCourseMeta = {
+    ensureCalendar,
+    courseNumber,
+    nextCourse,
+    previousCourse,
+    courseAt,
+    pairedSec3,
+    getMeta: group => COURSE_META[group] ? { ...COURSE_META[group] } : null,
+    getCalendar: () => calendar.map(r => ({ ...r })),
+  };
+
   function start() {
     injectStyles();
     const planner = document.getElementById('planner');
@@ -208,7 +272,6 @@
     queueApply();
     refreshMetadata();
 
-    // Si la clé vient d'être saisie à la première ouverture, on attend qu'elle soit enregistrée.
     let tries = 0;
     const timer = setInterval(() => {
       tries += 1;
