@@ -1,0 +1,74 @@
+// Agenda Kevin — pont de synchronisation vers Google Agenda
+// 1) Créer un projet sur script.google.com
+// 2) Coller ce fichier dans Code.gs
+// 3) Dans Paramètres du projet > Propriétés du script, ajouter :
+//      AGENDA_SYNC_SECRET = le secret affiché dans Agenda
+// 4) Déployer > Nouveau déploiement > Application Web
+//      Exécuter en tant que : Moi
+//      Qui a accès : Toute personne
+// 5) Copier l’URL /exec et la coller dans Agenda > Réglages > Synchronisation Google Agenda.
+
+const CALENDAR_ID = 'chspj1p3h2gccmlujur3e2keqk@group.calendar.google.com';
+const TIME_ZONE = 'America/Toronto';
+
+const PERIODS = {
+  p1: ['08:15', '09:30'],
+  p2: ['09:45', '11:00'],
+  p3: ['11:15', '12:30'],
+  p4: ['12:45', '14:00'],
+  p5: ['14:15', '15:30'],
+};
+
+function json_(value) {
+  return ContentService
+    .createTextOutput(JSON.stringify(value))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function parseLocal_(dateISO, timeHM) {
+  return Utilities.parseDate(dateISO + ' ' + timeHM, TIME_ZONE, 'yyyy-MM-dd HH:mm');
+}
+
+function doGet() {
+  return json_({ ok: true, service: 'Agenda Kevin — Google Calendar Sync' });
+}
+
+function doPost(e) {
+  try {
+    const payload = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    const expected = PropertiesService.getScriptProperties().getProperty('AGENDA_SYNC_SECRET') || '';
+    if (!expected || payload.secret !== expected) {
+      return json_({ ok: false, reason: 'unauthorized' });
+    }
+
+    const date = String(payload.date || '');
+    const periodKey = String(payload.period_key || '');
+    const description = String(payload.description || '');
+    const period = PERIODS[periodKey];
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !period) {
+      return json_({ ok: false, reason: 'invalid_payload' });
+    }
+
+    const calendar = CalendarApp.getCalendarById(CALENDAR_ID);
+    if (!calendar) return json_({ ok: false, reason: 'calendar_not_found' });
+
+    const start = parseLocal_(date, period[0]);
+    const end = parseLocal_(date, period[1]);
+    const events = calendar.getEvents(start, end).filter(event => {
+      const title = String(event.getTitle() || '').trim();
+      const startDiff = Math.abs(event.getStartTime().getTime() - start.getTime());
+      return /^FRA(?:3|5)SE-(?:31|32|51)$/.test(title) && startDiff < 60000;
+    });
+
+    if (!events.length) {
+      // Une case sans cours dans Agenda n’a simplement aucun événement Google à modifier.
+      return json_({ ok: true, updated: 0, reason: 'event_not_found' });
+    }
+
+    // Il ne devrait y avoir qu’un seul événement de cours pour cette période.
+    events[0].setDescription(description);
+    return json_({ ok: true, updated: 1, event: events[0].getTitle() });
+  } catch (err) {
+    return json_({ ok: false, reason: 'exception', message: String(err && err.message ? err.message : err) });
+  }
+}
