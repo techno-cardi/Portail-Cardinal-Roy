@@ -1,7 +1,7 @@
 {
-  "name": "Ma planification — Cardinal-Roy",
-  "short_name": "Ma planif",
-  "description": "Planification hebdomadaire 2026-2027",
+  "name": "Agenda",
+  "short_name": "Agenda",
+  "description": "Agenda de planification 2026-2027",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
