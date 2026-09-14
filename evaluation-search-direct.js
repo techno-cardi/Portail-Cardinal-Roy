@@ -76,6 +76,15 @@
       keywords: 'horaire horaires enseignant enseignants prof profs professeur professeurs personnel grille grilles cours emploi du temps'
     },
     {
+      id: 'tableau-depannage-direct',
+      title: 'Tableau de disponibilités de dépannage 2026-2027',
+      procedureId: 'tableau-depannage-2026-2027',
+      linkText: 'ouvrir le tableau de dépannage',
+      subtitle: 'Organisation scolaire',
+      icon: '👥',
+      keywords: 'tableau disponibilités disponibilite disponibilité dépannage depannage suppléance suppleance suppléant suppleant remplacement remplaçant remplacant urgence dépannage obligatoire depannage obligatoire rouge dépannage volontaire depannage volontaire vert enseignant enseignants prof profs professeur professeurs personnel période périodes periode periodes jour jours cycle horaire 2026 2027'
+    },
+    {
       id: 'surveillance-dineurs-direct',
       title: 'Surveillance des dîneurs',
       procedureId: 'horaires-surveillance-2026-2027',
