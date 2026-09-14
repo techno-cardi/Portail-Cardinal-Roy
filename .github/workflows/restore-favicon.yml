@@ -1,0 +1,78 @@
+name: Restaurer le favicon du portail
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/restore-favicon.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    name: Restaurer l’icône historique
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extraire le favicon historique et le remettre dans le portail
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64
+          import pathlib
+          import re
+          import subprocess
+
+          historical_commit = '22d1d0f1d4c167a6ff88443220233c765a94ee87'
+          old_index = subprocess.check_output(
+              ['git', 'show', f'{historical_commit}:index.html'],
+              text=True,
+          )
+
+          match = re.search(
+              r'<link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,([^"]+)">',
+              old_index,
+          )
+          if not match:
+              raise SystemExit('Favicon historique introuvable dans le commit de référence.')
+
+          pathlib.Path('favicon.ico').write_bytes(base64.b64decode(match.group(1)))
+
+          index_path = pathlib.Path('index.html')
+          index = index_path.read_text(encoding='utf-8')
+          index = re.sub(
+              r'\n?<link\s+[^>]*rel=["\'](?:shortcut\s+)?icon["\'][^>]*>',
+              '',
+              index,
+              flags=re.IGNORECASE,
+          )
+          favicon_tag = '<link rel="icon" type="image/x-icon" href="favicon.ico?v=20260914">'
+          index, count = re.subn(
+              r'(<title>.*?</title>)',
+              r'\1\n' + favicon_tag,
+              index,
+              count=1,
+              flags=re.DOTALL,
+          )
+          if count != 1:
+              raise SystemExit('Balise <title> introuvable dans index.html.')
+          index_path.write_text(index, encoding='utf-8')
+          PY
+
+      - name: Publier le favicon restauré
+        shell: bash
+        run: |
+          if git diff --quiet -- index.html favicon.ico && git ls-files --error-unmatch favicon.ico >/dev/null 2>&1; then
+            echo "Le favicon est déjà restauré."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html favicon.ico
+          git commit -m "Restaurer l’icône du portail"
+          git push
