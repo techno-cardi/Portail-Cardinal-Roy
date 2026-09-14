@@ -9,11 +9,22 @@
     });
   }
 
-  function start() {
-    const planner = document.getElementById('planner');
-    if (!planner) return;
+  function cleanCourseListLabels() {
+    document.querySelectorAll('.cl-title strong').forEach(el => {
+      if (/^Cours #\? - /.test(el.textContent || '')) {
+        el.textContent = (el.textContent || '').replace(/^Cours #\? - /, 'Cours sans numéro - ');
+      }
+    });
+  }
+
+  function tidy() {
     removeUnusedPM();
-    new MutationObserver(removeUnusedPM).observe(planner, { childList: true, subtree: true });
+    cleanCourseListLabels();
+  }
+
+  function start() {
+    tidy();
+    new MutationObserver(tidy).observe(document.body, { childList: true, subtree: true });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
