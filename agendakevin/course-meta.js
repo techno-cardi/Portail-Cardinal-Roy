@@ -12,16 +12,16 @@
   // FRA3SE-31 = colorId 2, FRA3SE-32 = colorId 7, FRA5SE-51 = colorId 5.
   const COURSE_META = {
     'FRA3SE-31': { color: '#7ae7bf', anchorDate: '2026-09-11', anchorNumber: 8 },
-    'FRA3SE-32': { color: '#46d6db', anchorDate: '2026-09-11', anchorNumber: 8 },
+    'FRA3SE-32': { color: '#46d6db', anchorDate: '2026-09-11', anchorNumber: 7 },
     'FRA5SE-51': { color: '#fbd75b', anchorDate: '2026-09-10', anchorNumber: 5 },
   };
 
-  // Exceptions historiques du groupe 32 :
-  // - le 2 septembre a été publié comme cours #5;
-  // - le cours du 4 septembre (Fête de la rentrée) n'a pas reçu de numéro.
+  // Exceptions historiques de numérotation.
+  // Le groupe 32 était bien à l'horaire le 4 septembre, mais la Fête de la rentrée
+  // a remplacé le cours : la case demeure visible, sans numéro, et ne compte pas
+  // dans la progression annuelle.
   const COURSE_NUMBER_OVERRIDES = {
     'FRA3SE-32': {
-      '2026-09-02': 5,
       '2026-09-04': null,
     },
   };
@@ -61,6 +61,13 @@
 
   function groupOnDay(rec, group) {
     return !!groupSlot(rec, group);
+  }
+
+  function countsAsNumberedCourse(rec, group) {
+    if (!groupOnDay(rec, group)) return false;
+    const overrides = COURSE_NUMBER_OVERRIDES[group];
+    if (overrides && Object.prototype.hasOwnProperty.call(overrides, rec.plan_date) && overrides[rec.plan_date] == null) return false;
+    return true;
   }
 
   async function fetchWholeSchoolCalendar(key) {
@@ -123,12 +130,12 @@
     if (dateISO > meta.anchorDate) {
       for (const rec of calendar) {
         if (rec.plan_date <= meta.anchorDate || rec.plan_date > dateISO) continue;
-        if (groupOnDay(rec, group)) number += 1;
+        if (countsAsNumberedCourse(rec, group)) number += 1;
       }
     } else if (dateISO < meta.anchorDate) {
       for (const rec of calendar) {
         if (rec.plan_date <= dateISO || rec.plan_date > meta.anchorDate) continue;
-        if (groupOnDay(rec, group)) number -= 1;
+        if (countsAsNumberedCourse(rec, group)) number -= 1;
       }
     }
     numberCache.set(cacheKey, number);
@@ -141,7 +148,7 @@
     for (const rec of calendar) {
       if (includeSame ? rec.plan_date < start : rec.plan_date <= start) continue;
       const periodKey = groupSlot(rec, group);
-      if (!periodKey) continue;
+      if (!periodKey || !countsAsNumberedCourse(rec, group)) continue;
       return {
         group,
         date: rec.plan_date,
@@ -159,7 +166,7 @@
       const rec = calendar[i];
       if (rec.plan_date >= beforeDateISO) continue;
       const periodKey = groupSlot(rec, group);
-      if (!periodKey) continue;
+      if (!periodKey || !countsAsNumberedCourse(rec, group)) continue;
       return {
         group,
         date: rec.plan_date,
