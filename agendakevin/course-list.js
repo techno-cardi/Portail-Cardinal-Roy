@@ -191,11 +191,16 @@
       bodyEl.innerHTML = '<div class="cl-none">Aucun cours planifié à afficher pour ce groupe.</div>';
       return;
     }
-    bodyEl.innerHTML = rows.map(r => `
+    bodyEl.innerHTML = rows.map(r => {
+      const title = r.courseNumber == null
+        ? `Cours sans numéro - ${escapeHtml(formatDate(r.date))}`
+        : `Cours #${r.courseNumber} - ${escapeHtml(formatDate(r.date))}`;
+      return `
       <section class="cl-course">
-        <h3 class="cl-title"><strong>Cours #${r.courseNumber ?? '?'} - ${escapeHtml(formatDate(r.date))}</strong></h3>
+        <h3 class="cl-title"><strong>${title}</strong></h3>
         ${courseBodyHtml(r.body)}
-      </section>`).join('');
+      </section>`;
+    }).join('');
   }
 
   async function openCourseList() {
