@@ -16,6 +16,16 @@
     'FRA5SE-51': { color: '#fbd75b', anchorDate: '2026-09-10', anchorNumber: 5 },
   };
 
+  // Exceptions historiques du groupe 32 :
+  // - le 2 septembre a été publié comme cours #5;
+  // - le cours du 4 septembre (Fête de la rentrée) n'a pas reçu de numéro.
+  const COURSE_NUMBER_OVERRIDES = {
+    'FRA3SE-32': {
+      '2026-09-02': 5,
+      '2026-09-04': null,
+    },
+  };
+
   const COURSES = {
     1:  { p1: 'FRA3SE-32', p3: 'FRA3SE-31' },
     2:  { p1: 'FRA3SE-32', p3: 'FRA5SE-51' },
@@ -101,6 +111,13 @@
     if (!meta || !calendar.length) return null;
     const cacheKey = `${group}:${dateISO}`;
     if (numberCache.has(cacheKey)) return numberCache.get(cacheKey);
+
+    const overrides = COURSE_NUMBER_OVERRIDES[group];
+    if (overrides && Object.prototype.hasOwnProperty.call(overrides, dateISO)) {
+      const value = overrides[dateISO];
+      numberCache.set(cacheKey, value);
+      return value;
+    }
 
     let number = meta.anchorNumber;
     if (dateISO > meta.anchorDate) {
@@ -226,7 +243,7 @@
     if (colon < 0) return;
     const dateISO = id.slice(0, colon);
     const number = courseNumber(group, dateISO);
-    const signature = `${group}:${dateISO}:${number ?? '?'}`;
+    const signature = `${group}:${dateISO}:${number ?? 'none'}`;
     if (strip.dataset.courseMetaSignature === signature) return;
 
     strip.dataset.courseGroup = group;
