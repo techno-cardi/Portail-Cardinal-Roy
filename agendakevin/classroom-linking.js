@@ -4,10 +4,18 @@
   const GROUP_MAP_UPDATE = 'PDC_NATIVE_GROUP_MAP_UPDATE';
   const GROUP_MAP_STATUS_REQUEST = 'PDC_NATIVE_GROUP_MAP_STATUS_REQUEST';
   const GROUP_MAP_STATUS = 'PDC_NATIVE_GROUP_MAP_STATUS';
+  let bridgeCheckRunning = false;
 
   function currentGroup() {
     const text = document.getElementById('crpTarget')?.textContent || '';
     return text.match(/(?:^|\D)(31|32|51)(?:\D|$)/)?.[1] || '';
+  }
+
+  function bridgeVersions() {
+    return {
+      native: document.documentElement.dataset.pdcNativePublisherVersion || '',
+      userscript: document.documentElement.dataset.pdcClassroomBridgeVersion || '',
+    };
   }
 
   function parseClassroomLink(value) {
@@ -91,23 +99,76 @@
     document.head.appendChild(style);
   }
 
+  function renderLinkedState(state, group, linked) {
+    if (linked) {
+      state.className = 'crp-link-state ok';
+      state.innerHTML = `Groupe ${group} lié à Classroom · <button type="button" class="crp-link-action" data-classroom-link-group="${group}">Modifier</button>`;
+    } else {
+      state.className = 'crp-link-state warn';
+      state.innerHTML = `Groupe ${group} non lié · <button type="button" class="crp-link-action" data-classroom-link-group="${group}">Lier à Classroom</button>`;
+    }
+  }
+
+  async function diagnoseBridge() {
+    if (bridgeCheckRunning) return;
+    const state = document.getElementById('crpLinkState');
+    const group = currentGroup();
+    if (!state || !group) return;
+
+    bridgeCheckRunning = true;
+    try {
+      // Laisse une courte fenêtre aux content scripts pour poser leurs marqueurs.
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        const versions = bridgeVersions();
+        if (versions.native && versions.userscript) break;
+        await new Promise(resolve => setTimeout(resolve, 250));
+      }
+
+      const versions = bridgeVersions();
+      if (!versions.native || !versions.userscript) {
+        state.className = 'crp-link-state warn';
+        if (!versions.native && !versions.userscript) {
+          state.textContent = 'Pont Chrome et script Tampermonkey non détectés';
+        } else if (!versions.native) {
+          state.textContent = `Pont Chrome non détecté · Tampermonkey ${versions.userscript}`;
+        } else {
+          state.textContent = `Script Tampermonkey non détecté · Pont ${versions.native}`;
+        }
+        return;
+      }
+
+      state.className = 'crp-link-state';
+      state.textContent = `Pont ${versions.native} · Tampermonkey ${versions.userscript} · vérification…`;
+      const result = await requestGroupMapStatus(2200);
+      if (!result.ok) {
+        state.className = 'crp-link-state warn';
+        state.textContent = `Pont Chrome ${versions.native} détecté, mais il ne répond pas`;
+        return;
+      }
+      renderLinkedState(state, group, Boolean(result.groups?.[group]));
+    } finally {
+      bridgeCheckRunning = false;
+    }
+  }
+
   function renderLinkAction() {
     const state = document.getElementById('crpLinkState');
     const group = currentGroup();
     if (!state || !group || state.querySelector('.crp-link-action')) return;
 
     const text = state.textContent || '';
-    if (text.includes('Mise à jour du pont/Tampermonkey')) return;
+    if (text.includes('Mise à jour du pont/Tampermonkey')) {
+      diagnoseBridge();
+      return;
+    }
 
     if (text.includes('Groupe non lié')) {
-      state.className = 'crp-link-state warn';
-      state.innerHTML = `Groupe ${group} non lié · <button type="button" class="crp-link-action" data-classroom-link-group="${group}">Lier à Classroom</button>`;
+      renderLinkedState(state, group, false);
       return;
     }
 
     if (text.includes(`Groupe ${group} lié à Classroom`)) {
-      state.className = 'crp-link-state ok';
-      state.innerHTML = `Groupe ${group} lié à Classroom · <button type="button" class="crp-link-action" data-classroom-link-group="${group}">Modifier</button>`;
+      renderLinkedState(state, group, true);
     }
   }
 
@@ -135,11 +196,7 @@
         state.textContent = `Enregistrement du groupe ${group}…`;
       }
       await rememberGroup(group, classroomUrl);
-      if (state) {
-        state.className = 'crp-link-state ok';
-        state.textContent = `Groupe ${group} lié à Classroom`;
-      }
-      renderLinkAction();
+      if (state) renderLinkedState(state, group, true);
     } catch (error) {
       if (state) {
         state.className = 'crp-link-state warn';
