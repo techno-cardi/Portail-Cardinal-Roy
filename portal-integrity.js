@@ -2,20 +2,6 @@
   const SAE_ICON_URL = 'assets/vendor/encadrement-sae.png';
   let scheduled = false;
 
-  const bindSectionLink = link => {
-    if (!link || link.dataset.portalIntegrityBound === 'true') return;
-    link.dataset.portalIntegrityBound = 'true';
-    link.addEventListener('click', event => {
-      const href = link.getAttribute('href') || '';
-      if (!href.startsWith('#section-')) return;
-      const target = document.querySelector(href);
-      if (!target) return;
-      event.preventDefault();
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      history.replaceState(null, '', href);
-    });
-  };
-
   const repairStructure = () => {
     const host = document.getElementById('category-sections');
     const nav = document.querySelector('.section-nav-inner');
@@ -37,12 +23,9 @@
       const classeLink = nav.querySelector('a[href="#section-classe"]');
       if (classeLink) classeLink.insertAdjacentElement('afterend', link);
       else nav.prepend(link);
-      bindSectionLink(link);
     }
 
     // Le calendrier des dates importantes fait partie de l'organisation scolaire.
-    // Ce placement centralisé évite qu'un ordre différent des MutationObserver
-    // fasse disparaître la fiche d'une catégorie ou de la navigation par recherche.
     const schoolList = document.querySelector('#section-organisation-scolaire .procedure-list');
     const dates = document.getElementById('dates-importantes-2026-2027');
     if (schoolList && dates && dates.parentElement !== schoolList) {
@@ -51,7 +34,6 @@
       else schoolList.prepend(dates);
     }
 
-    nav.querySelectorAll('a[href^="#section-"]').forEach(bindSectionLink);
     return true;
   };
 
@@ -84,12 +66,9 @@
     window.setTimeout(() => bootstrapObserver.disconnect(), 12000);
   }
 
-  // Après le chargement, une dernière passe couvre aussi les navigateurs qui
-  // planifient différemment les callbacks de MutationObserver.
   window.addEventListener('load', repairStructure, { once: true });
 
   // Garde-fou éditorial pour la banque de pensées du jour.
-  // La citation prévue le 12 mai a été remplacée par une création neutre de la banque de réserve.
   const repairDailyThought = () => {
     const block = document.getElementById('daily-thought');
     if (!block || block.dataset.thoughtDate !== '2027-05-12') return;
@@ -108,8 +87,7 @@
   repairDailyThought();
 
   // Les dates du calendrier scolaire gardent leur pensée prévue. Les autres jours
-  // utilisent une création neutre de la banque de réserve : la barre reste donc
-  // toujours visible sans consommer la séquence prévue pour les jours de classe.
+  // utilisent une création neutre de la banque de réserve.
   const RESERVE_THOUGHTS = [
     'Les petites avancées construisent de grands chemins.',
     'Apprendre, c’est ajouter une fenêtre à sa façon de voir.',
