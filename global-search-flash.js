@@ -1,17 +1,17 @@
 (() => {
-  const previousInput = document.getElementById('guide-search');
+  'use strict';
+
+  const input = document.getElementById('guide-search');
   const suggestions = document.getElementById('search-suggestions');
   const status = document.getElementById('search-status');
-  if (!previousInput || !suggestions) return;
+  if (!input || !suggestions) return;
 
-  /* Moteur de recherche unique : le clone retire les anciens écouteurs sans
-     toucher aux favoris ni à la navigation générale. */
-  const input = previousInput.cloneNode(true);
-  previousInput.replaceWith(input);
   window.PORTAL_SEARCH_ENGINE = '2.0';
 
   const MOZAIK_LOGO = 'assets/vendor/moz.png';
-  const normalize = value => (value || '')
+  const PED_DAY_URL = 'https://drive.google.com/file/d/1S7mZootQb4dddOYHKOU19_yyEqeWu3fG/view?usp=drivesdk';
+
+  const normalize = value => String(value || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
@@ -44,7 +44,7 @@
 
   patchMozaikVisuals();
   const favoriteHost = document.getElementById('favorite-links');
-  if (favoriteHost) new MutationObserver(patchMozaikVisuals).observe(favoriteHost, {childList:true,subtree:true});
+  if (favoriteHost) new MutationObserver(patchMozaikVisuals).observe(favoriteHost, { childList:true, subtree:true });
 
   if (!document.getElementById('portal-search-engine-style')) {
     const style = document.createElement('style');
@@ -129,7 +129,7 @@
     if (a === b) return 0;
     if (!a.length) return b.length;
     if (!b.length) return a.length;
-    const previous = Array.from({length:b.length + 1}, (_,i) => i);
+    const previous = Array.from({ length:b.length + 1 }, (_,i) => i);
     for (let i=1;i<=a.length;i++) {
       let left = i;
       let diagonal = i - 1;
@@ -168,13 +168,13 @@
     return `<span class="suggestion-visual emoji-visual" aria-hidden="true">${escapeHtml(text || '📌')}</span>`;
   };
 
-  const entries = [];
+  const internalEntries = [];
   document.querySelectorAll('.procedure').forEach(node => {
     const title = node.querySelector('.procedure-title')?.textContent?.trim() || node.id;
     const subtitle = node.querySelector('.procedure-subtitle')?.textContent?.trim() || '';
     const haystack = normalize(`${title} ${subtitle} ${node.dataset.search || ''} ${node.querySelector('.procedure-content')?.textContent || ''}`);
-    entries.push({
-      type:'procedure', id:node.id, title, subtitle, node, haystack,
+    internalEntries.push({
+      kind:'internal', type:'procedure', id:node.id, title, subtitle, node, haystack,
       titleNorm:normalize(title), subtitleNorm:normalize(subtitle), words:[...new Set(haystack.split(' ').filter(Boolean))],
       visual:visualForElement(node.querySelector('summary .procedure-visual'))
     });
@@ -184,12 +184,86 @@
     const title = node.dataset.searchLabel || node.querySelector('h4')?.textContent?.trim() || node.id;
     const subtitle = 'Applications CSSC';
     const haystack = normalize(`${title} ${node.dataset.searchKeywords || ''} ${node.textContent || ''}`);
-    entries.push({
-      type:'subresource', id:node.id, parentId:node.closest('.procedure')?.id || 'applications-cssc', title, subtitle, node, haystack,
+    internalEntries.push({
+      kind:'internal', type:'subresource', id:node.id, parentId:node.closest('.procedure')?.id || 'applications-cssc', title, subtitle, node, haystack,
       titleNorm:normalize(title), subtitleNorm:normalize(subtitle), words:[...new Set(haystack.split(' ').filter(Boolean))],
       visual:visualForElement(node.querySelector('.resource-logo'))
     });
   });
+
+  const linkFromProcedure = (procedureId, linkText = '') => {
+    const procedure = document.getElementById(procedureId);
+    if (!procedure) return '';
+    const links = [...procedure.querySelectorAll('.procedure-content a[href^="http"]')];
+    if (!links.length) return '';
+    if (linkText) {
+      const wanted = normalize(linkText);
+      const match = links.find(link => normalize(link.textContent).includes(wanted));
+      if (match?.href) return match.href;
+    }
+    return links[0]?.href || '';
+  };
+
+  const directTemplates = [
+    {
+      id:'nature-moments-evaluations', title:'Nature et moments des évaluations',
+      url:'https://drive.google.com/drive/folders/1LTgKPbES9IixST2V-jolWxA7s6SMV6jT', subtitle:'Drive commun', icon:'📁',
+      keywords:'nature moment moments evaluation evaluations évaluation évaluations evaluer évaluer quand dates calendrier periode périodes période'
+    },
+    {
+      id:'attentes-exigences', title:'Attentes et exigences',
+      url:'https://drive.google.com/drive/folders/18URlr-7b2TmnzZqL4TdOOGlNI2V7TfJW', subtitle:'Drive commun', icon:'📁',
+      keywords:'attente attentes exigence exigences pedagogique pédagogiques consigne consignes criteres critères reussite réussite travaux remise cours regles règles'
+    },
+    {
+      id:'planification-annuelle', title:'Planification annuelle',
+      url:'https://drive.google.com/drive/folders/15dleRqnqz8ZldCzWrogMAJONlVBta3IY', subtitle:'Drive commun', icon:'📁',
+      keywords:'planification annuelle planif globale progression apprentissages repartition répartition sequence séquence contenu année annee plan cours'
+    },
+    {
+      id:'horaire-locaux-direct', title:'Horaire des locaux', procedureId:'horaire-locaux-2026-2027', linkText:'horaire des locaux', icon:'🏫',
+      keywords:'horaire horaires local locaux salle salles classe classes occupation disponibilite disponibilité réservation reservation local libre locaux libres'
+    },
+    {
+      id:'horaire-enseignants-direct', title:'Horaire des enseignants', procedureId:'horaire-enseignants-2026-2027', linkText:'horaire des enseignants', icon:'🧑‍🏫',
+      keywords:'horaire horaires enseignant enseignants prof profs professeur professeurs personnel grille grilles cours emploi du temps'
+    },
+    {
+      id:'tableau-depannage-direct', title:'Tableau de disponibilités de dépannage 2026-2027', procedureId:'tableau-depannage-2026-2027', linkText:'ouvrir le tableau de dépannage', subtitle:'Organisation scolaire', icon:'👥',
+      keywords:'tableau disponibilités disponibilite disponibilité dépannage depannage suppléance suppleance suppléant suppleant remplacement remplaçant remplacant urgence dépannage obligatoire depannage obligatoire rouge dépannage volontaire depannage volontaire vert enseignant enseignants prof profs professeur professeurs personnel période périodes periode periodes jour jours cycle 2026 2027',
+      excludeBareQueries:['horaire']
+    },
+    {
+      id:'surveillance-dineurs-direct', title:'Surveillance des dîneurs', procedureId:'horaires-surveillance-2026-2027', linkText:'surveillance des dîneurs', icon:'👀',
+      keywords:'horaire horaires surveillance surveillances surveillant surveillants diner dîner dineur dîneur dineurs dîneurs midi'
+    },
+    {
+      id:'surveillance-bibliotheque-direct', title:'Surveillance bibliothèque', procedureId:'horaires-surveillance-2026-2027', linkText:'surveillance bibliothèque', icon:'👀',
+      keywords:'horaire horaires surveillance surveillances surveillant surveillants bibliotheque bibliothèque pause pauses midi'
+    },
+    {
+      id:'pedago-2026-09-18-direct', title:'Horaire de la journée pédagogique du 18 septembre', url:PED_DAY_URL,
+      subtitle:'Vendredi 18 septembre 2026', icon:'🗓️', requiresElement:'journee-pedagogique-2026-09-18',
+      keywords:'pédago pedago pédagogie pedagogie journée pédago journee pedago journée pédagogique journee pedagogique pédagogique pedagogique vendredi 18 septembre 2026 ordre du jour OJ JP',
+      excludeBareQueries:['horaire']
+    }
+  ].map(resource => ({
+    ...resource,
+    titleNorm:normalize(resource.title),
+    searchText:normalize(`${resource.title} ${resource.keywords || ''}`)
+  }));
+
+  const resolvedDirectResources = () => directTemplates
+    .filter(resource => !resource.requiresElement || document.getElementById(resource.requiresElement))
+    .map(resource => ({ ...resource, kind:'direct', url:resource.url || linkFromProcedure(resource.procedureId, resource.linkText) }))
+    .filter(resource => /^https?:\/\//i.test(resource.url || ''));
+
+  const updateDirectRegistry = resources => {
+    const simple = resources.map(({id,title,url}) => ({id,title,url}));
+    window.PORTAL_DIRECT_SEARCH_RESOURCES = simple;
+    window.PORTAL_EVALUATION_SEARCH_RESOURCES = simple;
+  };
+  updateDirectRegistry(resolvedDirectResources());
 
   const tokenAlternatives = token => [token, ...(ALIASES.get(token) || [])];
   const tokenScore = (entry, token) => {
@@ -213,7 +287,7 @@
     return best;
   };
 
-  const scoreEntry = (entry, query) => {
+  const scoreInternal = (entry, query) => {
     const q = normalize(query);
     if (!q) return -1;
     let tokens = q.split(' ').filter(Boolean);
@@ -237,18 +311,53 @@
     return score;
   };
 
-  const search = query => {
-    const q = normalize(query);
-    if (!q) return [];
-    let matches = entries
-      .map(entry => ({entry, score:scoreEntry(entry, q)}))
+  const findDirectMatches = raw => {
+    const query = normalize(raw);
+    if (!query) return [];
+    const tokens = query.split(' ').filter(token => token.length > 1);
+    if (!tokens.length) return [];
+
+    const resources = resolvedDirectResources();
+    updateDirectRegistry(resources);
+    return resources
+      .map(resource => {
+        if ((resource.excludeBareQueries || []).map(normalize).includes(query)) return null;
+        if (!tokens.every(token => resource.searchText.includes(token))) return null;
+        let score = 0;
+        if (resource.titleNorm === query) score += 500;
+        else if (resource.titleNorm.startsWith(query)) score += 350;
+        else if (resource.titleNorm.includes(query)) score += 300;
+        if (resource.searchText.includes(query)) score += 170;
+        tokens.forEach(token => {
+          if (resource.titleNorm.split(' ').includes(token)) score += 70;
+          else if (resource.titleNorm.includes(token)) score += 55;
+          else score += 25;
+        });
+        return { resource, score };
+      })
+      .filter(Boolean)
+      .sort((a,b) => b.score - a.score || a.resource.title.localeCompare(b.resource.title,'fr'))
+      .map(result => result.resource)
+      .slice(0,7);
+  };
+
+  const findInternalMatches = raw => {
+    const query = normalize(raw);
+    if (!query) return [];
+    let matches = internalEntries
+      .map(entry => ({ entry, score:scoreInternal(entry, query) }))
       .filter(result => result.score >= 0)
       .sort((a,b) => b.score - a.score || a.entry.title.localeCompare(b.entry.title,'fr'));
     const hasSubresource = matches.some(result => result.entry.type === 'subresource');
-    if (hasSubresource && !q.includes('applications cssc')) {
+    if (hasSubresource && !query.includes('applications cssc')) {
       matches = matches.filter(result => !(result.entry.type === 'procedure' && result.entry.id === 'applications-cssc'));
     }
     return matches.slice(0,7).map(result => result.entry);
+  };
+
+  const search = raw => {
+    const direct = findDirectMatches(raw);
+    return direct.length ? direct : findInternalMatches(raw);
   };
 
   let currentMatches = [];
@@ -264,14 +373,14 @@
   };
 
   const setActive = index => {
-    const buttons = [...suggestions.querySelectorAll('.suggestion')];
-    if (!buttons.length) { activeIndex = -1; return; }
-    activeIndex = Math.max(0,Math.min(index,buttons.length - 1));
-    buttons.forEach((button,i) => {
+    const nodes = [...suggestions.querySelectorAll('.suggestion')];
+    if (!nodes.length) { activeIndex = -1; return; }
+    activeIndex = Math.max(0, Math.min(index, nodes.length - 1));
+    nodes.forEach((node,i) => {
       const active = i === activeIndex;
-      button.classList.toggle('is-active',active);
-      button.setAttribute('aria-selected',String(active));
-      if (active) button.scrollIntoView({block:'nearest'});
+      node.classList.toggle('is-active', active);
+      node.setAttribute('aria-selected', String(active));
+      if (active) node.scrollIntoView({ block:'nearest' });
     });
   };
 
@@ -284,47 +393,29 @@
     suggestions.hidden = false;
     input.setAttribute('aria-expanded','true');
     if (status) status.textContent = currentMatches.length ? `${currentMatches.length} suggestion${currentMatches.length > 1 ? 's' : ''}` : 'Aucune suggestion';
+
     if (!currentMatches.length) {
       suggestions.innerHTML = '<div class="no-suggestion">Essayez un autre mot : application, tâche, élève, absence, réservation…</div>';
       return;
     }
-    suggestions.innerHTML = currentMatches.map((entry,index) => `
-      <button type="button" class="suggestion" role="option" aria-selected="false" data-search-index="${index}" ${entry.type === 'subresource' ? `data-search-subresource="${escapeHtml(entry.id)}"` : `data-search-open="${escapeHtml(entry.id)}"`}>
+
+    suggestions.innerHTML = currentMatches.map((entry,index) => {
+      if (entry.kind === 'direct') {
+        return `<a class="suggestion" role="option" aria-selected="false" data-search-index="${index}" data-direct-search-resource="${escapeHtml(entry.id)}" href="${escapeHtml(entry.url)}" target="_blank" rel="noopener noreferrer">
+          <span class="suggestion-visual emoji-visual" aria-hidden="true">${escapeHtml(entry.icon || '📁')}</span>
+          <span class="suggestion-copy"><strong>${safeHighlight(entry.title,tokens)}</strong>${entry.subtitle ? `<small>${safeHighlight(entry.subtitle,tokens)}</small>` : ''}</span>
+          <span class="suggestion-arrow" aria-hidden="true">↗</span>
+        </a>`;
+      }
+      return `<button type="button" class="suggestion" role="option" aria-selected="false" data-search-index="${index}" ${entry.type === 'subresource' ? `data-search-subresource="${escapeHtml(entry.id)}"` : `data-search-open="${escapeHtml(entry.id)}"`}>
         ${entry.visual}
-        <span class="suggestion-copy">
-          <strong>${safeHighlight(entry.title,tokens)}</strong>
-          ${entry.subtitle ? `<small>${safeHighlight(entry.subtitle,tokens)}</small>` : ''}
-        </span>
+        <span class="suggestion-copy"><strong>${safeHighlight(entry.title,tokens)}</strong>${entry.subtitle ? `<small>${safeHighlight(entry.subtitle,tokens)}</small>` : ''}</span>
         <span class="suggestion-arrow" aria-hidden="true">→</span>
-      </button>`).join('');
+      </button>`;
+    }).join('');
   };
 
-  const flash = target => {
-    if (!target) return;
-    target.classList.remove('portal-search-flash');
-    void target.offsetWidth;
-    target.classList.add('portal-search-flash');
-    window.setTimeout(() => target.classList.remove('portal-search-flash'),2900);
-  };
-
-  /* Le flash démarre lorsque le défilement est terminé. Avant, il se jouait en
-     partie pendant la descente et l'utilisateur n'en voyait que la fin. */
-  const scrollAndFlash = (target, block = 'start') => {
-    let finished = false;
-    let fallback = 0;
-    const finish = () => {
-      if (finished) return;
-      finished = true;
-      window.removeEventListener('scrollend', finish);
-      if (fallback) window.clearTimeout(fallback);
-      flash(target);
-    };
-    if ('onscrollend' in window) window.addEventListener('scrollend', finish, {once:true});
-    target.scrollIntoView({behavior:'smooth', block});
-    fallback = window.setTimeout(finish, 850);
-  };
-
-  const openEntry = entry => {
+  const openInternal = entry => {
     if (!entry?.node) return;
     hideSuggestions();
     input.blur();
@@ -332,22 +423,35 @@
       const parent = document.getElementById(entry.parentId);
       if (parent?.classList.contains('procedure')) parent.open = true;
       history.replaceState(null,'',`#${entry.id}`);
-      requestAnimationFrame(() => requestAnimationFrame(() => scrollAndFlash(entry.node, 'center')));
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (typeof window.PORTAL_SCROLL_AND_FLASH === 'function') window.PORTAL_SCROLL_AND_FLASH(entry.node, 'center');
+        else entry.node.scrollIntoView({ behavior:'smooth', block:'center' });
+      }));
       return;
     }
     entry.node.open = true;
     history.replaceState(null,'',`#${entry.id}`);
-    requestAnimationFrame(() => scrollAndFlash(entry.node, 'start'));
+    requestAnimationFrame(() => {
+      if (typeof window.PORTAL_SCROLL_AND_FLASH === 'function') window.PORTAL_SCROLL_AND_FLASH(entry.node, 'start');
+      else entry.node.scrollIntoView({ behavior:'smooth', block:'start' });
+    });
   };
 
   const activateIndex = index => {
     const entry = currentMatches[index];
-    if (entry) openEntry(entry);
+    if (!entry) return;
+    if (entry.kind === 'direct') {
+      hideSuggestions();
+      input.blur();
+      window.open(entry.url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    openInternal(entry);
   };
 
-  input.addEventListener('input',renderSuggestions);
-  input.addEventListener('focus',renderSuggestions);
-  input.addEventListener('keydown',event => {
+  input.addEventListener('input', renderSuggestions);
+  input.addEventListener('focus', renderSuggestions);
+  input.addEventListener('keydown', event => {
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       if (suggestions.hidden) renderSuggestions();
@@ -377,29 +481,37 @@
     }
   });
 
-  suggestions.addEventListener('mousemove',event => {
-    const button = event.target.closest('.suggestion[data-search-index]');
-    if (button) setActive(Number(button.dataset.searchIndex));
+  suggestions.addEventListener('mousemove', event => {
+    const node = event.target.closest('.suggestion[data-search-index]');
+    if (node) setActive(Number(node.dataset.searchIndex));
   });
-  suggestions.addEventListener('click',event => {
+
+  suggestions.addEventListener('click', event => {
+    const direct = event.target.closest('[data-direct-search-resource]');
+    if (direct) {
+      hideSuggestions();
+      input.blur();
+      return;
+    }
     const button = event.target.closest('.suggestion[data-search-index]');
     if (!button) return;
     event.preventDefault();
     event.stopPropagation();
     activateIndex(Number(button.dataset.searchIndex));
   });
-  document.addEventListener('click',event => {
+
+  document.addEventListener('click', event => {
     if (!event.target.closest('.search-shell')) hideSuggestions();
   });
 
-  document.addEventListener('keydown',event => {
+  document.addEventListener('keydown', event => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault();
       event.stopImmediatePropagation();
       input.focus();
       input.select();
     }
-  },true);
+  }, true);
 
   let backToTop = document.getElementById('back-to-top');
   if (!backToTop) {
@@ -412,30 +524,21 @@
     document.body.appendChild(backToTop);
   }
 
-  const updateBackToTop = () => backToTop.classList.toggle('is-visible',window.scrollY > 520);
+  const updateBackToTop = () => backToTop.classList.toggle('is-visible', window.scrollY > 520);
   updateBackToTop();
-  window.addEventListener('scroll',updateBackToTop,{passive:true});
-  backToTop.addEventListener('click',() => {
+  window.addEventListener('scroll', updateBackToTop, { passive:true });
+  backToTop.addEventListener('click', () => {
     document.querySelectorAll('.procedure[open]').forEach(procedure => { procedure.open = false; });
-    document.querySelectorAll('.portal-search-flash,.search-focus-flash,.global-search-flash').forEach(node => node.classList.remove('portal-search-flash','search-focus-flash','global-search-flash'));
+    window.PORTAL_CLEAR_FLASH?.();
     input.value = '';
     hideSuggestions();
     history.replaceState(null,'',`${location.pathname}${location.search}`);
-    window.scrollTo({top:0,behavior:'smooth'});
+    window.scrollTo({ top:0, behavior:'smooth' });
   });
 
   if (location.hash) {
     const id = decodeURIComponent(location.hash.slice(1));
-    const entry = entries.find(candidate => candidate.id === id);
-    if (entry) window.setTimeout(() => openEntry(entry),120);
-  }
-
-  /* Le fil d'actualités est indépendant du moteur de recherche. On le charge ici
-     parce que l'interface est déjà entièrement rendue à ce moment. */
-  if (!document.querySelector('script[data-school-news-ticker]')) {
-    const newsScript = document.createElement('script');
-    newsScript.src = 'news-ticker.js';
-    newsScript.dataset.schoolNewsTicker = 'true';
-    document.body.appendChild(newsScript);
+    const entry = internalEntries.find(candidate => candidate.id === id);
+    if (entry) window.setTimeout(() => openInternal(entry), 120);
   }
 })();
