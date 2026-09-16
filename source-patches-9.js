@@ -12,6 +12,16 @@
     'évaluation evaluation évaluations evaluations bulletin bulletins examens examen planification enseignement enseignant enseignants drive commun dossier dossiers'
   ].join(' ');
 
+  const DRIVE_BLOCK = `
+    <div class="callout" data-evaluation-drive-folders="true">
+      <strong>Dossiers du Drive commun :</strong>
+      <div class="links">
+        <a class="btn primary" href="https://drive.google.com/drive/folders/1LTgKPbES9IixST2V-jolWxA7s6SMV6jT" target="_blank" rel="noopener noreferrer">Nature et moments des évaluations</a>
+        <a class="btn" href="https://drive.google.com/drive/folders/18URlr-7b2TmnzZqL4TdOOGlNI2V7TfJW" target="_blank" rel="noopener noreferrer">Attentes et exigences</a>
+        <a class="btn" href="https://drive.google.com/drive/folders/15dleRqnqz8ZldCzWrogMAJONlVBta3IY" target="_blank" rel="noopener noreferrer">Planification annuelle</a>
+      </div>
+    </div>`;
+
   let card = root.querySelector('#evaluation-bulletin-planification');
   if (!card) {
     card = document.createElement('section');
@@ -19,7 +29,6 @@
     card.id = 'evaluation-bulletin-planification';
     card.dataset.title = 'Évaluation, bulletin et planification';
     card.dataset.icon = '📊';
-    card.dataset.keywords = KEYWORDS;
     card.innerHTML = `
       <div class="card-head">
         <div class="card-icon" aria-hidden="true">📊</div>
@@ -30,17 +39,11 @@
       </div>
       <div class="card-body">
         <p>Accès direct aux dossiers de référence du Drive commun pour préparer l’évaluation et la planification de l’année.</p>
-        <div class="callout" data-evaluation-drive-folders="true">
-          <strong>Dossiers du Drive commun :</strong>
-          <div class="links">
-            <a class="btn primary" href="https://drive.google.com/drive/folders/1LTgKPbES9IixST2V-jolWxA7s6SMV6jT" target="_blank" rel="noopener noreferrer">Nature et moments des évaluations</a>
-            <a class="btn" href="https://drive.google.com/drive/folders/18URlr-7b2TmnzZqL4TdOOGlNI2V7TfJW" target="_blank" rel="noopener noreferrer">Attentes et exigences</a>
-            <a class="btn" href="https://drive.google.com/drive/folders/15dleRqnqz8ZldCzWrogMAJONlVBta3IY" target="_blank" rel="noopener noreferrer">Planification annuelle</a>
-          </div>
-        </div>
       </div>`;
     root.appendChild(card);
-  } else {
-    card.dataset.keywords = `${card.dataset.keywords || ''} ${KEYWORDS}`.replace(/\s+/g, ' ').trim();
   }
+
+  card.dataset.keywords = `${card.dataset.keywords || ''} ${KEYWORDS}`.replace(/\s+/g, ' ').trim();
+  const body = card.querySelector('.card-body') || card;
+  if (!body.querySelector('[data-evaluation-drive-folders]')) body.insertAdjacentHTML('beforeend', DRIVE_BLOCK);
 })();
