@@ -21,7 +21,7 @@ test('le favicon historique reste chargé et accessible', async ({ page, request
   expect(errors).toEqual([]);
 });
 
-test('le halo de recherche reste arrondi et animé', async ({ page }) => {
+test('le halo de recherche reste arrondi, animé et fluide', async ({ page }) => {
   const errors = await openPortal(page);
   await page.locator('#guide-search').fill('plan de classe');
   const first = page.locator('#search-suggestions .suggestion').first();
@@ -29,7 +29,7 @@ test('le halo de recherche reste arrondi et animé', async ({ page }) => {
   await expect(first).toContainText(/Plan de classe/i);
   await first.click();
 
-  const target = page.locator('.portal-search-flash').first();
+  const target = page.locator('.portal-search-pulse').first();
   await expect(target).toBeVisible();
   const visual = await target.evaluate(node => {
     const style = getComputedStyle(node);
