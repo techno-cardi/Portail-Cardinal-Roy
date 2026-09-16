@@ -1,14 +1,14 @@
 /*
  * Garde-fou visuel critique du Portail Cardinal-Roy.
  *
- * Ce fichier est volontairement séparé des feuilles de style générales :
- * le halo de navigation par recherche ne doit plus dépendre d'une ancienne
- * version mise en cache de guide-updates.css.
+ * L’ancienne classe portal-search-flash sert maintenant uniquement de signal
+ * de navigation. L’animation visible est portée par portal-search-pulse afin
+ * qu’un vieux timeout ne puisse pas interrompre une nouvelle impulsion.
  */
 
-.procedure.portal-search-flash,
-.subresource-search-target.portal-search-flash,
-.category-heading.portal-search-flash{
+.procedure.portal-search-pulse,
+.subresource-search-target.portal-search-pulse,
+.category-heading.portal-search-pulse{
   position:relative!important;
   z-index:4!important;
   border-radius:14px!important;
@@ -17,7 +17,7 @@
   will-change:box-shadow,background-color,border-color;
 }
 
-.category-heading.portal-search-flash{
+.category-heading.portal-search-pulse{
   padding:10px 12px!important;
   margin:-10px -12px!important;
 }
@@ -28,24 +28,24 @@
     border-color:inherit;
     background-color:inherit;
   }
-  10%{
-    box-shadow:0 0 0 5px rgba(127,20,39,.34),0 10px 28px rgba(91,14,27,.20);
+  12%{
+    box-shadow:0 0 0 5px rgba(127,20,39,.30),0 10px 28px rgba(91,14,27,.18);
     border-color:#7f1427;
-    background-color:#fff1f4;
+    background-color:#fff2f5;
   }
-  25%{
-    box-shadow:0 0 0 10px rgba(127,20,39,.11),0 7px 20px rgba(91,14,27,.12);
-    border-color:#bd7f8e;
+  30%{
+    box-shadow:0 0 0 9px rgba(127,20,39,.10),0 8px 22px rgba(91,14,27,.11);
+    border-color:#b87584;
     background-color:#fff9fa;
   }
-  40%{
-    box-shadow:0 0 0 3px rgba(127,20,39,.30),0 11px 30px rgba(91,14,27,.18);
-    border-color:#7f1427;
-    background-color:#fff3f6;
+  48%{
+    box-shadow:0 0 0 4px rgba(127,20,39,.22),0 9px 25px rgba(91,14,27,.14);
+    border-color:#8f2f40;
+    background-color:#fff5f7;
   }
-  58%{
-    box-shadow:0 0 0 8px rgba(127,20,39,.09),0 5px 16px rgba(91,14,27,.09);
-    border-color:#c99da8;
+  68%{
+    box-shadow:0 0 0 7px rgba(127,20,39,.07),0 5px 16px rgba(91,14,27,.08);
+    border-color:#cca4ad;
     background-color:#fffafb;
   }
   100%{
@@ -56,9 +56,9 @@
 }
 
 @media(prefers-reduced-motion:reduce){
-  .procedure.portal-search-flash,
-  .subresource-search-target.portal-search-flash,
-  .category-heading.portal-search-flash{
+  .procedure.portal-search-pulse,
+  .subresource-search-target.portal-search-pulse,
+  .category-heading.portal-search-pulse{
     animation:none!important;
     outline:4px solid rgba(127,20,39,.42)!important;
     outline-offset:4px!important;
