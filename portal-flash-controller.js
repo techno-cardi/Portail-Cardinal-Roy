@@ -8,6 +8,12 @@
   let hashTimer = 0;
   const cleanupTimers = new WeakMap();
 
+  const visualTarget = target => {
+    if (!(target instanceof Element)) return null;
+    if (target.classList.contains('category-section')) return target.querySelector('.category-heading') || target;
+    return target;
+  };
+
   const clearTarget = target => {
     if (!(target instanceof Element)) return;
     const timer = cleanupTimers.get(target);
@@ -23,7 +29,8 @@
   };
 
   const restartFlash = target => {
-    if (!(target instanceof Element)) return;
+    target = visualTarget(target);
+    if (!target) return;
 
     clearAll(target);
     clearTarget(target);
@@ -43,7 +50,7 @@
 
   const scrollAndFlash = (target, block = 'start') => {
     if (!(target instanceof Element)) return;
-
+    const pulseTarget = visualTarget(target);
     const navigation = ++navigationSequence;
     let finished = false;
     let fallback = 0;
@@ -53,7 +60,7 @@
       finished = true;
       window.removeEventListener('scrollend', finish);
       if (fallback) window.clearTimeout(fallback);
-      if (navigation === navigationSequence) restartFlash(target);
+      if (navigation === navigationSequence) restartFlash(pulseTarget);
     };
 
     if ('onscrollend' in window) window.addEventListener('scrollend', finish, { once:true });
@@ -66,10 +73,7 @@
     if (!raw) return null;
     let id = raw;
     try { id = decodeURIComponent(raw); } catch {}
-    const node = document.getElementById(id);
-    if (!node) return null;
-    if (node.classList.contains('category-section')) return node.querySelector('.category-heading') || node;
-    return node;
+    return visualTarget(document.getElementById(id));
   };
 
   const flashCurrentHashAfterNavigation = (delay = 120) => {
@@ -83,7 +87,6 @@
 
   window.addEventListener('hashchange', () => flashCurrentHashAfterNavigation(120));
 
-  // Une ouverture manuelle d’une fiche déclenche elle aussi une seule impulsion.
   document.addEventListener('click', event => {
     if (event.target.closest('#back-to-top')) {
       clearAll();
