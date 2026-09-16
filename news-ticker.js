@@ -1,14 +1,15 @@
 (() => {
-  if (!document.querySelector('script[data-portal-integrity]')) {
-    const integrityScript = document.createElement('script');
-    integrityScript.src = 'portal-integrity.js';
-    integrityScript.dataset.portalIntegrity = 'true';
-    document.body.appendChild(integrityScript);
-  }
+  'use strict';
 
   const host = document.querySelector('.search-stage-inner');
   const intro = host?.querySelector('.search-intro');
   if (!host || !intro || document.getElementById('school-news-ticker')) return;
+
+  const TIMEZONE = 'America/Toronto';
+  const ROTATION_MS = 5000;
+  const REFRESH_MS = 5 * 60 * 1000;
+  const PED_DAY_URL = 'https://drive.google.com/file/d/1S7mZootQb4dddOYHKOU19_yyEqeWu3fG/view?usp=drivesdk';
+  const PED_DAY_EXPIRES_AT = Date.parse('2026-09-19T00:00:00-04:00');
 
   if (!document.getElementById('school-news-ticker-style')) {
     const style = document.createElement('style');
@@ -28,9 +29,16 @@
       }
       .school-news-track{
         min-width:0;display:flex;align-items:center;gap:8px;opacity:1;transform:translateY(0);
-        transition:opacity .22s ease,transform .22s ease
+        color:inherit;text-decoration:none;border-radius:7px;
+        transition:opacity .22s ease,transform .22s ease,background .15s ease,box-shadow .15s ease
       }
       .school-news-track.is-changing{opacity:0;transform:translateY(3px)}
+      .school-news-track.school-news-action{cursor:pointer;padding:3px 6px;margin:-3px -6px}
+      .school-news-track.school-news-action:hover,
+      .school-news-track.school-news-action:focus-visible{
+        background:rgba(255,255,255,.13);box-shadow:0 0 0 2px rgba(255,255,255,.18);outline:none
+      }
+      .school-news-track.school-news-action .school-news-text{text-decoration:underline;text-underline-offset:3px}
       .school-news-date{flex:0 0 auto;color:#f9dfe6;font-size:.82rem;font-weight:700;white-space:nowrap}
       .school-news-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem;font-weight:600}
       .school-news-controls{display:flex;align-items:center;gap:4px;white-space:nowrap}
@@ -45,22 +53,12 @@
           display:flex;flex-direction:column;align-items:center;gap:9px;
           min-height:0;margin-bottom:12px;padding:10px 12px 11px;text-align:center
         }
-        .school-news-badge{
-          align-self:center;justify-content:center;margin:0 auto;padding:5px 8px;font-size:.68rem
-        }
-        .school-news-track{
-          width:100%;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center
-        }
-        .school-news-date{
-          display:block;margin:0;color:#f9dfe6;font-size:.8rem;font-weight:800;white-space:normal;line-height:1.2
-        }
-        .school-news-text{
-          display:block;width:100%;max-width:100%;overflow:visible;text-overflow:clip;white-space:normal;
-          font-size:.95rem;font-weight:700;line-height:1.25;text-align:center
-        }
-        .school-news-controls{
-          width:100%;display:flex;justify-content:center;align-items:center;gap:10px;margin-top:1px
-        }
+        .school-news-badge{align-self:center;justify-content:center;margin:0 auto;padding:5px 8px;font-size:.68rem}
+        .school-news-track{width:100%;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center}
+        .school-news-track.school-news-action{width:auto;max-width:100%;padding:5px 8px;margin:-5px -8px}
+        .school-news-date{display:block;margin:0;color:#f9dfe6;font-size:.8rem;font-weight:800;white-space:normal;line-height:1.2}
+        .school-news-text{display:block;width:100%;max-width:100%;overflow:visible;text-overflow:clip;white-space:normal;font-size:.95rem;font-weight:700;line-height:1.25;text-align:center}
+        .school-news-controls{width:100%;display:flex;justify-content:center;align-items:center;gap:10px;margin-top:1px}
         .school-news-count{min-width:42px;font-size:.78rem;font-weight:700}
         .school-news-nav{width:36px;height:34px;border-radius:8px;font-size:1.12rem}
       }
@@ -69,9 +67,6 @@
     document.head.appendChild(style);
   }
 
-  const TIMEZONE = 'America/Toronto';
-  const ROTATION_MS = 5000;
-  const REFRESH_MS = 5 * 60 * 1000;
   const ticker = document.createElement('aside');
   ticker.id = 'school-news-ticker';
   ticker.className = 'school-news-ticker';
@@ -81,10 +76,10 @@
   ticker.setAttribute('data-refresh-ms', String(REFRESH_MS));
   ticker.innerHTML = `
     <span class="school-news-badge"><span aria-hidden="true">📅</span> Dates importantes</span>
-    <span class="school-news-track" aria-live="polite">
+    <a class="school-news-track" aria-live="polite">
       <span class="school-news-date"></span>
       <span class="school-news-text"></span>
-    </span>
+    </a>
     <span class="school-news-controls">
       <button class="school-news-nav school-news-prev" type="button" aria-label="Date importante précédente">‹</button>
       <span class="school-news-count" aria-hidden="true"></span>
@@ -105,9 +100,15 @@
   let transitionTimer = 0;
   let feedSignature = '';
 
+  const normalize = value => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+
   const dateKey = value => new Intl.DateTimeFormat('en-CA', {
-    timeZone: TIMEZONE,
-    year: 'numeric', month: '2-digit', day: '2-digit'
+    timeZone:TIMEZONE, year:'numeric', month:'2-digit', day:'2-digit'
   }).format(value);
 
   const localDayLabel = value => {
@@ -117,8 +118,7 @@
     if (key === dateKey(now)) return 'Aujourd’hui';
     if (key === dateKey(tomorrow)) return 'Demain';
     return new Intl.DateTimeFormat('fr-CA', {
-      timeZone: TIMEZONE,
-      weekday: 'short', day: 'numeric', month: 'short'
+      timeZone:TIMEZONE, weekday:'short', day:'numeric', month:'short'
     }).format(value).replace('.', '');
   };
 
@@ -127,18 +127,43 @@
     const start = new Date(item.start);
     if (Number.isNaN(start.getTime())) return '';
     return new Intl.DateTimeFormat('fr-CA', {
-      timeZone: TIMEZONE,
-      hour: 'numeric', minute: '2-digit'
+      timeZone:TIMEZONE, hour:'numeric', minute:'2-digit'
     }).format(start).replace(':', ' h ');
   };
 
+  const isSeptemberPedDay = item =>
+    normalize(item?.title) === 'pedagogique' && String(item?.start || '').startsWith('2026-09-18');
+
+  const actionUrl = item => isSeptemberPedDay(item) && Date.now() < PED_DAY_EXPIRES_AT ? PED_DAY_URL : '';
+
   const isUpcoming = item => {
+    if (isSeptemberPedDay(item) && Date.now() >= PED_DAY_EXPIRES_AT) return false;
     const end = new Date(item.end || item.start);
     if (Number.isNaN(end.getTime())) return false;
     return end.getTime() >= Date.now() - 15 * 60 * 1000;
   };
 
   const itemKey = item => `${item.title || ''}|${item.start || ''}|${item.end || ''}`;
+
+  const syncAction = item => {
+    const url = actionUrl(item);
+    track.classList.toggle('school-news-action', Boolean(url));
+    if (url) {
+      track.href = url;
+      track.target = '_blank';
+      track.rel = 'noopener noreferrer';
+      track.title = 'Ouvrir directement l’horaire de la journée pédagogique du 18 septembre';
+      track.dataset.pedDayLink = '2026-09-18';
+      track.dataset.pedDayUrl = url;
+    } else {
+      track.removeAttribute('href');
+      track.removeAttribute('target');
+      track.removeAttribute('rel');
+      track.removeAttribute('title');
+      delete track.dataset.pedDayLink;
+      delete track.dataset.pedDayUrl;
+    }
+  };
 
   const render = (nextIndex, animate = true) => {
     if (!items.length) return;
@@ -151,6 +176,7 @@
       textNode.textContent = item.title;
       countNode.textContent = `${index + 1}/${items.length}`;
       ticker.dataset.currentIndex = String(index);
+      syncAction(item);
       track.classList.remove('is-changing');
     };
     if (transitionTimer) window.clearTimeout(transitionTimer);
@@ -169,9 +195,7 @@
 
   const start = () => {
     stop();
-    if (!document.hidden && items.length > 1) {
-      timer = window.setInterval(() => render(index + 1), ROTATION_MS);
-    }
+    if (!document.hidden && items.length > 1) timer = window.setInterval(() => render(index + 1), ROTATION_MS);
   };
 
   const stopRefresh = () => {
@@ -181,9 +205,7 @@
 
   const startRefresh = () => {
     stopRefresh();
-    if (!document.hidden) {
-      refreshTimer = window.setInterval(() => load(), REFRESH_MS);
-    }
+    if (!document.hidden) refreshTimer = window.setInterval(() => load(), REFRESH_MS);
   };
 
   const browse = direction => {
@@ -196,17 +218,18 @@
       const currentItem = items[index];
       const currentKey = currentItem ? itemKey(currentItem) : '';
       const currentTitle = currentItem?.title || '';
-      const response = await fetch(`news-feed.json?v=${Date.now()}`, { cache: 'no-store' });
+      const response = await fetch(`news-feed.json?v=${Date.now()}`, { cache:'no-store' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const feed = await response.json();
       const nextItems = Array.isArray(feed.items) ? feed.items.filter(isUpcoming) : [];
-      nextItems.sort((a, b) => new Date(a.start) - new Date(b.start));
+      nextItems.sort((a,b) => new Date(a.start) - new Date(b.start));
 
       if (!nextItems.length) {
         items = [];
         feedSignature = '';
         ticker.hidden = true;
         ticker.dataset.itemCount = '0';
+        syncAction(null);
         stop();
         return;
       }
@@ -225,6 +248,7 @@
       ticker.dataset.itemCount = String(items.length);
       ticker.dataset.lastRefresh = String(Date.now());
       if (changed || !textNode.textContent) render(index, false);
+      else syncAction(items[index]);
       start();
     } catch (error) {
       console.warn('Dates importantes indisponibles :', error);
