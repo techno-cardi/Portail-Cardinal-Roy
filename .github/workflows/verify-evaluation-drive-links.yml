@@ -5,8 +5,8 @@ on:
     branches: [main]
     paths:
       - 'index.html'
-      - 'evaluation-drive-links.js'
-      - 'evaluation-search-direct.js'
+      - 'source-patches-9.js'
+      - 'global-search-flash.js'
       - 'tests/evaluation-drive-links.spec.js'
       - '.github/workflows/verify-evaluation-drive-links.yml'
   workflow_dispatch:
