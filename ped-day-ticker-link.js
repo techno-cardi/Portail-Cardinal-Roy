@@ -2,6 +2,7 @@
   'use strict';
 
   const RESOURCE_ID = 'journee-pedagogique-2026-09-18';
+  const RESOURCE_URL = 'https://drive.google.com/file/d/1S7mZootQb4dddOYHKOU19_yyEqeWu3fG/view?usp=drivesdk';
   const EXPIRES_AT = Date.parse('2026-09-19T00:00:00-04:00');
   const normalize = value => String(value || '')
     .normalize('NFD')
@@ -17,17 +18,11 @@
       && (date.includes('18 sept') || date.includes("aujourd'hui") || date.includes('aujourd’hui'));
   };
 
-  const openSchedule = event => {
-    const card = document.getElementById(RESOURCE_ID);
-    if (!card || Date.now() >= EXPIRES_AT) return;
+  const openFile = event => {
+    if (Date.now() >= EXPIRES_AT || !document.getElementById(RESOURCE_ID)) return;
     event?.preventDefault?.();
     event?.stopPropagation?.();
-    card.open = true;
-    history.replaceState(null, '', `#${RESOURCE_ID}`);
-    requestAnimationFrame(() => {
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      window.setTimeout(() => window.PORTAL_FLASH_TARGET?.(card), 500);
-    });
+    window.open(RESOURCE_URL, '_blank', 'noopener,noreferrer');
   };
 
   const wireTicker = ticker => {
@@ -43,7 +38,6 @@
       const expired = Date.now() >= EXPIRES_AT || !document.getElementById(RESOURCE_ID);
 
       if (targetSlide && expired) {
-        // L'événement du 18 septembre ne doit plus être visible après minuit.
         track.style.visibility = 'hidden';
         window.setTimeout(() => {
           next.click();
@@ -57,26 +51,26 @@
       if (clickable) {
         track.setAttribute('role', 'link');
         track.setAttribute('tabindex', '0');
-        track.setAttribute('title', "Ouvrir l’horaire de la journée pédagogique du 18 septembre");
+        track.setAttribute('title', 'Ouvrir directement l’horaire de la journée pédagogique du 18 septembre');
         track.dataset.pedDayLink = '2026-09-18';
+        track.dataset.pedDayUrl = RESOURCE_URL;
       } else {
         track.removeAttribute('role');
         track.removeAttribute('tabindex');
         track.removeAttribute('title');
         delete track.dataset.pedDayLink;
+        delete track.dataset.pedDayUrl;
       }
     };
 
     track.addEventListener('click', event => {
-      if (track.dataset.pedDayLink === '2026-09-18') openSchedule(event);
+      if (track.dataset.pedDayLink === '2026-09-18') openFile(event);
     });
     track.addEventListener('keydown', event => {
       if (track.dataset.pedDayLink !== '2026-09-18') return;
-      if (event.key === 'Enter' || event.key === ' ') openSchedule(event);
+      if (event.key === 'Enter' || event.key === ' ') openFile(event);
     });
 
-    // Le carrousel ne change que le texte de ses deux enfants. On n'observe pas
-    // les attributs ajoutés par ce correctif afin d'éviter toute boucle interne.
     new MutationObserver(sync).observe(track, { childList: true, subtree: true, characterData: true });
     sync();
     return true;
