@@ -4,6 +4,8 @@
   if (!source || !app) return;
 
   const FAVORITES_KEY = 'cardi-guide-favorites-v1';
+  const DRIVE_URL = 'https://drive.google.com/drive/folders/0ACOxqc1_36isUk9PVA';
+  const DRIVE_LOGO = 'assets/vendor/google-drive.svg';
 
   const stripLeadingEmoji = value => (value || '')
     .replace(/^[\s\p{Extended_Pictographic}\uFE0F•·–—→←⚡✓✔✕✖]+/gu, '')
@@ -149,8 +151,19 @@
     if (first) first.innerHTML = 'Connectez-vous à <strong>AppSP</strong> avec votre compte institutionnel Google ou Microsoft.';
   }
 
-  const preferredQuickIds = ['sortie','presences','avis','reservation','chromebook','courriels','planclasse'];
-  const quickItems = preferredQuickIds.map(id => items.find(item => item.id === id)).filter(Boolean);
+  const driveQuickItem = {
+    id:'drive-commun-quick',
+    title:'Drive commun',
+    subtitle:'Dossier partagé du personnel',
+    logoSrc:DRIVE_LOGO,
+    logoAlt:'Logo Google Drive',
+    externalUrl:DRIVE_URL,
+    dataQuickResource:'drive-commun'
+  };
+  const preferredQuickIds = ['sortie','avis','reservation','chromebook','courriels','planclasse'];
+  const quickItems = [items.find(item => item.id === 'sortie'), driveQuickItem]
+    .concat(preferredQuickIds.slice(1).map(id => items.find(item => item.id === id)))
+    .filter(Boolean);
   const launchItem = {
     id:'page-lancement-cardinal-roy',
     title:'Page de lancement Cardinal-Roy',
@@ -162,7 +175,7 @@
   };
   quickItems.push(launchItem);
   items.forEach(item => {
-    if (quickItems.length < 8 && !quickItems.includes(item) && item.id !== 'pi') quickItems.push(item);
+    if (quickItems.length < 8 && !quickItems.includes(item) && item.id !== 'pi' && item.id !== 'presences') quickItems.push(item);
   });
 
   const realApps = [];
@@ -247,7 +260,7 @@
           </div>
           <div class="quick-links">
             ${quickItems.map(item => item.externalUrl
-              ? `<a href="${escapeHtml(item.externalUrl)}" target="_blank" rel="noopener noreferrer">${visualFor(item,'quick-visual')}<span class="quick-label">${escapeHtml(item.title)}</span><span aria-hidden="true">↗</span></a>`
+              ? `<a href="${escapeHtml(item.externalUrl)}" target="_blank" rel="noopener noreferrer"${item.dataQuickResource ? ` data-quick-resource="${escapeHtml(item.dataQuickResource)}"` : ''}>${visualFor(item,'quick-visual')}<span class="quick-label">${escapeHtml(item.title)}</span><span aria-hidden="true">↗</span></a>`
               : `<a href="#${item.id}">${visualFor(item,'quick-visual')}<span class="quick-label">${escapeHtml(item.title)}</span><span aria-hidden="true">→</span></a>`
             ).join('')}
           </div>
@@ -310,13 +323,9 @@
     categoryHost.appendChild(section);
   });
 
-  const input = document.getElementById('guide-search');
-  const suggestions = document.getElementById('search-suggestions');
-  const status = document.getElementById('search-status');
   const favoritesArea = document.getElementById('favorites-area');
   const favoriteLinks = document.getElementById('favorite-links');
   const favoritesCount = document.getElementById('favorites-count');
-
   const itemById = new Map(items.map(item => [item.id,item]));
 
   const syncFavoriteButtons = () => {
@@ -354,64 +363,11 @@
     if (!target?.classList.contains('procedure')) return;
     target.open = true;
     history.replaceState(null, '', `#${id}`);
-    requestAnimationFrame(() => target.scrollIntoView({ behavior:'smooth', block:'start' }));
+    requestAnimationFrame(() => {
+      if (typeof window.PORTAL_SCROLL_AND_FLASH === 'function') window.PORTAL_SCROLL_AND_FLASH(target, 'start');
+      else target.scrollIntoView({ behavior:'smooth', block:'start' });
+    });
   };
-
-  const searchMatches = query => {
-    const q = normalize(query);
-    if (!q) return [];
-    const tokens = q.split(' ').filter(Boolean);
-    return items
-      .filter(item => tokens.every(token => item.haystack.includes(token)))
-      .sort((a,b) => {
-        const at = normalize(a.title);
-        const bt = normalize(b.title);
-        const as = at.startsWith(q) ? 0 : at.includes(q) ? 1 : 2;
-        const bs = bt.startsWith(q) ? 0 : bt.includes(q) ? 1 : 2;
-        return as - bs || a.title.localeCompare(b.title,'fr');
-      })
-      .slice(0,7);
-  };
-
-  const hideSuggestions = () => {
-    suggestions.hidden = true;
-    suggestions.innerHTML = '';
-    input.setAttribute('aria-expanded','false');
-    status.textContent = '';
-  };
-
-  const renderSuggestions = () => {
-    const matches = searchMatches(input.value);
-    if (!input.value.trim()) {
-      hideSuggestions();
-      return;
-    }
-    input.setAttribute('aria-expanded','true');
-    suggestions.hidden = false;
-    status.textContent = matches.length ? `${matches.length} suggestion${matches.length > 1 ? 's' : ''}` : 'Aucune suggestion';
-    suggestions.innerHTML = matches.length
-      ? matches.map((item,index) => `<button type="button" class="suggestion" role="option" data-open-id="${escapeHtml(item.id)}" data-suggestion-index="${index}">${visualFor(item,'suggestion-visual')}<span class="suggestion-copy"><strong>${escapeHtml(item.title)}</strong>${item.subtitle ? `<small>${escapeHtml(item.subtitle)}</small>` : ''}</span><span class="suggestion-arrow" aria-hidden="true">→</span></button>`).join('')
-      : `<div class="no-suggestion">Essayez un autre mot : nom d’application, tâche, élève, absence, réservation…</div>`;
-  };
-
-  input.addEventListener('input', renderSuggestions);
-  input.addEventListener('focus', renderSuggestions);
-  input.addEventListener('keydown', event => {
-    if (event.key === 'Enter') {
-      const first = searchMatches(input.value)[0];
-      if (first) {
-        event.preventDefault();
-        hideSuggestions();
-        input.blur();
-        openTarget(first.id);
-      }
-    }
-    if (event.key === 'Escape') {
-      input.value = '';
-      hideSuggestions();
-      input.blur();
-    }
-  });
 
   document.addEventListener('click', event => {
     const favorite = event.target.closest('[data-favorite-id]');
@@ -425,30 +381,17 @@
     const openButton = event.target.closest('[data-open-id]');
     if (openButton) {
       event.preventDefault();
-      hideSuggestions();
       openTarget(openButton.dataset.openId);
       return;
     }
 
     const anchor = event.target.closest('a[href^="#"]');
-    if (anchor) {
-      const id = decodeURIComponent(anchor.getAttribute('href').slice(1));
-      const target = document.getElementById(id);
-      if (target?.classList.contains('procedure')) {
-        event.preventDefault();
-        openTarget(id);
-        return;
-      }
-    }
-
-    if (!event.target.closest('.search-shell')) hideSuggestions();
-  });
-
-  document.addEventListener('keydown', event => {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+    if (!anchor) return;
+    const id = decodeURIComponent(anchor.getAttribute('href').slice(1));
+    const target = document.getElementById(id);
+    if (target?.classList.contains('procedure')) {
       event.preventDefault();
-      input.focus();
-      input.select();
+      openTarget(id);
     }
   });
 
