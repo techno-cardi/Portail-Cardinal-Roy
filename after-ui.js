@@ -1,8 +1,4 @@
 (() => {
-  const input = document.getElementById('guide-search');
-  const suggestions = document.getElementById('search-suggestions');
-  if (!input || !suggestions) return;
-
   const CHROME_LOGO_URL = 'assets/vendor/chrome.svg';
   const CSSC_LOGO_URL = 'assets/vendor/cssc.png';
   const RESERVATION_GUIDE = 'https://docs.google.com/document/d/1xTT24JTumbFbWY8vWt3aRSkJS8RLZtEIMuvU9nwRpsc/edit?usp=drive_link';
@@ -19,9 +15,6 @@
     .replace(/[^a-z0-9+ -]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-
-  const escapeHtml = value => String(value || '')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
   const correctMozaik = root => {
     if (!root) return;
@@ -61,8 +54,12 @@
     const href = appLinks.get(key);
     if (!href) return;
     const link = document.createElement('a');
-    link.href = href; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.className = 'inline-app-link';
-    strong.replaceWith(link); link.appendChild(strong);
+    link.href = href;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.className = 'inline-app-link';
+    strong.replaceWith(link);
+    link.appendChild(strong);
   });
 
   const c2atom = document.getElementById('c2atom');
@@ -72,8 +69,12 @@
       body.querySelectorAll('strong').forEach(strong => {
         if (strong.closest('a') || !normalize(strong.textContent).includes('c2atom')) return;
         const link = document.createElement('a');
-        link.href = C2ATOM_URL; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.className = 'inline-app-link';
-        strong.replaceWith(link); link.appendChild(strong);
+        link.href = C2ATOM_URL;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.className = 'inline-app-link';
+        strong.replaceWith(link);
+        link.appendChild(strong);
       });
       if (!body.querySelector('.c2atom-open-box')) {
         const box = document.createElement('div');
@@ -92,11 +93,26 @@
     const body = avis.querySelector('.procedure-content');
     if (body) {
       const login = [...body.querySelectorAll('a')].find(a => /mozaik|portail|connexion/i.test(`${a.textContent} ${a.href}`));
-      if (login) { login.href='https://mozaikportail.ca/'; login.target='_blank'; login.rel='noopener noreferrer'; login.textContent='Connexion Mozaïk'; login.classList.add('btn','primary'); }
-      const seuilsLink = [...body.querySelectorAll('a')].find(a => normalize(a.textContent).includes('systeme d encadrement') || (a.getAttribute('href')||'').includes('1x3FtPGjXHO98NtOc2zvgWUVCVqPhZFcP'));
-      if (seuilsLink) { seuilsLink.href=SEUILS_ACTIONS_URL; seuilsLink.target='_blank'; seuilsLink.rel='noopener noreferrer'; seuilsLink.textContent='Seuils et actions à poser'; }
+      if (login) {
+        login.href = 'https://mozaikportail.ca/';
+        login.target = '_blank';
+        login.rel = 'noopener noreferrer';
+        login.textContent = 'Connexion Mozaïk';
+        login.classList.add('btn','primary');
+      }
+      const seuilsLink = [...body.querySelectorAll('a')].find(a =>
+        normalize(a.textContent).includes('systeme d encadrement') || (a.getAttribute('href') || '').includes('1x3FtPGjXHO98NtOc2zvgWUVCVqPhZFcP')
+      );
+      if (seuilsLink) {
+        seuilsLink.href = SEUILS_ACTIONS_URL;
+        seuilsLink.target = '_blank';
+        seuilsLink.rel = 'noopener noreferrer';
+        seuilsLink.textContent = 'Seuils et actions à poser';
+      }
       body.querySelectorAll('p,li,.callout').forEach(el => {
-        if (normalize(el.textContent).includes('selon l intention et les regles de l ecole')) el.innerHTML = el.innerHTML.replace(/ou partagée dans ce système\.?/i, 'ou partagée aux parents.');
+        if (normalize(el.textContent).includes('selon l intention et les regles de l ecole')) {
+          el.innerHTML = el.innerHTML.replace(/ou partagée dans ce système\.?/i, 'ou partagée aux parents.');
+        }
       });
     }
   }
@@ -104,7 +120,12 @@
   const tourtable = document.getElementById('tourtable');
   if (tourtable) {
     const body = tourtable.querySelector('.procedure-content');
-    if (body) body.innerHTML = body.innerHTML.replace(/un\s+délai\s+généralement\s+de\s+7\s+jours/gi,'un délai de 7 jours').replace(/généralement\s+de\s+7\s+jours/gi,'de 7 jours').replace(/généralement\s+7\s+jours/gi,'7 jours');
+    if (body) {
+      body.innerHTML = body.innerHTML
+        .replace(/un\s+délai\s+généralement\s+de\s+7\s+jours/gi,'un délai de 7 jours')
+        .replace(/généralement\s+de\s+7\s+jours/gi,'de 7 jours')
+        .replace(/généralement\s+7\s+jours/gi,'7 jours');
+    }
   }
 
   [...document.querySelectorAll('.procedure')].forEach(procedure => {
@@ -114,18 +135,43 @@
     if (!body) return;
     let guide = [...body.querySelectorAll('a')].find(a => /guide.*systeme de reservation|systeme de reservation.*guide/.test(normalize(a.textContent)));
     const tutorialLinks = [...body.querySelectorAll('a')].filter(a => /tutoriel.*reservation|voir le tutoriel de reservation/.test(normalize(a.textContent)));
-    if (!guide && tutorialLinks.length) { guide=tutorialLinks.shift(); guide.textContent='Guide - Système de réservation'; }
-    if (guide) { guide.href=RESERVATION_GUIDE; guide.target='_blank'; guide.rel='noopener noreferrer'; }
-    tutorialLinks.forEach(a => { const box=a.closest('.callout,.tutorial-box,.tutoriel-box'); if (box && normalize(box.textContent)===normalize(a.textContent)) box.remove(); else a.remove(); });
+    if (!guide && tutorialLinks.length) {
+      guide = tutorialLinks.shift();
+      guide.textContent = 'Guide - Système de réservation';
+    }
+    if (guide) {
+      guide.href = RESERVATION_GUIDE;
+      guide.target = '_blank';
+      guide.rel = 'noopener noreferrer';
+    }
+    tutorialLinks.forEach(a => {
+      const box = a.closest('.callout,.tutorial-box,.tutoriel-box');
+      if (box && normalize(box.textContent) === normalize(a.textContent)) box.remove();
+      else a.remove();
+    });
   });
 
   const nav = document.querySelector('.section-nav-inner');
-  if (nav) [...nav.querySelectorAll('a[href^="#section-"]')].forEach(link => {
-    const id = decodeURIComponent(link.getAttribute('href').slice(1));
-    const target = document.getElementById(id);
-    if (!target) { link.remove(); return; }
-    link.addEventListener('click', event => { event.preventDefault(); target.scrollIntoView({behavior:'smooth',block:'start'}); history.replaceState(null,'',`#${id}`); });
-  });
+  if (nav) {
+    [...nav.querySelectorAll('a[href^="#section-"]')].forEach(link => {
+      const id = decodeURIComponent(link.getAttribute('href').slice(1));
+      if (!document.getElementById(id)) link.remove();
+    });
+
+    // Un seul gestionnaire délégué suffit, y compris pour les sections ajoutées
+    // plus tard par les correctifs structurels.
+    nav.addEventListener('click', event => {
+      const link = event.target.closest('a[href^="#section-"]');
+      if (!link || !nav.contains(link)) return;
+      const id = decodeURIComponent(link.getAttribute('href').slice(1));
+      const target = document.getElementById(id);
+      if (!target) return;
+      event.preventDefault();
+      history.replaceState(null, '', `#${id}`);
+      if (typeof window.PORTAL_SCROLL_AND_FLASH === 'function') window.PORTAL_SCROLL_AND_FLASH(target, 'start');
+      else target.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  }
 
   const chromeProcedure = [...document.querySelectorAll('.procedure')].find(node => {
     const title = normalize(node.querySelector('.procedure-title')?.textContent || '');
@@ -141,14 +187,22 @@
     shortcutNote.appendChild(chromeBlock);
 
     const dialog = document.createElement('dialog');
-    dialog.id='chrome-help-dialog'; dialog.className='chrome-help-dialog'; dialog.setAttribute('aria-labelledby','chrome-help-title');
+    dialog.id = 'chrome-help-dialog';
+    dialog.className = 'chrome-help-dialog';
+    dialog.setAttribute('aria-labelledby','chrome-help-title');
     dialog.innerHTML = `<div class="chrome-dialog-header"><div class="chrome-dialog-title"><img src="${CHROME_LOGO_URL}" alt=""><div><h2 id="chrome-help-title">Bien démarrer avec Google Chrome</h2><p>Les quelques réglages qui font vraiment gagner du temps au quotidien.</p></div></div><button type="button" class="chrome-dialog-close" aria-label="Fermer">×</button></div><div class="chrome-dialog-body"><section><h3>Pourquoi utiliser Chrome?</h3><p>Chrome est recommandé pour le travail scolaire parce qu’il s’intègre bien avec votre compte Google et les outils utilisés à l’école, comme Drive, Classroom et Agenda. Avec votre profil scolaire et la synchronisation permise par l’organisation, vos favoris et certains réglages peuvent aussi vous suivre d’un appareil à l’autre.</p></section><section><h3>1. Afficher la barre de favoris</h3><p>Faites <span class="key-row"><kbd>Ctrl</kbd><span>+</span><kbd>Shift</kbd><span>+</span><kbd>B</kbd></span>.</p><p>Vous pouvez aussi cliquer sur les <strong>trois petits points ⋮</strong> en haut à droite, puis choisir <strong>Favoris et listes</strong> → <strong>Afficher la barre de favoris</strong>.</p></section><section><h3>2. Ajouter un site en le glissant</h3><p>Ouvrez le site que vous voulez garder. À gauche de l’adresse, cliquez sur l’icône du site et gardez le bouton de la souris enfoncé. Faites ensuite glisser l’icône jusque dans la barre de favoris, puis relâchez.</p></section><section><h3>3. Ajouter un site avec le clavier</h3><p>Sur le site à enregistrer, faites <span class="key-row"><kbd>Ctrl</kbd><span>+</span><kbd>D</kbd></span>, choisissez <strong>Barre de favoris</strong> comme dossier, puis cliquez sur <strong>Terminé</strong>.</p></section><div class="chrome-dialog-actions"><a class="btn primary" href="https://appsp.ca/lancement/cardinal-roy/" target="_blank" rel="noopener noreferrer">Ouvrir la page de lancement Cardinal-Roy</a><button type="button" class="btn chrome-open-procedure">Voir la fiche Chrome complète</button></div></div>`;
     document.body.appendChild(dialog);
-    const closeDialog=()=>dialog.open&&dialog.close();
-    document.getElementById('chrome-help-open')?.addEventListener('click',()=>dialog.showModal());
-    dialog.querySelector('.chrome-dialog-close')?.addEventListener('click',closeDialog);
-    dialog.addEventListener('click',event=>{ if(event.target===dialog) closeDialog(); });
-    dialog.querySelector('.chrome-open-procedure')?.addEventListener('click',()=>{ closeDialog(); chromeProcedure.open=true; history.replaceState(null,'',`#${chromeProcedure.id}`); requestAnimationFrame(()=>chromeProcedure.scrollIntoView({behavior:'smooth',block:'start'})); });
+    const closeDialog = () => dialog.open && dialog.close();
+    document.getElementById('chrome-help-open')?.addEventListener('click', () => dialog.showModal());
+    dialog.querySelector('.chrome-dialog-close')?.addEventListener('click', closeDialog);
+    dialog.addEventListener('click', event => { if (event.target === dialog) closeDialog(); });
+    dialog.querySelector('.chrome-open-procedure')?.addEventListener('click', () => {
+      closeDialog();
+      chromeProcedure.open = true;
+      history.replaceState(null, '', `#${chromeProcedure.id}`);
+      if (typeof window.PORTAL_SCROLL_AND_FLASH === 'function') window.PORTAL_SCROLL_AND_FLASH(chromeProcedure, 'start');
+      else chromeProcedure.scrollIntoView({behavior:'smooth', block:'start'});
+    });
   }
 
   const applications = document.getElementById('applications-cssc');
@@ -203,131 +257,15 @@
     box.classList.add('subresource-search-target');
     box.dataset.searchLabel = resource.title;
     box.dataset.searchKeywords = resource.keywords;
-    resource.element = box;
-    resource.haystack = normalize(`${resource.title} ${resource.keywords} ${box.textContent}`);
-    const img = box.querySelector('.resource-logo img');
-    resource.logo = img?.src || '';
-    resource.icon = img ? '' : (box.querySelector('.resource-logo')?.textContent.trim() || '🔎');
   });
 
-  const style = document.createElement('style');
-  style.id = 'subresource-search-style';
-  style.textContent = `
-    #applications-cssc .resource-box{scroll-margin-top:120px;position:relative}
-    #applications-cssc .resource-box.search-focus-flash{animation:subresourceFlash 2.25s ease-in-out}
-    @keyframes subresourceFlash{
-      0%{box-shadow:0 5px 15px rgba(53,31,36,.06);border-color:#e1d8da;background:#fff;transform:translateY(0)}
-      16%{box-shadow:0 0 0 6px rgba(127,20,39,.20),0 12px 28px rgba(76,13,29,.18);border-color:#7f1427;background:#fff3f6;transform:translateY(-2px)}
-      36%{box-shadow:0 0 0 2px rgba(127,20,39,.08),0 8px 20px rgba(53,31,36,.10);border-color:#c79ca6;background:#fff;transform:translateY(0)}
-      56%{box-shadow:0 0 0 6px rgba(127,20,39,.18),0 12px 28px rgba(76,13,29,.16);border-color:#7f1427;background:#fff5f7;transform:translateY(-1px)}
-      100%{box-shadow:0 5px 15px rgba(53,31,36,.06);border-color:#e1d8da;background:#fff;transform:translateY(0)}
-    }
-    .suggestion.subresource-suggestion{background:#fffafc}
-    .suggestion.subresource-suggestion:hover,.suggestion.subresource-suggestion:focus-visible{background:#f8eaee}
-    .cssc-procedure-logo img{object-fit:contain!important;padding:3px!important;background:#fff}
-  `;
-  if (!document.getElementById(style.id)) document.head.appendChild(style);
-
-  const getSubMatches = query => {
-    const q = normalize(query);
-    if (!q || q.length < 2) return [];
-    const tokens = q.split(/\s+/).filter(Boolean);
-    return SUBRESOURCES
-      .filter(resource => resource.element && tokens.every(token => resource.haystack.includes(token)))
-      .map(resource => {
-        const title = normalize(resource.title);
-        let score = 0;
-        if (title === q) score += 200;
-        else if (title.startsWith(q)) score += 150;
-        else if (title.includes(q)) score += 120;
-        if (resource.haystack.includes(q)) score += 85;
-        tokens.forEach(token => {
-          if (title.includes(token)) score += 25;
-          if (normalize(resource.keywords).includes(token)) score += 18;
-        });
-        return {...resource, score};
-      })
-      .sort((a,b) => b.score - a.score || a.title.localeCompare(b.title,'fr'))
-      .slice(0,5);
-  };
-
-  const subVisual = resource => resource.logo
-    ? `<span class="suggestion-visual real-logo"><img src="${escapeHtml(resource.logo)}" alt=""></span>`
-    : `<span class="suggestion-visual emoji-visual" aria-hidden="true">${escapeHtml(resource.icon || '🔎')}</span>`;
-
-  const renderEnhancedSuggestions = () => {
-    const q = input.value.trim();
-    if (!q) return;
-    const matches = getSubMatches(q);
-    if (!matches.length) return;
-
-    [...suggestions.querySelectorAll('.suggestion[data-open-id="applications-cssc"]')].forEach(node => node.remove());
-    suggestions.querySelectorAll('.subresource-suggestion').forEach(node => node.remove());
-
-    const fragment = document.createDocumentFragment();
-    matches.forEach((resource,index) => {
-      const button = document.createElement('button');
-      button.type='button';
-      button.className='suggestion subresource-suggestion';
-      button.setAttribute('role','option');
-      button.dataset.subresourceId=resource.id;
-      button.dataset.subresourceIndex=String(index);
-      button.innerHTML = `${subVisual(resource)}<span class="suggestion-copy"><strong>${escapeHtml(resource.title)}</strong><small>Applications CSSC</small></span><span class="suggestion-arrow" aria-hidden="true">→</span>`;
-      fragment.appendChild(button);
-    });
-    suggestions.prepend(fragment);
-
-    const all = [...suggestions.querySelectorAll('.suggestion')];
-    all.slice(7).forEach(node => node.remove());
-    suggestions.hidden=false;
-    input.setAttribute('aria-expanded','true');
-    const status=document.getElementById('search-status');
-    const count=suggestions.querySelectorAll('.suggestion').length;
-    if (status) status.textContent=`${count} suggestion${count>1?'s':''}`;
-  };
-
-  input.addEventListener('input', () => queueMicrotask(renderEnhancedSuggestions));
-  input.addEventListener('focus', () => queueMicrotask(renderEnhancedSuggestions));
-
-  const openSubresource = id => {
-    const target = document.getElementById(id);
-    if (!target) return;
-    applications.open = true;
-    suggestions.hidden=true;
-    suggestions.innerHTML='';
-    input.setAttribute('aria-expanded','false');
-    const status=document.getElementById('search-status');
-    if (status) status.textContent='';
-    input.blur();
-    history.replaceState(null,'',`#${id}`);
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      target.scrollIntoView({behavior:'smooth',block:'center'});
-      target.classList.remove('search-focus-flash');
-      void target.offsetWidth;
-      setTimeout(() => target.classList.add('search-focus-flash'), 220);
-      setTimeout(() => target.classList.remove('search-focus-flash'), 2800);
-    }));
-  };
-
-  document.addEventListener('click', event => {
-    const button = event.target.closest('[data-subresource-id]');
-    if (!button) return;
-    event.preventDefault();
-    event.stopPropagation();
-    openSubresource(button.dataset.subresourceId);
-  }, true);
-
-  input.addEventListener('keydown', event => {
-    if (event.key !== 'Enter') return;
-    const first = getSubMatches(input.value)[0];
-    if (!first) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    openSubresource(first.id);
-  }, true);
-
-  if (location.hash) {
-    const id = decodeURIComponent(location.hash.slice(1));
-    if (SUBRESOURCES.some(resource => resource.id === id)) setTimeout(() => openSubresource(id), 140);
+  if (!document.getElementById('subresource-search-style')) {
+    const style = document.createElement('style');
+    style.id = 'subresource-search-style';
+    style.textContent = `
+      #applications-cssc .resource-box{scroll-margin-top:120px;position:relative}
+      .cssc-procedure-logo img{object-fit:contain!important;padding:3px!important;background:#fff}
+    `;
+    document.head.appendChild(style);
   }
 })();
