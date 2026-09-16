@@ -75,7 +75,9 @@
       if (event.key === 'Enter' || event.key === ' ') openSchedule(event);
     });
 
-    new MutationObserver(sync).observe(track, { childList: true, subtree: true, characterData: true, attributes: true });
+    // Le carrousel ne change que le texte de ses deux enfants. On n'observe pas
+    // les attributs ajoutés par ce correctif afin d'éviter toute boucle interne.
+    new MutationObserver(sync).observe(track, { childList: true, subtree: true, characterData: true });
     sync();
     return true;
   };
