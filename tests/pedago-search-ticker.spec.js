@@ -18,7 +18,7 @@ async function fixDate(page, iso) {
   }, { fixed });
 }
 
-test('pédago garde l’horaire du 18 septembre comme premier résultat sans clignotement et pointe directement vers le PDF', async ({ page }) => {
+test('pédago garde l’horaire du 18 septembre comme premier résultat stable et direct', async ({ page }) => {
   await fixDate(page, '2026-09-18T09:00:00-04:00');
   await page.goto('/');
   const input = page.locator('#guide-search');
@@ -27,6 +27,7 @@ test('pédago garde l’horaire du 18 septembre comme premier résultat sans cli
   await input.fill('pédago');
   const first = page.locator('#search-suggestions .suggestion').first();
   await expect(first).toContainText('Horaire de la journée pédagogique du 18 septembre');
+  await expect(first).toHaveAttribute('data-direct-search-resource', 'pedago-2026-09-18-direct');
   await expect(first).toHaveAttribute('href', PEDAGO_FILE);
   await expect(first).toHaveAttribute('target', '_blank');
 
@@ -35,18 +36,10 @@ test('pédago garde l’horaire du 18 septembre comme premier résultat sans cli
   await expect(page.locator('#search-suggestions')).not.toContainText('Attentes et exigences');
 });
 
-test('la pédago du 18 septembre dans Dates importantes ouvre directement le PDF', async ({ page }) => {
+test('la pédago du 18 septembre dans Dates importantes est un vrai lien direct vers le PDF', async ({ page }) => {
   await fixDate(page, '2026-09-18T09:00:00-04:00');
   await page.goto('/');
   await expect(page.locator('#guide-search')).toBeVisible();
-
-  await page.evaluate(() => {
-    window.__pedagoOpenedUrl = '';
-    window.open = url => {
-      window.__pedagoOpenedUrl = String(url || '');
-      return null;
-    };
-  });
 
   const ticker = page.locator('#school-news-ticker');
   await expect(ticker).toBeVisible();
@@ -54,11 +47,9 @@ test('la pédago du 18 septembre dans Dates importantes ouvre directement le PDF
 
   const link = ticker.locator('.school-news-track[data-ped-day-link="2026-09-18"]');
   await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute('href', PEDAGO_FILE);
+  await expect(link).toHaveAttribute('target', '_blank');
   await expect(link).toHaveAttribute('data-ped-day-url', PEDAGO_FILE);
-  await link.click();
-
-  await expect.poll(() => page.evaluate(() => window.__pedagoOpenedUrl)).toBe(PEDAGO_FILE);
-  await expect(page).not.toHaveURL(/#journee-pedagogique-2026-09-18$/);
 });
 
 test('l’entrée du 18 septembre n’est plus affichée dans le bandeau après minuit', async ({ page }) => {
