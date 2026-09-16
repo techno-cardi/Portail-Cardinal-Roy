@@ -2,6 +2,7 @@
   'use strict';
 
   const RESOURCE_ID = 'journee-pedagogique-2026-09-18';
+  const RESOURCE_URL = 'https://drive.google.com/file/d/1S7mZootQb4dddOYHKOU19_yyEqeWu3fG/view?usp=drivesdk';
   const suggestions = document.getElementById('search-suggestions');
   const status = document.getElementById('search-status');
   if (!suggestions) return;
@@ -34,35 +35,30 @@
 
     suggestions.hidden = false;
     suggestions.innerHTML = `
-      <button type="button" class="suggestion" role="option" aria-selected="false" data-pedago-search-result="${RESOURCE_ID}">
+      <a class="suggestion" role="option" aria-selected="false"
+         data-pedago-search-result="${RESOURCE_ID}"
+         href="${RESOURCE_URL}" target="_blank" rel="noopener noreferrer">
         <span class="suggestion-visual emoji-visual" aria-hidden="true">🗓️</span>
         <span class="suggestion-copy">
           <strong>${title}</strong>
           <small>${subtitle}</small>
         </span>
-        <span class="suggestion-arrow" aria-hidden="true">→</span>
-      </button>`;
+        <span class="suggestion-arrow" aria-hidden="true">↗</span>
+      </a>`;
     input.setAttribute('aria-expanded', 'true');
     if (status) status.textContent = '1 suggestion';
     return true;
   };
 
-  const openPedago = event => {
-    const card = getCard();
-    if (!card) return;
+  const openFile = event => {
     event?.preventDefault?.();
     event?.stopPropagation?.();
-    card.open = true;
-    history.replaceState(null, '', `#${RESOURCE_ID}`);
-    requestAnimationFrame(() => {
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      window.setTimeout(() => window.PORTAL_FLASH_TARGET?.(card), 500);
-    });
+    window.open(RESOURCE_URL, '_blank', 'noopener,noreferrer');
   };
 
-  // La page avait deux moteurs qui réécrivaient le même menu de suggestions.
-  // Pour les recherches « péd... », on prend la main en phase capture afin que
-  // le résultat ne soit plus remplacé une fraction de seconde plus tard.
+  // La page a deux moteurs qui écrivent dans le même menu. Pour les recherches
+  // « péd... », on prend la main en phase capture afin que le bon résultat reste
+  // stable pendant la saisie.
   document.addEventListener('input', event => {
     const input = getInput();
     if (event.target !== input || !isPedagoQuery(input.value)) return;
@@ -79,7 +75,7 @@
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
-      openPedago(event);
+      openFile(event);
       return;
     }
 
@@ -99,6 +95,6 @@
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
-    openPedago(event);
+    openFile(event);
   }, true);
 })();
