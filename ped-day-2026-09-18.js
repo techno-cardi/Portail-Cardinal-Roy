@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.0';
+  const VERSION = '1.1';
   const RESOURCE_ID = 'journee-pedagogique-2026-09-18';
   const RESOURCE_URL = 'https://drive.google.com/file/d/1S7mZootQb4dddOYHKOU19_yyEqeWu3fG/view?usp=drivesdk';
   const EXPIRES_AT = Date.parse('2026-09-19T00:00:00-04:00');
@@ -85,6 +85,10 @@
     window.setTimeout(() => {
       remove();
       window.PORTAL_PED_DAY_2026_09_18 = 'expired';
+      // Le moteur de recherche construit son index au chargement. Un rechargement
+      // unique à l'expiration garantit que la fiche disparaît aussi des résultats
+      // si le portail est resté ouvert pendant le passage au samedi 19 septembre.
+      window.setTimeout(() => window.location.reload(), 100);
     }, delay + 250);
   }
 })();
