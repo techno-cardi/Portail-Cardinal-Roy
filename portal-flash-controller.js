@@ -1,9 +1,9 @@
 (() => {
   'use strict';
 
-  const CLASS_NAME = 'portal-search-flash';
-  const FLASH_MS = 2900;
-  const NAVIGATION_DELAY_MS = 900;
+  const LEGACY_CLASS = 'portal-search-flash';
+  const ACTIVE_CLASS = 'portal-search-pulse';
+  const FLASH_MS = 2850;
   let sequence = 0;
   let navigationTimer = 0;
   const cleanupTimers = new WeakMap();
@@ -13,37 +13,37 @@
     const timer = cleanupTimers.get(target);
     if (timer) window.clearTimeout(timer);
     cleanupTimers.delete(target);
-    target.classList.remove(CLASS_NAME);
-    target.style.removeProperty('animation');
+    target.classList.remove(ACTIVE_CLASS);
+  };
+
+  const clearAll = except => {
+    document.querySelectorAll(`.${ACTIVE_CLASS}`).forEach(node => {
+      if (node !== except) clearTarget(node);
+    });
   };
 
   const restartFlash = target => {
     if (!(target instanceof Element)) return;
 
-    // Une seule impulsion active à la fois. On enlève aussi toute ancienne
-    // animation afin qu'un deuxième, troisième, dixième clic puisse toujours
-    // repartir de 0 sans recharger la page.
-    document.querySelectorAll(`.${CLASS_NAME}`).forEach(clearTarget);
+    clearAll(target);
     clearTarget(target);
 
-    target.style.setProperty('animation', 'none', 'important');
+    // Un seul reflow, puis un seul frame. Ça évite le double départ visible
+    // qu’on avait quand history.replaceState et le moteur de recherche relançaient
+    // tous les deux l’animation presque au même moment.
     void target.offsetWidth;
-    target.style.removeProperty('animation');
-
     const current = ++sequence;
     target.dataset.portalFlashSequence = String(current);
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        target.classList.add(CLASS_NAME);
-        const timer = window.setTimeout(() => {
-          if (target.dataset.portalFlashSequence === String(current)) {
-            target.classList.remove(CLASS_NAME);
-          }
-          cleanupTimers.delete(target);
-        }, FLASH_MS);
-        cleanupTimers.set(target, timer);
-      });
+    window.requestAnimationFrame(() => {
+      target.classList.add(ACTIVE_CLASS);
+      const timer = window.setTimeout(() => {
+        if (target.dataset.portalFlashSequence === String(current)) {
+          target.classList.remove(ACTIVE_CLASS);
+        }
+        cleanupTimers.delete(target);
+      }, FLASH_MS);
+      cleanupTimers.set(target, timer);
     });
   };
 
@@ -54,16 +54,13 @@
     try { id = decodeURIComponent(raw); } catch {}
     const node = document.getElementById(id);
     if (!node) return null;
-
-    // Pour une catégorie, on fait pulser son en-tête plutôt que toute la
-    // section verticale, ce qui conserve l'effet compact et arrondi.
     if (node.classList.contains('category-section')) {
       return node.querySelector('.category-heading') || node;
     }
     return node;
   };
 
-  const flashCurrentHashAfterNavigation = (delay = NAVIGATION_DELAY_MS) => {
+  const flashCurrentHashAfterNavigation = (delay = 120) => {
     if (navigationTimer) window.clearTimeout(navigationTimer);
     navigationTimer = window.setTimeout(() => {
       navigationTimer = 0;
@@ -72,39 +69,41 @@
     }, delay);
   };
 
-  // Les moteurs du portail utilisent history.replaceState pour ouvrir une
-  // ressource. replaceState ne déclenche pas hashchange, donc on centralise ici
-  // la relance du halo pour chaque navigation interne.
-  if (!history.__portalFlashWrapped) {
-    const originalReplaceState = history.replaceState.bind(history);
-    const originalPushState = history.pushState.bind(history);
+  // Les anciennes routines de recherche ajoutent encore portal-search-flash.
+  // On l’utilise seulement comme signal et on fait vivre la vraie animation sur
+  // une classe séparée. Ainsi, leurs vieux setTimeout ne peuvent plus couper une
+  // nouvelle impulsion lancée quelques instants plus tard.
+  const observer = new MutationObserver(records => {
+    for (const record of records) {
+      const target = record.target;
+      if (!(target instanceof Element)) continue;
+      if (target.classList.contains(LEGACY_CLASS)) restartFlash(target);
+    }
+  });
+  observer.observe(document.documentElement, {
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class']
+  });
 
-    history.replaceState = (...args) => {
-      const result = originalReplaceState(...args);
-      if (location.hash) flashCurrentHashAfterNavigation();
-      return result;
-    };
-    history.pushState = (...args) => {
-      const result = originalPushState(...args);
-      if (location.hash) flashCurrentHashAfterNavigation();
-      return result;
-    };
-    Object.defineProperty(history, '__portalFlashWrapped', { value: true });
-  }
-
-  // Navigation native par ancre.
+  // Les liens de catégorie changent réellement le hash; une seule impulsion est
+  // donc lancée ici. On ne surcharge plus history.replaceState/pushState.
   window.addEventListener('hashchange', () => flashCurrentHashAfterNavigation(120));
 
-  // Clic manuel sur une fiche dans le répertoire : chaque nouvelle sélection
-  // doit aussi produire l'impulsion, même sans passer par la recherche.
   document.addEventListener('click', event => {
+    const backToTop = event.target.closest('#back-to-top');
+    if (backToTop) {
+      clearAll();
+      return;
+    }
+
     const summary = event.target.closest('.procedure > summary');
     if (summary?.parentElement) {
       window.setTimeout(() => restartFlash(summary.parentElement), 40);
     }
   }, true);
 
-  // Point d'entrée public pour les futurs scripts du portail.
   window.PORTAL_FLASH_TARGET = restartFlash;
   window.PORTAL_FLASH_HASH = flashCurrentHashAfterNavigation;
+  window.PORTAL_FLASH_CLASS = ACTIVE_CLASS;
 })();
