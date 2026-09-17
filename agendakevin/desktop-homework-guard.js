@@ -51,7 +51,6 @@
   function homeworkKind(text) {
     const normalized = String(text || '').trim();
     if (/^devoirs?\s*:/i.test(normalized)) return 'Devoir';
-    if (/^rappel\s*:/i.test(normalized)) return 'Rappel';
     if (/^(?:à|a)\s+faire\s*:/i.test(normalized)) return 'À faire';
     return '';
   }
@@ -70,10 +69,7 @@
     const style = document.createElement('style');
     style.id = 'boardHomeworkStyles';
     style.textContent = `
-      #boardModeBtn{display:none}
       @media (min-width:821px){
-        #boardModeBtn{display:inline-flex;align-items:center;justify-content:center}
-        #boardModeBtn.active{background:#07577f;color:#fff;border-color:#07577f;box-shadow:0 4px 14px rgba(7,87,127,.22)}
         body.board-mode-active .board-homework-block.board-homework-hidden .block-text{display:none!important}
         body.board-mode-active .board-homework-block.board-homework-hidden{min-height:42px;display:flex;align-items:center}
         .board-homework-reveal{
@@ -94,32 +90,6 @@
       }
     `;
     document.head.appendChild(style);
-  }
-
-  function ensureButton() {
-    let button = document.getElementById('boardModeBtn');
-    if (button) return button;
-    const actions = document.querySelector('.header-actions');
-    if (!actions) return null;
-    button = document.createElement('button');
-    button.id = 'boardModeBtn';
-    button.type = 'button';
-    button.className = 'header-course-button';
-    button.textContent = 'Tableau';
-    button.title = 'Mode tableau : masquer les devoirs jusqu’à la fin du cours';
-    button.setAttribute('aria-pressed', boardMode ? 'true' : 'false');
-    const course = document.getElementById('courseListBtn');
-    actions.insertBefore(button, course || actions.firstChild);
-    button.addEventListener('click', () => {
-      boardMode = !boardMode;
-      sessionStorage.setItem(BOARD_KEY, boardMode ? '1' : '0');
-      if (!boardMode) {
-        revealed.clear();
-        saveRevealed();
-      }
-      applyBoardMode();
-    });
-    return button;
   }
 
   function cleanupBlock(block) {
@@ -168,17 +138,8 @@
 
   function applyBoardMode() {
     frame = 0;
-    const desktop = isDesktop();
-    const button = ensureButton();
-    const active = desktop && boardMode;
+    const active = isDesktop() && boardMode;
     document.body.classList.toggle('board-mode-active', active);
-    if (button) {
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-pressed', active ? 'true' : 'false');
-      button.title = active
-        ? 'Mode tableau actif : les devoirs sont masqués'
-        : 'Activer le mode tableau';
-    }
 
     const blocks = [...document.querySelectorAll('#planner .editor-block')];
     if (!active) {
@@ -195,10 +156,25 @@
     frame = requestAnimationFrame(applyBoardMode);
   }
 
+  function toggleFromCourseName(e) {
+    if (!isDesktop()) return;
+    const name = e.target.closest('.course-strip-name');
+    if (!name || !name.closest('#planner .course-strip.has-course')) return;
+
+    boardMode = !boardMode;
+    sessionStorage.setItem(BOARD_KEY, boardMode ? '1' : '0');
+    if (!boardMode) {
+      revealed.clear();
+      saveRevealed();
+    }
+    scheduleApply();
+  }
+
   function start() {
     ensureStyles();
-    ensureButton();
     scheduleApply();
+
+    document.addEventListener('dblclick', toggleFromCourseName);
 
     const planner = document.getElementById('planner');
     if (planner) {
