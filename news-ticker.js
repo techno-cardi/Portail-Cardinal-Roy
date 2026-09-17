@@ -8,7 +8,7 @@
   const TIMEZONE = 'America/Toronto';
   const ROTATION_MS = 5000;
   const REFRESH_MS = 5 * 60 * 1000;
-  const PED_DAY_URL = 'https://drive.google.com/file/d/1S7mZootQb4dddOYHKOU19_yyEqeWu3fG/view?usp=drivesdk';
+  const PED_DAY_URL = 'https://drive.google.com/file/d/1SUkoCJa-kxqqFMQQDMBTskOIFqdM3Wwt/view?usp=drivesdk';
   const PED_DAY_EXPIRES_AT = Date.parse('2026-09-19T00:00:00-04:00');
 
   if (!document.getElementById('school-news-ticker-style')) {
