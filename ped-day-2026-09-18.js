@@ -1,9 +1,9 @@
 (() => {
   'use strict';
 
-  const VERSION = '2.0';
+  const VERSION = '2.1';
   const RESOURCE_ID = 'journee-pedagogique-2026-09-18';
-  const RESOURCE_URL = 'https://drive.google.com/file/d/1S7mZootQb4dddOYHKOU19_yyEqeWu3fG/view?usp=drivesdk';
+  const RESOURCE_URL = 'https://drive.google.com/file/d/1SUkoCJa-kxqqFMQQDMBTskOIFqdM3Wwt/view?usp=drivesdk';
   const EXPIRES_AT = Date.parse('2026-09-19T00:00:00-04:00');
   const KEYWORDS = [
     'pédago pedago pédagogie pedagogie journée pédago journee pedago journée pédagogique journee pedagogique journée ped journee ped pédagogique pedagogique JP journée pédagogique 18 septembre journee pedagogique 18 septembre',
