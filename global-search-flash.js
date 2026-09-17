@@ -15,7 +15,7 @@
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
   const MOZAIK_LOGO = 'assets/vendor/moz.png';
-  const PED_DAY_URL = 'https://drive.google.com/file/d/1S7mZootQb4dddOYHKOU19_yyEqeWu3fG/view?usp=drivesdk';
+  const PED_DAY_URL = 'https://drive.google.com/file/d/1SUkoCJa-kxqqFMQQDMBTskOIFqdM3Wwt/view?usp=drivesdk';
 
   const patchVisual = container => {
     if (!container) return;
