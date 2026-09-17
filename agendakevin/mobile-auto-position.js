@@ -2,6 +2,7 @@
   'use strict';
 
   const MOBILE_QUERY = '(max-width: 820px), (pointer: coarse)';
+  const DESKTOP_QUERY = '(min-width: 821px)';
   const PERIOD_END = { p1: 570, p2: 660, p3: 750, p4: 840, p5: 930, pm: 990 };
   let pending = true;
   let timer = 0;
@@ -10,6 +11,14 @@
     return /Android/i.test(navigator.userAgent)
       && matchMedia(MOBILE_QUERY).matches
       && matchMedia('(display-mode: standalone)').matches;
+  }
+
+  function isDesktopAgenda() {
+    return !/Android/i.test(navigator.userAgent) && matchMedia(DESKTOP_QUERY).matches;
+  }
+
+  function isAutoPositionEnvironment() {
+    return isAndroidPwa() || isDesktopAgenda();
   }
 
   function iso(date = new Date()) {
@@ -79,15 +88,18 @@
   }
 
   function position() {
-    if (!pending || !isAndroidPwa() || !activeWeekView()) return false;
+    if (!pending || !isAutoPositionEnvironment() || !activeWeekView()) return false;
     const target = chooseTarget();
     if (!target) {
       const todayISO = iso();
-      if (isSchoolDay(todayISO)) centerDate(todayISO);
+      if (isAndroidPwa() && isSchoolDay(todayISO)) centerDate(todayISO);
       pending = false;
       return false;
     }
-    centerDate(target.dateISO);
+
+    // Sur Android installé, on garde le centrage horizontal du jour.
+    // Sur ordinateur (page Chrome ou PWA installée), on ne touche qu'au scroll vertical.
+    if (isAndroidPwa()) centerDate(target.dateISO);
     centerPeriod(target.cell);
     pending = false;
     return true;
@@ -99,13 +111,13 @@
   }
 
   function onResume() {
-    if (!isAndroidPwa() || document.visibilityState !== 'visible') return;
+    if (!isAutoPositionEnvironment() || document.visibilityState !== 'visible') return;
     pending = true;
     schedule(220);
   }
 
   function start() {
-    if (!isAndroidPwa()) return;
+    if (!isAutoPositionEnvironment()) return;
     const planner = document.getElementById('planner');
     if (planner) new MutationObserver(() => schedule()).observe(planner, { childList: true, subtree: true });
     document.addEventListener('visibilitychange', onResume);
