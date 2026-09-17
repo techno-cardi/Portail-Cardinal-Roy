@@ -2,7 +2,9 @@
   'use strict';
 
   const API_URL = 'https://ojyswaxuqwnqilrvtjll.supabase.co/functions/v1/planner-api';
+  const SYNC_API_URL = 'https://ojyswaxuqwnqilrvtjll.supabase.co/functions/v1/planner-google-sync';
   const ACCESS_STORAGE = 'cr-planner-access-v1';
+  const SYNC_SESSION_KEY = 'cr-google-sync-reconciled-v2';
   const SCHOOL_START = '2026-08-24';
   const SCHOOL_END = '2027-06-24';
   const $ = (s, root = document) => root.querySelector(s);
@@ -20,16 +22,42 @@
     toast._t = setTimeout(() => el.classList.remove('show'), ms);
   }
 
-  async function api(path = '', options = {}) {
+  async function request(url, path = '', options = {}) {
     const key = localStorage.getItem(ACCESS_STORAGE) || '';
     if (!key) throw new Error('Mot de passe absent sur cet appareil.');
     const headers = new Headers(options.headers || {});
     headers.set('x-planner-key', key);
     if (options.body) headers.set('content-type', 'application/json');
-    const res = await fetch(`${API_URL}${path}`, { ...options, headers, cache: 'no-store' });
+    const res = await fetch(`${url}${path}`, { ...options, headers, cache: 'no-store' });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `Erreur ${res.status}`);
     return data;
+  }
+
+  function api(path = '', options = {}) {
+    return request(API_URL, path, options);
+  }
+
+  function syncApi(payload) {
+    return request(SYNC_API_URL, '', { method: 'POST', body: JSON.stringify(payload) });
+  }
+
+  function iso(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function parseIso(value) {
+    const [y, m, d] = String(value).split('-').map(Number);
+    return new Date(y, m - 1, d, 12);
+  }
+
+  function addDays(date, count) {
+    const next = new Date(date);
+    next.setDate(next.getDate() + count);
+    return next;
   }
 
   function injectStyles() {
@@ -67,25 +95,58 @@
     }
   }
 
+  async function reconcileRecent({ quiet = true } = {}) {
+    if (!navigator.onLine) return null;
+    let aggregate = { updated: 0, failures: [] };
+    for (let i = 0; i < 3; i += 1) {
+      const result = await syncApi({ action: 'reconcile_recent' });
+      if (!result.enabled) return result;
+      aggregate.updated += Number(result.updated || 0);
+      aggregate.failures.push(...(result.failures || []));
+      if (!result.has_more || result.failures?.length) break;
+    }
+    if (!quiet && aggregate.failures.length) {
+      toast(`Google Agenda : ${aggregate.failures.length} cours n’ont pas pu être mis à jour.`, 4500);
+    }
+    return aggregate;
+  }
+
   async function syncExisting(button, errorEl) {
     button.disabled = true;
     errorEl.textContent = '';
+    const start = parseIso(SCHOOL_START);
+    const end = parseIso(SCHOOL_END);
+    let cursor = new Date(start);
+    let updated = 0;
+    let failures = [];
+    let windowIndex = 0;
+    const totalWindows = Math.ceil((end - start) / (45 * 86400000)) + 1;
+
     try {
-      const data = await api(`?action=year_plan&from=${SCHOOL_START}&to=${SCHOOL_END}`);
-      const notes = (data.notes || []).filter(n => /^p[1-5]$/.test(n.period_key) && String(n.body || '').trim());
-      if (!notes.length) { toast('Aucune planification existante à synchroniser.'); return; }
-      let done = 0;
-      for (let i = 0; i < notes.length; i += 4) {
-        const batch = notes.slice(i, i + 4);
-        await Promise.all(batch.map(n => api('', {
-          method: 'POST',
-          body: JSON.stringify({ action: 'save_note', plan_date: n.plan_date, period_key: n.period_key, body: n.body }),
-        })));
-        done += batch.length;
-        button.textContent = `Synchronisation… ${done}/${notes.length}`;
+      while (cursor <= end) {
+        const to = addDays(cursor, 44);
+        if (to > end) to.setTime(end.getTime());
+        windowIndex += 1;
+        button.textContent = `Synchronisation… ${windowIndex}/${totalWindows}`;
+        const result = await syncApi({ action: 'backfill', from: iso(cursor), to: iso(to) });
+        updated += Number(result.updated || 0);
+        failures.push(...(result.failures || []));
+        if (result.failures?.length) break;
+        cursor = addDays(to, 1);
       }
-      toast(`${notes.length} cours existants envoyés vers Google Agenda.`, 4200);
-      button.textContent = 'Planif existante synchronisée';
+
+      if (failures.length) {
+        const first = failures[0];
+        errorEl.textContent = `Google Agenda n’a pas pu mettre à jour ${failures.length} cours. Premier problème : ${first.plan_date || ''} ${String(first.period_key || '').toUpperCase()} (${first.reason || 'événement introuvable'}).`;
+        button.disabled = false;
+        button.textContent = 'Réessayer la synchronisation complète';
+        return;
+      }
+
+      await reconcileRecent({ quiet: true }).catch(() => null);
+      sessionStorage.setItem(SYNC_SESSION_KEY, '1');
+      toast(`${updated} descriptions Google Agenda vérifiées et mises à jour.`, 4600);
+      button.textContent = 'Planif synchronisée avec Google Agenda';
     } catch (err) {
       errorEl.textContent = err.message || 'Synchronisation initiale impossible.';
       button.disabled = false;
@@ -109,7 +170,7 @@
       dialog.innerHTML = `
         <div class="gs-shell">
           <div class="gs-head">
-            <div><h2>Synchronisation Google Agenda</h2><p>Une fois branchée, chaque sauvegarde d’un cours met aussi à jour la description de l’événement correspondant.</p></div>
+            <div><h2>Synchronisation Google Agenda</h2><p>Chaque sauvegarde met à jour la description du cours. Agenda vérifie aussi automatiquement les changements qui auraient échappé à la synchro immédiate.</p></div>
             <button type="button" class="gs-close">Fermer</button>
           </div>
           <div class="gs-status ${status.enabled ? 'on' : ''}">${status.enabled ? 'Synchronisation active' : 'Synchronisation non configurée'}</div>
@@ -127,7 +188,7 @@
           </div>
           <div class="gs-field"><label for="gsUrl">URL du déploiement Apps Script</label><input id="gsUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off"></div>
           <div class="gs-error" id="gsError"></div>
-          ${status.enabled ? '<button type="button" class="gs-backfill" id="gsBackfill">Synchroniser la planif déjà inscrite</button>' : ''}
+          ${status.enabled ? '<button type="button" class="gs-backfill" id="gsBackfill">Vérifier et resynchroniser toute la planif</button>' : ''}
           <div class="gs-actions">
             ${status.enabled ? '<button type="button" class="gs-disable" id="gsDisable">Désactiver</button>' : ''}
             <button type="button" class="gs-save" id="gsSave">${status.enabled ? 'Remplacer le déploiement' : 'Activer la synchronisation'}</button>
@@ -154,8 +215,10 @@
         e.currentTarget.textContent = 'Activation…';
         try {
           await api('', { method: 'POST', body: JSON.stringify({ action: 'google_sync_configure', url }) });
+          sessionStorage.removeItem(SYNC_SESSION_KEY);
           toast('Synchronisation Google Agenda activée.');
           dialog.close();
+          reconcileRecent({ quiet: true }).catch(() => null);
         } catch (err) {
           error.textContent = err.message || 'Activation impossible.';
           e.currentTarget.disabled = false;
@@ -166,6 +229,7 @@
         e.currentTarget.disabled = true;
         try {
           await api('', { method: 'POST', body: JSON.stringify({ action: 'google_sync_configure', url: '' }) });
+          sessionStorage.removeItem(SYNC_SESSION_KEY);
           toast('Synchronisation Google Agenda désactivée.');
           dialog.close();
         } catch (err) {
@@ -183,6 +247,17 @@
     injectStyles();
     const btn = document.getElementById('googleSyncBtn');
     if (btn) btn.addEventListener('click', openDialog);
+
+    if (!sessionStorage.getItem(SYNC_SESSION_KEY)) {
+      setTimeout(async () => {
+        try {
+          await reconcileRecent({ quiet: true });
+          sessionStorage.setItem(SYNC_SESSION_KEY, '1');
+        } catch (err) {
+          console.warn('[Agenda] Réconciliation Google Agenda reportée :', err);
+        }
+      }, 1800);
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
