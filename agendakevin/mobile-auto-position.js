@@ -74,7 +74,7 @@
   function centerPeriod(cell) {
     const toolbar = document.querySelector('.toolbar');
     const toolbarHeight = toolbar?.getBoundingClientRect().height || 0;
-    const top = window.scrollY + cell.getBoundingClientRect().top - toolbarHeight - 18;
+    const top = window.scrollY + cell.getBoundingClientRect().top - toolbarHeight - 68;
     window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
   }
 
