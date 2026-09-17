@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-const PEDAGO_FILE = 'https://drive.google.com/file/d/1S7mZootQb4dddOYHKOU19_yyEqeWu3fG/view?usp=drivesdk';
+const PEDAGO_FILE = 'https://drive.google.com/file/d/1SUkoCJa-kxqqFMQQDMBTskOIFqdM3Wwt/view?usp=drivesdk';
 
 async function fixDate(page, iso) {
   const fixed = new Date(iso).valueOf();
