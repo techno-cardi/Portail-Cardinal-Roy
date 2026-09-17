@@ -6,9 +6,6 @@
     ['p1', 'P1'],
     ['p2', 'P2'],
     ['p3', 'P3'],
-    ['p4', 'P4'],
-    ['p5', 'P5'],
-    ['pm', 'PM'],
   ];
 
   let bar = null;
@@ -83,8 +80,8 @@
         .mobile-context-period{font-size:.82rem;color:#07577f}
         .mobile-context-course{margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:.74rem;font-weight:800;color:#385a6d}
         .mobile-context-course.free{font-weight:650;color:#9aa8b0}
-        .mobile-context-periods{display:flex;align-items:center;justify-content:space-between;gap:3px;margin-top:4px}
-        .mobile-context-chip{min-width:29px;padding:2px 5px;border-radius:999px;text-align:center;font-size:.64rem;font-weight:750;line-height:1.15;color:#9aa8b0;border:1px solid transparent}
+        .mobile-context-periods{display:flex;align-items:center;justify-content:space-around;gap:8px;margin-top:4px}
+        .mobile-context-chip{min-width:42px;padding:2px 8px;border-radius:999px;text-align:center;font-size:.66rem;font-weight:750;line-height:1.15;color:#9aa8b0;border:1px solid transparent}
         .mobile-context-chip.teaching{color:#426579;background:rgba(218,235,244,.62)}
         .mobile-context-chip.active{color:#fff;background:#07577f;border-color:#07577f;font-weight:850}
       }
