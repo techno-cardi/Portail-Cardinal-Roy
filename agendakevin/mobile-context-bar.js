@@ -7,6 +7,7 @@
     ['p2', 'P2'],
     ['p3', 'P3'],
   ];
+  const PERIOD_KEYS = new Set(PERIODS.map(([key]) => key));
 
   let bar = null;
   let frame = 0;
@@ -111,22 +112,19 @@
     return id.slice(id.lastIndexOf(':') + 1);
   }
 
-  function visiblePeriodCell(cells, probeY) {
-    const containing = cells.find(cell => {
-      const rect = cell.getBoundingClientRect();
-      return rect.top <= probeY && rect.bottom > probeY;
-    });
-    if (containing) return containing;
+  function dominantVisiblePeriodCell(cells, viewportTop, viewportBottom) {
+    const candidates = cells
+      .filter(cell => PERIOD_KEYS.has(keyForCell(cell)))
+      .map(cell => {
+        const rect = cell.getBoundingClientRect();
+        const visibleTop = Math.max(rect.top, viewportTop);
+        const visibleBottom = Math.min(rect.bottom, viewportBottom);
+        return { cell, visible: Math.max(0, visibleBottom - visibleTop) };
+      })
+      .filter(item => item.visible > 0)
+      .sort((a, b) => b.visible - a.visible);
 
-    const visible = cells.filter(cell => {
-      const rect = cell.getBoundingClientRect();
-      return rect.bottom > 0 && rect.top < innerHeight;
-    });
-    if (!visible.length) return null;
-
-    return visible
-      .map(cell => ({ cell, distance: Math.abs(cell.getBoundingClientRect().top - probeY) }))
-      .sort((a, b) => a.distance - b.distance)[0].cell;
+    return candidates[0]?.cell || null;
   }
 
   function headerStillProvidesContext(dateISO, toolbarBottom) {
@@ -162,16 +160,22 @@
     context.classList.add('show');
 
     const barHeight = context.getBoundingClientRect().height || 48;
-    const probeY = Math.min(innerHeight - 20, toolbarBottom + barHeight + 18);
+    const viewportTop = Math.min(innerHeight - 20, toolbarBottom + barHeight + 12);
+    const viewportBottom = innerHeight - 8;
     const cells = cellsForDate(weekWrap, dateISO);
-    const cell = visiblePeriodCell(cells, probeY);
+    const cell = dominantVisiblePeriodCell(cells, viewportTop, viewportBottom);
     if (!cell) {
       context.classList.remove('show');
       return;
     }
 
     const key = keyForCell(cell);
-    const label = PERIODS.find(([periodKey]) => periodKey === key)?.[1] || key.toUpperCase();
+    const label = PERIODS.find(([periodKey]) => periodKey === key)?.[1] || '';
+    if (!label) {
+      context.classList.remove('show');
+      return;
+    }
+
     const courseNode = cell.querySelector('.course-strip.has-course');
     const course = String(courseNode?.textContent || '').trim();
 
