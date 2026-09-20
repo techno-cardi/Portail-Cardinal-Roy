@@ -13,7 +13,7 @@
     { id:'intervention-retards', category:'classe', owner:'encadrement' },
     { id:'evaluation-bulletin-planification', category:'outils', owner:'pedagogie' },
     { id:'dates-importantes-2026-2027', category:'organisation-scolaire', owner:'organisation' },
-    { id:'scolago', category:'outils', owner:'ressources-humaines' }
+    { id:'scolago', category:'commencer', owner:'ressources-humaines' }
   ];
 
   const missing = [];
