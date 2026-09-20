@@ -34,10 +34,10 @@
     return moved;
   };
 
-  const duplicatesWithin = root => {
+  const duplicateIds = nodes => {
     const seen = new Set();
     const duplicates = new Set();
-    root.querySelectorAll('[id]').forEach(node => {
+    nodes.forEach(node => {
       if (seen.has(node.id)) duplicates.add(node.id);
       seen.add(node.id);
     });
@@ -51,10 +51,10 @@
     const declaredIds = new Set(window.PORTAL_MANAGED_RESOURCE_IDS || []);
     const missingDeclared = [...(window.PORTAL_MANAGED_RESOURCE_MISSING || [])];
 
-    const duplicateSourceIds = duplicatesWithin(source);
-    const duplicateRenderedIds = duplicatesWithin(app);
-    if (duplicateSourceIds.length) fatal.push({ type:'duplicate-source-id', ids:duplicateSourceIds });
-    if (duplicateRenderedIds.length) fatal.push({ type:'duplicate-rendered-id', ids:duplicateRenderedIds });
+    const duplicateSourceIds = duplicateIds([...source.querySelectorAll('.searchable[id]')]);
+    const duplicateRenderedIds = duplicateIds([...app.querySelectorAll('.procedure[id]')]);
+    if (duplicateSourceIds.length) fatal.push({ type:'duplicate-source-resource-id', ids:duplicateSourceIds });
+    if (duplicateRenderedIds.length) fatal.push({ type:'duplicate-rendered-resource-id', ids:duplicateRenderedIds });
     if (missingDeclared.length) fatal.push({ type:'declared-resource-missing-from-source', ids:missingDeclared });
 
     managed.forEach(src => {
