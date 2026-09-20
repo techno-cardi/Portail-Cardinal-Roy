@@ -29,23 +29,26 @@ test('le libellé Dates importantes ouvre directement le PDF annuel sans changer
   await page.goto('/');
   await expect(page.locator('#guide-search')).toBeVisible();
 
-  const badge = page.locator('#school-news-ticker .school-news-badge');
+  const badge = page.locator('#school-news-ticker a.school-news-badge');
   await expect(badge).toBeVisible();
   await expect(badge).toContainText('Dates importantes');
-  await expect(badge).toHaveAttribute('role', 'link');
-  await expect(badge).toHaveAttribute('tabindex', '0');
-  await expect(badge).toHaveAttribute('data-dates-pdf-url', /1bfyqip0TJWvj58fUznfQzTx4Oc21i3PN/);
+  await expect(badge).toHaveAttribute('href', /1bfyqip0TJWvj58fUznfQzTx4Oc21i3PN/);
+  await expect(badge).toHaveAttribute('target', '_blank');
+  await expect(badge).toHaveAttribute('rel', /noopener noreferrer/);
 
-  const decoration = await badge.evaluate(node => getComputedStyle(node).textDecorationLine);
-  expect(decoration).toBe('none');
-
-  await page.evaluate(() => {
-    window.__datesPdfOpened = '';
-    window.open = url => {
-      window.__datesPdfOpened = String(url || '');
-      return null;
+  const visual = await badge.evaluate(node => {
+    const style = getComputedStyle(node);
+    return {
+      decoration: style.textDecorationLine,
+      background: style.backgroundColor,
+      color: style.color,
+      radius: style.borderRadius,
+      display: style.display
     };
   });
-  await badge.click();
-  await expect.poll(() => page.evaluate(() => window.__datesPdfOpened)).toContain('1bfyqip0TJWvj58fUznfQzTx4Oc21i3PN');
+  expect(visual.decoration).toBe('none');
+  expect(visual.display).toBe('inline-flex');
+  expect(visual.radius).toBe('6px');
+  expect(visual.background).not.toBe('rgba(0, 0, 0, 0)');
+  expect(visual.color).toBe('rgb(127, 20, 39)');
 });
