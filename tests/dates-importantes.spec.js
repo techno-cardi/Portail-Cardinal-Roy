@@ -24,3 +24,28 @@ test('le calendrier des dates importantes est dans Organisation scolaire avec le
 
   expect(pageErrors).toEqual([]);
 });
+
+test('le libellé Dates importantes ouvre directement le PDF annuel sans changer son apparence', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#guide-search')).toBeVisible();
+
+  const badge = page.locator('#school-news-ticker .school-news-badge');
+  await expect(badge).toBeVisible();
+  await expect(badge).toContainText('Dates importantes');
+  await expect(badge).toHaveAttribute('role', 'link');
+  await expect(badge).toHaveAttribute('tabindex', '0');
+  await expect(badge).toHaveAttribute('data-dates-pdf-url', /1bfyqip0TJWvj58fUznfQzTx4Oc21i3PN/);
+
+  const decoration = await badge.evaluate(node => getComputedStyle(node).textDecorationLine);
+  expect(decoration).toBe('none');
+
+  await page.evaluate(() => {
+    window.__datesPdfOpened = '';
+    window.open = url => {
+      window.__datesPdfOpened = String(url || '');
+      return null;
+    };
+  });
+  await badge.click();
+  await expect.poll(() => page.evaluate(() => window.__datesPdfOpened)).toContain('1bfyqip0TJWvj58fUznfQzTx4Oc21i3PN');
+});
