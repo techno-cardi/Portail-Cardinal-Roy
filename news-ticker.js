@@ -8,6 +8,7 @@
   const TIMEZONE = 'America/Toronto';
   const ROTATION_MS = 5000;
   const REFRESH_MS = 5 * 60 * 1000;
+  const DATES_PDF_URL = 'https://drive.google.com/file/d/1bfyqip0TJWvj58fUznfQzTx4Oc21i3PN/view?usp=drivesdk';
   const PED_DAY_URL = 'https://drive.google.com/file/d/1SUkoCJa-kxqqFMQQDMBTskOIFqdM3Wwt/view?usp=drivesdk';
   const PED_DAY_EXPIRES_AT = Date.parse('2026-09-19T00:00:00-04:00');
 
@@ -27,6 +28,7 @@
         display:inline-flex;align-items:center;gap:5px;white-space:nowrap;padding:5px 8px;border-radius:6px;
         background:#fff;color:#7f1427;font-size:.74rem;font-weight:800;letter-spacing:.01em;text-transform:uppercase
       }
+      .school-news-badge[data-dates-pdf-url]{cursor:pointer}
       .school-news-track{
         min-width:0;display:flex;align-items:center;gap:8px;opacity:1;transform:translateY(0);
         color:inherit;text-decoration:none;border-radius:7px;
@@ -75,7 +77,7 @@
   ticker.setAttribute('data-rotation-ms', String(ROTATION_MS));
   ticker.setAttribute('data-refresh-ms', String(REFRESH_MS));
   ticker.innerHTML = `
-    <span class="school-news-badge"><span aria-hidden="true">📅</span> Dates importantes</span>
+    <span class="school-news-badge" role="link" tabindex="0" title="Ouvrir Dates importantes 2026-2027" data-dates-pdf-url="${DATES_PDF_URL}"><span aria-hidden="true">📅</span> Dates importantes</span>
     <a class="school-news-track" aria-live="polite">
       <span class="school-news-date"></span>
       <span class="school-news-text"></span>
@@ -87,6 +89,7 @@
     </span>`;
   host.insertBefore(ticker, intro);
 
+  const badge = ticker.querySelector('.school-news-badge');
   const dateNode = ticker.querySelector('.school-news-date');
   const textNode = ticker.querySelector('.school-news-text');
   const countNode = ticker.querySelector('.school-news-count');
@@ -106,6 +109,17 @@
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim();
+
+  const openDatesPdf = event => {
+    event?.preventDefault?.();
+    window.open(DATES_PDF_URL, '_blank', 'noopener,noreferrer');
+  };
+
+  badge.addEventListener('click', openDatesPdf);
+  badge.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    openDatesPdf(event);
+  });
 
   const dateKey = value => new Intl.DateTimeFormat('en-CA', {
     timeZone:TIMEZONE, year:'numeric', month:'2-digit', day:'2-digit'
