@@ -10,71 +10,6 @@
   document.head.appendChild(link);
 })();
 
-(() => {
-  const root = document.getElementById('legacy-source');
-  if (!root) return;
-
-  const URLS = {
-    login: 'https://scolago.com/fr-CA/Account/Login',
-    sso: 'https://support.scolago.com/fr/support/solutions/articles/151000200140-tous-comment-fonctionne-la-connexion-s%C3%A9curis%C3%A9e-sso-',
-    guide: 'https://drive.google.com/file/d/1YrR-0R-9Y6L22aKgriBD7U95E4MdC7r1/view?usp=drivesdk'
-  };
-
-  const keywords = [
-    'Scolago scola go connexion se connecter login compte accès acces authentification SSO connexion sécurisée connexion securisee Google Microsoft',
-    'guide utilisateur guide d utilisateur guide employé guide employe guide employés guide employes',
-    'absence absences suppléance suppleance suppléant suppleant remplacement remplaçant remplacant disponibilité disponibilite'
-  ].join(' ');
-
-  const bodyHtml = `
-    <p><strong>Scolago</strong> : connexion et guide d’utilisation pour les employés.</p>
-    <div class="links">
-      <a class="btn primary" href="${URLS.login}" target="_blank" rel="noopener noreferrer">Se connecter à Scolago</a>
-      <a class="btn" href="${URLS.sso}" target="_blank" rel="noopener noreferrer">Comment se connecter — SSO</a>
-      <a class="btn" href="${URLS.guide}" target="_blank" rel="noopener noreferrer">Guide d’utilisateur — employés</a>
-    </div>`;
-
-  const scolago = root.querySelector('#scolago');
-  if (scolago) {
-    scolago.dataset.title = 'Scolago';
-    scolago.dataset.keywords = keywords;
-    const heading = scolago.querySelector('h2,h3');
-    const subtitle = scolago.querySelector('.card-sub');
-    const body = scolago.querySelector('.card-body');
-    if (heading) heading.textContent = 'Scolago';
-    if (subtitle) subtitle.textContent = 'Connexion et guide d’utilisateur';
-    if (body) body.innerHTML = bodyHtml;
-  }
-
-  const applications = root.querySelector('#applications-cssc');
-  if (applications) {
-    const box = [...applications.querySelectorAll('.resource-box')].find(node =>
-      (node.querySelector('h4')?.textContent || '').trim().toLowerCase() === 'scolago'
-    );
-    if (box) {
-      const copy = box.querySelector('.resource-copy');
-      const paragraph = copy?.querySelector('p');
-      let actions = copy?.querySelector('.resource-actions');
-      if (paragraph) paragraph.textContent = 'Accéder à Scolago et consulter les renseignements de connexion et le guide d’utilisateur.';
-      if (!actions && copy) {
-        actions = document.createElement('div');
-        actions.className = 'resource-actions';
-        copy.appendChild(actions);
-      }
-      if (actions) {
-        actions.innerHTML = `
-          <a class="btn primary" href="${URLS.login}" target="_blank" rel="noopener noreferrer">Se connecter</a>
-          <a class="btn" href="${URLS.sso}" target="_blank" rel="noopener noreferrer">Comment se connecter</a>
-          <a class="btn" href="${URLS.guide}" target="_blank" rel="noopener noreferrer">Guide d’utilisateur</a>`;
-      }
-    }
-    applications.dataset.keywords = `${applications.dataset.keywords || ''} ${keywords}`.replace(/\s+/g, ' ').trim();
-  }
-
-  // Ne jamais réintroduire dans le portail les procédures Scolago propres à l'école.
-  root.querySelector('#scolago-absence-personnel')?.remove();
-})();
-
 /* Le formulaire officiel AppSP est la source à utiliser pour une sortie éducative ou une activité spéciale. */
 (() => {
   const root = document.getElementById('legacy-source');
@@ -127,37 +62,54 @@
   root.appendChild(card);
 })();
 
-/* Accès directs aux dossiers du Drive commun liés à l’évaluation et à la planification. */
+/* Accès directs aux dossiers du Drive commun liés à l’évaluation et à la planification.
+   Ce bloc remplace l’ancienne couche source-patches-9.js. */
 (() => {
   const root = document.getElementById('legacy-source');
-  const card = root?.querySelector('#evaluation-bulletin-planification');
-  if (!card) return;
+  if (!root) return;
 
-  const extraKeywords = [
-    'nature et moments des évaluations nature et moments evaluation nature évaluations nature evaluations moments évaluations moments evaluations',
-    'quand évaluer quand evaluer dates évaluations dates evaluations calendrier évaluations calendrier evaluations période évaluation periode evaluation périodes évaluations periodes evaluations',
+  const keywords = [
+    'nature et moments des évaluations nature et moments evaluation nature évaluations nature evaluations moments évaluations moments evaluations quand évaluer quand evaluer dates évaluations dates evaluations',
     'attentes et exigences attentes exigences attentes pédagogiques attentes pedagogiques exigences pédagogiques exigences pedagogiques attentes élèves attentes eleves exigences élèves exigences eleves',
     'consignes critères criteres critères de réussite criteres de reussite travaux remise travaux exigences de cours attentes de cours règles de cours regles de cours',
-    'planification annuelle planification globale planification globale annuelle planification des enseignants planification enseignant planif annuelle planif globale',
-    'progression annuelle progression des apprentissages répartition annuelle repartition annuelle séquence annuelle sequence annuelle contenu année contenu annee plan de cours',
-    'évaluation evaluation évaluations evaluations bulletin bulletins planification enseignement enseignant enseignants drive commun dossier dossiers'
+    'planification annuelle planification globale planification globale annuelle planification des enseignants planification enseignant planif annuelle planif globale progression annuelle progression des apprentissages',
+    'évaluation evaluation évaluations evaluations bulletin bulletins examens examen planification enseignement enseignant enseignants drive commun dossier dossiers'
   ].join(' ');
-  card.dataset.keywords = `${card.dataset.keywords || ''} ${extraKeywords}`.replace(/\s+/g, ' ').trim();
 
+  let card = root.querySelector('#evaluation-bulletin-planification');
+  if (!card) {
+    card = document.createElement('section');
+    card.className = 'card searchable';
+    card.id = 'evaluation-bulletin-planification';
+    card.dataset.title = 'Évaluation, bulletin et planification';
+    card.dataset.icon = '📊';
+    card.innerHTML = `
+      <div class="card-head">
+        <div class="card-icon" aria-hidden="true">📊</div>
+        <div>
+          <h3>Évaluation, bulletin et planification</h3>
+          <div class="card-sub">Examens, exigences et planification annuelle</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <p>Accès direct aux dossiers de référence du Drive commun pour préparer l’évaluation et la planification de l’année.</p>
+      </div>`;
+    root.appendChild(card);
+  }
+
+  card.dataset.keywords = `${card.dataset.keywords || ''} ${keywords}`.replace(/\s+/g, ' ').trim();
   const body = card.querySelector('.card-body') || card;
   if (body.querySelector('[data-evaluation-drive-folders]')) return;
 
-  const block = document.createElement('div');
-  block.className = 'callout';
-  block.dataset.evaluationDriveFolders = 'true';
-  block.innerHTML = `
-    <strong>Dossiers du Drive commun :</strong>
-    <div class="links">
-      <a class="btn primary" href="https://drive.google.com/drive/folders/1LTgKPbES9IixST2V-jolWxA7s6SMV6jT" target="_blank" rel="noopener noreferrer">Nature et moments d’évaluation</a>
-      <a class="btn" href="https://drive.google.com/drive/folders/18URlr-7b2TmnzZqL4TdOOGlNI2V7TfJW" target="_blank" rel="noopener noreferrer">Attentes et exigences</a>
-      <a class="btn" href="https://drive.google.com/drive/folders/15dleRqnqz8ZldCzWrogMAJONlVBta3IY" target="_blank" rel="noopener noreferrer">Planification annuelle</a>
-    </div>`;
-  body.appendChild(block);
+  body.insertAdjacentHTML('beforeend', `
+    <div class="callout" data-evaluation-drive-folders="true">
+      <strong>Dossiers du Drive commun :</strong>
+      <div class="links">
+        <a class="btn primary" href="https://drive.google.com/drive/folders/1LTgKPbES9IixST2V-jolWxA7s6SMV6jT" target="_blank" rel="noopener noreferrer">Nature et moments des évaluations</a>
+        <a class="btn" href="https://drive.google.com/drive/folders/18URlr-7b2TmnzZqL4TdOOGlNI2V7TfJW" target="_blank" rel="noopener noreferrer">Attentes et exigences</a>
+        <a class="btn" href="https://drive.google.com/drive/folders/15dleRqnqz8ZldCzWrogMAJONlVBta3IY" target="_blank" rel="noopener noreferrer">Planification annuelle</a>
+      </div>
+    </div>`);
 })();
 
 /*
@@ -222,10 +174,8 @@
   ].join(' '));
 })();
 
-/*
- * Charge les compléments de recherche et le positionnement final du haut de page
- * seulement lorsque le moteur de recherche final est prêt.
- */
+/* Charge les compléments de recherche et le positionnement final du haut de page
+   seulement lorsque le moteur de recherche final est prêt. */
 (() => {
   let attempts = 0;
   const attach = () => {
