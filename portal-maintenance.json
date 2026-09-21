@@ -24,12 +24,20 @@
     "max_items": 12,
     "timezone": "America/Toronto"
   },
+  "updates_policy": {
+    "source": "portal-updates-curated.json",
+    "technical_commits_are_public_updates": false,
+    "require_explicit_target_type": true,
+    "allowed_target_types": ["file", "section"],
+    "file_action_label": "Accéder au fichier"
+  },
   "direct_files": {
     "reservation-procedure": {
       "resource_id": "reservation",
       "url": "https://drive.google.com/file/d/1Ea0rcbyqvFjmXzc_yuNREdgk8Pq4LEQW/view?usp=drivesdk",
       "title": "Procédure - réservation de locaux et convocations",
       "action_label": "Accéder au fichier",
+      "source_file": "procedure-links.js",
       "search_required_groups": [
         ["procédure", "procedure", "guide", "tutoriel"],
         ["réservation", "reservation", "réserver", "reserver", "local", "locaux", "convocation", "convoquer", "récupération", "recuperation"]
@@ -40,8 +48,20 @@
       "url": "https://drive.google.com/file/d/1G4QFoa_jyItVPd1OTZkCGGabk9h2gIa6/view?usp=drivesdk",
       "title": "Double authentification - marche à suivre",
       "action_label": "Accéder au fichier",
+      "source_file": "procedure-links.js",
       "search_required_groups": [
         ["authentification", "authenticator", "multifacteur", "mfa", "2fa"]
+      ]
+    },
+    "tableau-depannage": {
+      "resource_id": "tableau-depannage-2026-2027",
+      "url": "https://docs.google.com/document/d/1-hr2ucGHlCGPEhTjHcMBVcoGwCViHWnD/edit?usp=drivesdk&ouid=109187652422234365096&rtpof=true&sd=true",
+      "title": "Tableau de disponibilités de dépannage 2026-2027",
+      "action_label": "Accéder au fichier",
+      "source_file": "depannage-resource.js",
+      "search_required_groups": [
+        ["tableau", "disponibilités", "disponibilite", "horaire"],
+        ["dépannage", "depannage", "suppléance", "suppleance"]
       ]
     }
   },
