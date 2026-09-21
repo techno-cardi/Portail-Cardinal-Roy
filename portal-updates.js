@@ -123,6 +123,9 @@
     const expiresAt = isDateKey(raw.expires_at)
       ? String(raw.expires_at)
       : addDays(publishedAt, DEFAULT_LIFETIME_DAYS);
+    const target = safeTarget(raw.target);
+    const requestedTargetType = String(raw.target_type || '').trim().toLowerCase();
+    const targetType = requestedTargetType === 'file' && /^https:\/\//i.test(target) ? 'file' : 'resource';
 
     return {
       id: String(raw.id || `${publishedAt}-${position}`),
@@ -130,7 +133,8 @@
       description: String(raw.description || '').trim(),
       publishedAt,
       expiresAt,
-      target: safeTarget(raw.target),
+      target,
+      targetType,
       kind: String(raw.kind || 'nouveau').toLowerCase() === 'maj' ? 'maj' : 'nouveau'
     };
   };
@@ -145,7 +149,7 @@
       .filter(item => item.publishedAt <= today && item.expiresAt >= today)
       .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt) || a.title.localeCompare(b.title, 'fr'))
       .filter(item => {
-        const key = `${item.title.toLocaleLowerCase('fr')}|${item.target}`;
+        const key = item.target || `${item.title.toLocaleLowerCase('fr')}|${item.id}`;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
@@ -166,6 +170,7 @@
     const element = document.createElement(item.target ? 'a' : 'article');
     element.className = 'portal-update-item';
     element.dataset.updateId = item.id;
+    element.dataset.targetType = item.targetType;
 
     if (item.target) {
       element.href = item.target;
@@ -203,7 +208,8 @@
     if (item.target) {
       const action = document.createElement('span');
       action.className = 'portal-update-action';
-      action.textContent = item.target.startsWith('#') ? 'Voir la procédure →' : 'Ouvrir ↗';
+      if (item.targetType === 'file') action.textContent = 'Accéder au fichier';
+      else action.textContent = item.target.startsWith('#') ? 'Voir la procédure →' : 'Ouvrir ↗';
       element.appendChild(action);
     }
 
@@ -253,7 +259,7 @@
   };
 
   const render = items => {
-    const signature = JSON.stringify(items.map(item => [item.id, item.title, item.publishedAt, item.expiresAt, item.target]));
+    const signature = JSON.stringify(items.map(item => [item.id, item.title, item.publishedAt, item.expiresAt, item.target, item.targetType]));
     if (signature === lastSignature) {
       syncCarousel();
       startRotation();
