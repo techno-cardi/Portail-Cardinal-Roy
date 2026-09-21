@@ -2,14 +2,16 @@
 import json
 import re
 import subprocess
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 CURATED = Path('portal-updates-curated.json')
 OUTPUT = Path('portal-updates.json')
 DEFAULT_LIFETIME_DAYS = 28
 MAX_OUTPUT_ITEMS = 12
 HISTORY_DAYS = 180
+TZ = ZoneInfo('America/Toronto')
 
 PREFIX_RE = re.compile(r'^(Nouveauté|Nouveaute|Mise à jour|Mise a jour)\s*:\s*(.+)$', re.I)
 META_RE = re.compile(r'^(Résumé|Resume|Cible|Lien|Expire|Expiration)\s*:\s*(.+)$', re.I)
@@ -117,9 +119,10 @@ def commit_items():
             continue
 
         try:
-            committed_date = datetime.fromisoformat(committed_at.replace('Z', '+00:00')).date().isoformat()
+            committed_dt = datetime.fromisoformat(committed_at.replace('Z', '+00:00'))
+            committed_date = committed_dt.astimezone(TZ).date().isoformat()
         except ValueError:
-            committed_date = datetime.now(timezone.utc).date().isoformat()
+            committed_date = datetime.now(TZ).date().isoformat()
 
         metadata = {}
         free_lines = []
@@ -152,7 +155,7 @@ def commit_items():
 
 
 def dedupe_and_filter(items):
-    today = date.today().isoformat()
+    today = datetime.now(TZ).date().isoformat()
     items = [item for item in items if item['published_at'] <= today and item['expires_at'] >= today]
     items.sort(key=lambda item: (item['published_at'], item['id']), reverse=True)
 
@@ -181,7 +184,7 @@ def main():
         return 0
 
     payload = {
-        'generated_at': datetime.now(timezone.utc).isoformat(),
+        'generated_at': datetime.now(TZ).isoformat(),
         'default_lifetime_days': DEFAULT_LIFETIME_DAYS,
         'max_visible': 3,
         'items': items,
