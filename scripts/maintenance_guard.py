@@ -47,13 +47,15 @@ required_paths = [
     "AGENTS.md", ".github/copilot-instructions.md", "README.md", "portal-maintenance.json",
     "portal-updates-curated.json", "portal-updates.json", ".github/workflows/update-portal-updates.yml",
     ".github/workflows/update-news-feed.yml", ".github/workflows/check-links.yml", "search-easter-egg.js",
-    "search-easter-eggs-extra.js", "admin-status.html", "admin-status.js",
+    "search-easter-eggs-extra.js", "direct-file-navigation.js", "admin-status.html", "admin-status.js",
 ]
 for rel in required_paths:
     if not (ROOT / rel).exists():
         error(f"Composant de continuité manquant: {rel}")
 
 config = read_json(CONFIG_PATH)
+direct_files = {}
+direct_by_resource = {}
 if config:
     if config.get("version") != 1:
         error("portal-maintenance.json doit utiliser version 1.")
@@ -87,6 +89,40 @@ if config:
         if not (ROOT / source).exists():
             error(f"Source/générateur déclaré mais absent: {source}")
 
+    raw_direct_files = config.get("direct_files") or {}
+    if not isinstance(raw_direct_files, dict) or not raw_direct_files:
+        error("portal-maintenance.json doit déclarer les fichiers directs dans direct_files.")
+    else:
+        procedure_links_text = (ROOT / "procedure-links.js").read_text(encoding="utf-8", errors="replace")
+        for key, entry in raw_direct_files.items():
+            if not isinstance(entry, dict):
+                error(f"Fichier direct {key}: objet attendu.")
+                continue
+            resource_id = str(entry.get("resource_id") or "").strip()
+            url = str(entry.get("url") or "").strip()
+            title = str(entry.get("title") or "").strip()
+            action_label = str(entry.get("action_label") or "").strip()
+            groups = entry.get("search_required_groups")
+            if not resource_id:
+                error(f"Fichier direct {key}: resource_id manquant.")
+            elif resource_id in direct_by_resource:
+                error(f"Deux fichiers directs utilisent resource_id={resource_id}.")
+            if not url.startswith("https://"):
+                error(f"Fichier direct {key}: URL HTTPS requise.")
+            if not title:
+                error(f"Fichier direct {key}: titre manquant.")
+            if action_label != "Accéder au fichier":
+                error(f"Fichier direct {key}: action_label doit être exactement « Accéder au fichier ».")
+            if not isinstance(groups, list) or not groups or any(not isinstance(group, list) or not group for group in groups):
+                error(f"Fichier direct {key}: search_required_groups doit contenir au moins un groupe non vide.")
+            if url and url not in procedure_links_text:
+                error(f"Fichier direct {key}: l'URL officielle n'est plus présente dans procedure-links.js.")
+            direct_files[key] = entry
+            if resource_id:
+                direct_by_resource[resource_id] = entry
+        if "direct-file-navigation.js" not in procedure_links_text:
+            error("procedure-links.js ne charge plus direct-file-navigation.js.")
+
 curated = read_json(ROOT / "portal-updates-curated.json")
 if curated:
     ids = set()
@@ -100,6 +136,7 @@ if curated:
         published = str(item.get("published_at", "")).strip()
         expires = str(item.get("expires_at", "")).strip()
         target = str(item.get("target", "")).strip()
+        target_type = str(item.get("target_type", "")).strip().lower()
         if not item_id or item_id in ids:
             error(f"Nouvelle #{index}: id absent ou dupliqué ({item_id or 'vide'}).")
         ids.add(item_id)
@@ -111,10 +148,35 @@ if curated:
             error(f"Nouvelle {item_id or index}: expires_at invalide.")
         if target and not (target.startswith("#") or target.startswith("https://")):
             error(f"Nouvelle {item_id or index}: cible non sécuritaire ({target}).")
+        if target_type and target_type != "file":
+            error(f"Nouvelle {item_id or index}: target_type inconnu ({target_type}).")
+        if target_type == "file":
+            if target.startswith("#"):
+                resource_id = target[1:]
+                if resource_id not in direct_by_resource:
+                    error(f"Nouvelle {item_id or index}: cible fichier #{resource_id} absente de direct_files.")
+            elif not any(str(entry.get("url") or "") == target for entry in direct_files.values()):
+                error(f"Nouvelle {item_id or index}: URL fichier non déclarée dans direct_files.")
         if target:
             if target in targets:
                 warn(f"Deux nouveautés de réserve utilisent la même cible: {target}")
             targets.add(target)
+
+updates_feed = read_json(ROOT / "portal-updates.json")
+if updates_feed:
+    for item in updates_feed.get("items", []):
+        if not isinstance(item, dict) or str(item.get("target_type") or "").strip().lower() != "file":
+            continue
+        target = str(item.get("target") or "").strip()
+        if not target.startswith("https://"):
+            error(f"Nouveauté générée {item.get('id', '?')}: un fichier doit pointer directement vers HTTPS.")
+        if not any(str(entry.get("url") or "") == target for entry in direct_files.values()):
+            error(f"Nouveauté générée {item.get('id', '?')}: URL directe absente de direct_files.")
+
+updates_builder = (ROOT / "scripts/build_portal_updates.py").read_text(encoding="utf-8", errors="replace")
+for token in ("target_type", "direct_files", "resolve_target"):
+    if token not in updates_builder:
+        error(f"Le générateur des nouveautés ne gère plus le contrat fichier direct ({token} absent).")
 
 updates_workflow = (ROOT / ".github/workflows/update-portal-updates.yml").read_text(encoding="utf-8", errors="replace")
 for token in ("push:", "schedule:", "workflow_dispatch:", "concurrency:"):
