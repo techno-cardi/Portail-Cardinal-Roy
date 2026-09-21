@@ -147,7 +147,7 @@
       anchor.rel = 'noopener noreferrer';
       anchor.dataset.directFileUpdate = entry.key;
       const action = anchor.querySelector('.portal-update-action');
-      if (action) action.textContent = entry.action_label;
+      if (action && action.textContent !== entry.action_label) action.textContent = entry.action_label;
     });
   };
 
