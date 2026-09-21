@@ -51,7 +51,12 @@ def normalize_kind(value):
 
 
 def normalize_target_type(value):
-    return 'file' if str(value or '').strip().lower() in {'file', 'fichier'} else ''
+    text = str(value or '').strip().lower()
+    if text in {'file', 'fichier'}:
+        return 'file'
+    if text in {'section', 'page', 'ancre'}:
+        return 'section'
+    return ''
 
 
 def direct_files():
@@ -70,8 +75,11 @@ def direct_files():
 
 def resolve_target(value, target_type=''):
     target = safe_target(value)
+    if target_type == 'section':
+        return target if target.startswith('#') else ''
+
     if target_type != 'file':
-        return target
+        return ''
 
     entries = direct_files()
     if target.startswith('#'):
@@ -91,15 +99,23 @@ def normalize_item(raw, fallback_id):
     published_at = normalize_date(raw.get('published_at') or raw.get('date'))
     if not title or not published_at:
         return None
-    expires_at = normalize_date(raw.get('expires_at')) or default_expiration(published_at)
+
     target_type = normalize_target_type(raw.get('target_type'))
+    if not target_type:
+        raise RuntimeError(f'Nouveauté « {title} »: target_type explicite requis (file ou section).')
+
+    target = resolve_target(raw.get('target'), target_type)
+    if not target:
+        raise RuntimeError(f'Nouveauté « {title} »: cible invalide ou non déclarée pour target_type={target_type}.')
+
+    expires_at = normalize_date(raw.get('expires_at')) or default_expiration(published_at)
     return {
         'id': str(raw.get('id') or fallback_id),
         'title': title,
         'description': str(raw.get('description') or '').strip(),
         'published_at': published_at,
         'expires_at': expires_at,
-        'target': resolve_target(raw.get('target'), target_type),
+        'target': target,
         'target_type': target_type,
         'kind': normalize_kind(raw.get('kind')),
     }
@@ -141,8 +157,9 @@ def current_items():
 
 
 def main():
-    # Les nouveautés visibles sont une liste éditoriale explicite.
+    # Les Nouveautés visibles sont une liste éditoriale explicite.
     # Ne jamais dériver cette section de l'historique Git ou de commits techniques.
+    # Chaque entrée doit déclarer sa nature: fichier final ou section du portail.
     items = dedupe_and_filter(curated_items())
     if current_items() == items:
         print('Aucun changement dans les nouveautés du portail.')
