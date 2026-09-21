@@ -53,7 +53,7 @@
     </div>
     <div class="portal-updates-list" id="portal-updates-list"></div>`;
 
-  if (quickArea) main.insertBefore(section, quickArea);
+  if (quickArea) quickArea.insertAdjacentElement('afterend', section);
   else main.prepend(section);
 
   const list = section.querySelector('#portal-updates-list');
