@@ -2,8 +2,8 @@ name: Mise à jour des dates importantes
 
 on:
   schedule:
-    # Toutes les 5 minutes, décalé de 2 minutes pour éviter les pointes GitHub Actions.
-    - cron: '2-57/5 * * * *'
+    # Toutes les 15 minutes. Suffisant pour un calendrier scolaire et 66 % moins d'exécutions que l'ancien rythme de 5 minutes.
+    - cron: '2-59/15 * * * *'
   workflow_dispatch:
   push:
     paths:
@@ -15,13 +15,13 @@ permissions:
 
 concurrency:
   group: dates-importantes-calendar-sync
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   update-news:
     runs-on: ubuntu-latest
+    timeout-minutes: 7
     env:
-      # Pour le calendrier privé, l'adresse iCal est stockée comme secret GitHub.
       CARDINAL_CALENDAR_ICAL_URL: ${{ secrets.CARDINAL_CALENDAR_ICAL_URL }}
       CARDINAL_SCHOOL_CALENDAR_ICAL_URL: ${{ secrets.CARDINAL_SCHOOL_CALENDAR_ICAL_URL }}
     steps:
@@ -55,6 +55,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add news-feed.json
-          git commit -m "Mettre à jour les dates importantes du calendrier"
+          git commit -m "Mettre à jour les dates importantes du calendrier [sans nouveauté]"
           git pull --rebase origin main
           git push origin HEAD:main

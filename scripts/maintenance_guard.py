@@ -46,8 +46,8 @@ def valid_date(value):
 required_paths = [
     "AGENTS.md", ".github/copilot-instructions.md", "README.md", "portal-maintenance.json",
     "portal-updates-curated.json", "portal-updates.json", ".github/workflows/update-portal-updates.yml",
-    ".github/workflows/check-links.yml", "search-easter-egg.js", "search-easter-eggs-extra.js",
-    "admin-status.html", "admin-status.js",
+    ".github/workflows/update-news-feed.yml", ".github/workflows/check-links.yml", "search-easter-egg.js",
+    "search-easter-eggs-extra.js", "admin-status.html", "admin-status.js",
 ]
 for rel in required_paths:
     if not (ROOT / rel).exists():
@@ -73,6 +73,12 @@ if config:
     for field in ("start", "end", "christmas_break", "spring_break", "rollover_review"):
         if school.get(field) and not valid_date(school[field]):
             error(f"Date invalide: school_year.{field}={school[field]}")
+
+    calendar_feed = config.get("calendar_feed") or {}
+    if calendar_feed.get("refresh_minutes") != 15:
+        error("Le fil des dates importantes doit rester configuré à 15 minutes sauf décision documentée.")
+    if calendar_feed.get("timezone") != "America/Toronto":
+        error("Le fil calendrier doit utiliser America/Toronto.")
 
     generated = config.get("generated_files") or {}
     for output, source in generated.items():
@@ -115,6 +121,15 @@ for token in ("push:", "schedule:", "workflow_dispatch:", "concurrency:"):
     if token not in updates_workflow:
         error(f"Le workflow des nouveautés n'expose plus {token}")
 
+news_workflow = (ROOT / ".github/workflows/update-news-feed.yml").read_text(encoding="utf-8", errors="replace")
+for token in ("schedule:", "workflow_dispatch:", "concurrency:"):
+    if token not in news_workflow:
+        error(f"Le workflow des dates importantes n'expose plus {token}")
+if "2-59/15 * * * *" not in news_workflow:
+    error("La cadence du calendrier ne correspond plus au manifeste de maintenance (15 minutes).")
+if "cancel-in-progress: true" not in news_workflow:
+    error("Le workflow calendrier doit annuler une exécution devenue obsolète.")
+
 index_text = (ROOT / "index.html").read_text(encoding="utf-8", errors="replace")
 if not re.search(r"PORTAL_BUILD\s*=\s*['\"][0-9A-Za-z._-]+['\"]", index_text):
     error("PORTAL_BUILD est absent ou invalide dans index.html.")
@@ -139,8 +154,7 @@ if config:
             warn(f"Révision annuelle à faire: {school.get('label', 'année scolaire')} (seuil {review}).")
 
 # Toute modification de code ou contenu exécuté par le portail doit prendre une
-# décision explicite sur les Nouveautés. C'est un garde de processus, pas une
-# obligation d'annoncer chaque correctif : [sans nouveauté] est toujours permis.
+# décision explicite sur les Nouveautés. [sans nouveauté] est toujours permis.
 event_name = os.environ.get("GITHUB_EVENT_NAME", "")
 before = os.environ.get("PORTAL_BEFORE", "").strip()
 if event_name == "push":
@@ -149,19 +163,10 @@ if event_name == "push":
             changed = subprocess.check_output(["git", "diff", "--name-only", before, "HEAD"], cwd=ROOT, text=True, stderr=subprocess.DEVNULL).splitlines()
         else:
             changed = subprocess.check_output(["git", "diff", "--name-only", "HEAD^", "HEAD"], cwd=ROOT, text=True, stderr=subprocess.DEVNULL).splitlines()
-
-        runtime_change = any(
-            re.match(r"^body-part-.*\.txt$", path)
-            or ("/" not in path and path.endswith((".js", ".css", ".html")))
-            for path in changed
-        )
+        runtime_change = any(re.match(r"^body-part-.*\.txt$", path) or ("/" not in path and path.endswith((".js", ".css", ".html"))) for path in changed)
         author = subprocess.check_output(["git", "log", "-1", "--pretty=%an"], cwd=ROOT, text=True).strip()
         message = subprocess.check_output(["git", "log", "-1", "--pretty=%B"], cwd=ROOT, text=True).strip()
-        decision = (
-            re.match(r"^(Nouveauté|Nouveaute|Mise à jour|Mise a jour)\s*:", message, re.I)
-            or "[sans nouveauté]" in message.lower()
-            or "[sans nouveaute]" in message.lower()
-        )
+        decision = re.match(r"^(Nouveauté|Nouveaute|Mise à jour|Mise a jour)\s*:", message, re.I) or "[sans nouveauté]" in message.lower() or "[sans nouveaute]" in message.lower()
         if runtime_change and author != "github-actions[bot]" and not decision:
             error("Du code ou du contenu visible a changé sans décision de nouveauté. Utiliser `Nouveauté:`, `Mise à jour:` ou `[sans nouveauté]` dans le commit.")
     except (subprocess.CalledProcessError, FileNotFoundError):

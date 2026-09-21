@@ -11,10 +11,12 @@ on:
       - 'portal-maintenance.json'
       - 'portal-updates-curated.json'
       - 'scripts/maintenance_guard.py'
+      - 'scripts/build_news_feed.py'
       - '.github/copilot-instructions.md'
       - 'AGENTS.md'
       - 'README.md'
       - '.github/workflows/update-portal-updates.yml'
+      - '.github/workflows/update-news-feed.yml'
       - '.github/workflows/check-links.yml'
       - '.github/workflows/maintenance-guard.yml'
   pull_request:

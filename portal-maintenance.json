@@ -18,6 +18,12 @@
     "spring_break": "2027-03-01",
     "rollover_review": "2027-04-15"
   },
+  "calendar_feed": {
+    "refresh_minutes": 15,
+    "horizon_days": 90,
+    "max_items": 12,
+    "timezone": "America/Toronto"
+  },
   "annual_resource_ids": [
     "calendrier-scolaire-2026-2027",
     "dates-importantes-2026-2027",
