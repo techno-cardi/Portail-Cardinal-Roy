@@ -68,6 +68,18 @@ if config:
     if knowledge.get("repository") != "techno-cardi/database" or knowledge.get("path") != "Portail Cardinal-Roy":
         error("Le pointeur vers la documentation durable est incorrect.")
 
+    updates_policy = config.get("updates_policy") or {}
+    if updates_policy.get("source") != "portal-updates-curated.json":
+        error("Les Nouveautés doivent provenir uniquement de portal-updates-curated.json.")
+    if updates_policy.get("technical_commits_are_public_updates") is not False:
+        error("Les commits techniques ne doivent jamais devenir automatiquement des Nouveautés publiques.")
+    if updates_policy.get("require_explicit_target_type") is not True:
+        error("Chaque Nouveauté doit déclarer explicitement target_type.")
+    if set(updates_policy.get("allowed_target_types") or []) != {"file", "section"}:
+        error("updates_policy.allowed_target_types doit contenir exactement file et section.")
+    if updates_policy.get("file_action_label") != "Accéder au fichier":
+        error("Le libellé des fichiers directs doit rester « Accéder au fichier ».")
+
     school = config.get("school_year") or {}
     for field in ("label", "start", "end", "christmas_break", "spring_break", "rollover_review"):
         if not school.get(field):
@@ -93,7 +105,6 @@ if config:
     if not isinstance(raw_direct_files, dict) or not raw_direct_files:
         error("portal-maintenance.json doit déclarer les fichiers directs dans direct_files.")
     else:
-        procedure_links_text = (ROOT / "procedure-links.js").read_text(encoding="utf-8", errors="replace")
         for key, entry in raw_direct_files.items():
             if not isinstance(entry, dict):
                 error(f"Fichier direct {key}: objet attendu.")
@@ -102,6 +113,7 @@ if config:
             url = str(entry.get("url") or "").strip()
             title = str(entry.get("title") or "").strip()
             action_label = str(entry.get("action_label") or "").strip()
+            source_file = str(entry.get("source_file") or "").strip()
             groups = entry.get("search_required_groups")
             if not resource_id:
                 error(f"Fichier direct {key}: resource_id manquant.")
@@ -113,15 +125,19 @@ if config:
                 error(f"Fichier direct {key}: titre manquant.")
             if action_label != "Accéder au fichier":
                 error(f"Fichier direct {key}: action_label doit être exactement « Accéder au fichier ».")
+            if not source_file:
+                error(f"Fichier direct {key}: source_file manquant.")
+            else:
+                source_path = ROOT / source_file
+                if not source_path.exists():
+                    error(f"Fichier direct {key}: source_file absent ({source_file}).")
+                elif url and url not in source_path.read_text(encoding="utf-8", errors="replace"):
+                    error(f"Fichier direct {key}: l'URL officielle n'est plus présente dans {source_file}.")
             if not isinstance(groups, list) or not groups or any(not isinstance(group, list) or not group for group in groups):
                 error(f"Fichier direct {key}: search_required_groups doit contenir au moins un groupe non vide.")
-            if url and url not in procedure_links_text:
-                error(f"Fichier direct {key}: l'URL officielle n'est plus présente dans procedure-links.js.")
             direct_files[key] = entry
             if resource_id:
                 direct_by_resource[resource_id] = entry
-        if "direct-file-navigation.js" not in procedure_links_text:
-            error("procedure-links.js ne charge plus direct-file-navigation.js.")
 
 curated = read_json(ROOT / "portal-updates-curated.json")
 if curated:
@@ -146,17 +162,32 @@ if curated:
             error(f"Nouvelle {item_id or index}: published_at invalide.")
         if expires and not valid_date(expires):
             error(f"Nouvelle {item_id or index}: expires_at invalide.")
-        if target and not (target.startswith("#") or target.startswith("https://")):
-            error(f"Nouvelle {item_id or index}: cible non sécuritaire ({target}).")
-        if target_type and target_type != "file":
-            error(f"Nouvelle {item_id or index}: target_type inconnu ({target_type}).")
+        if not target or not (target.startswith("#") or target.startswith("https://")):
+            error(f"Nouvelle {item_id or index}: cible absente ou non sécuritaire ({target or 'vide'}).")
+        if target_type not in {"file", "section"}:
+            error(f"Nouvelle {item_id or index}: target_type explicite requis (file ou section).")
+
+        resource_id = target[1:] if target.startswith("#") else ""
+        matching_direct_url = next(
+            (entry for entry in direct_files.values() if str(entry.get("url") or "") == target),
+            None,
+        )
+
         if target_type == "file":
             if target.startswith("#"):
-                resource_id = target[1:]
                 if resource_id not in direct_by_resource:
                     error(f"Nouvelle {item_id or index}: cible fichier #{resource_id} absente de direct_files.")
-            elif not any(str(entry.get("url") or "") == target for entry in direct_files.values()):
+            elif not matching_direct_url:
                 error(f"Nouvelle {item_id or index}: URL fichier non déclarée dans direct_files.")
+        elif target_type == "section":
+            if not target.startswith("#"):
+                error(f"Nouvelle {item_id or index}: une section doit viser une ancre interne #id.")
+            elif resource_id in direct_by_resource:
+                error(
+                    f"Nouvelle {item_id or index}: #{resource_id} est un fichier final déclaré; "
+                    "target_type doit être file pour éviter un clic intermédiaire."
+                )
+
         if target:
             if target in targets:
                 warn(f"Deux nouveautés de réserve utilisent la même cible: {target}")
@@ -165,18 +196,28 @@ if curated:
 updates_feed = read_json(ROOT / "portal-updates.json")
 if updates_feed:
     for item in updates_feed.get("items", []):
-        if not isinstance(item, dict) or str(item.get("target_type") or "").strip().lower() != "file":
+        if not isinstance(item, dict):
+            error("portal-updates.json contient une entrée non objet.")
             continue
+        target_type = str(item.get("target_type") or "").strip().lower()
         target = str(item.get("target") or "").strip()
-        if not target.startswith("https://"):
-            error(f"Nouveauté générée {item.get('id', '?')}: un fichier doit pointer directement vers HTTPS.")
-        if not any(str(entry.get("url") or "") == target for entry in direct_files.values()):
-            error(f"Nouveauté générée {item.get('id', '?')}: URL directe absente de direct_files.")
+        if target_type not in {"file", "section"}:
+            error(f"Nouveauté générée {item.get('id', '?')}: target_type doit être file ou section.")
+            continue
+        if target_type == "file":
+            if not target.startswith("https://"):
+                error(f"Nouveauté générée {item.get('id', '?')}: un fichier doit pointer directement vers HTTPS.")
+            if not any(str(entry.get("url") or "") == target for entry in direct_files.values()):
+                error(f"Nouveauté générée {item.get('id', '?')}: URL directe absente de direct_files.")
+        elif not target.startswith("#"):
+            error(f"Nouveauté générée {item.get('id', '?')}: une section doit rester une ancre interne #id.")
 
 updates_builder = (ROOT / "scripts/build_portal_updates.py").read_text(encoding="utf-8", errors="replace")
-for token in ("target_type", "direct_files", "resolve_target"):
+for token in ("target_type", "direct_files", "resolve_target", "curated_items()"):
     if token not in updates_builder:
-        error(f"Le générateur des nouveautés ne gère plus le contrat fichier direct ({token} absent).")
+        error(f"Le générateur des nouveautés ne respecte plus le contrat éditorial ({token} absent).")
+if "git_log_records" in updates_builder or "git log" in updates_builder:
+    error("Le générateur des Nouveautés ne doit jamais dériver les cartes publiques de l'historique Git.")
 
 updates_workflow = (ROOT / ".github/workflows/update-portal-updates.yml").read_text(encoding="utf-8", errors="replace")
 for token in ("push:", "schedule:", "workflow_dispatch:", "concurrency:"):
@@ -195,6 +236,8 @@ if "cancel-in-progress: true" not in news_workflow:
 index_text = (ROOT / "index.html").read_text(encoding="utf-8", errors="replace")
 if not re.search(r"PORTAL_BUILD\s*=\s*['\"][0-9A-Za-z._-]+['\"]", index_text):
     error("PORTAL_BUILD est absent ou invalide dans index.html.")
+if "direct-file-navigation.js" not in index_text:
+    error("index.html doit charger directement direct-file-navigation.js.")
 
 if config:
     school = config.get("school_year") or {}
@@ -216,7 +259,8 @@ if config:
             warn(f"Révision annuelle à faire: {school.get('label', 'année scolaire')} (seuil {review}).")
 
 # Toute modification de code ou contenu exécuté par le portail doit prendre une
-# décision explicite sur les Nouveautés. [sans nouveauté] est toujours permis.
+# décision explicite sur les Nouveautés. Le préfixe du commit documente la décision,
+# mais ne crée jamais lui-même une carte publique. [sans nouveauté] est toujours permis.
 event_name = os.environ.get("GITHUB_EVENT_NAME", "")
 before = os.environ.get("PORTAL_BEFORE", "").strip()
 if event_name == "push":
@@ -230,7 +274,7 @@ if event_name == "push":
         message = subprocess.check_output(["git", "log", "-1", "--pretty=%B"], cwd=ROOT, text=True).strip()
         decision = re.match(r"^(Nouveauté|Nouveaute|Mise à jour|Mise a jour)\s*:", message, re.I) or "[sans nouveauté]" in message.lower() or "[sans nouveaute]" in message.lower()
         if runtime_change and author != "github-actions[bot]" and not decision:
-            error("Du code ou du contenu visible a changé sans décision de nouveauté. Utiliser `Nouveauté:`, `Mise à jour:` ou `[sans nouveauté]` dans le commit.")
+            error("Du code ou du contenu visible a changé sans décision de nouveauté. Utiliser `Nouveauté:`, `Mise à jour:` ou `[sans nouveauté]` dans le commit. Une carte publique doit être ajoutée explicitement à portal-updates-curated.json.")
     except (subprocess.CalledProcessError, FileNotFoundError):
         warn("Impossible d'évaluer la décision de nouveauté pour ce commit.")
 
