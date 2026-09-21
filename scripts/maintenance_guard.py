@@ -11,7 +11,6 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "portal-maintenance.json"
 TZ = ZoneInfo("America/Toronto")
-
 errors = []
 warnings = []
 
@@ -45,17 +44,10 @@ def valid_date(value):
 
 
 required_paths = [
-    "AGENTS.md",
-    ".github/copilot-instructions.md",
-    "README.md",
-    "portal-updates-curated.json",
-    "portal-updates.json",
-    ".github/workflows/update-portal-updates.yml",
-    ".github/workflows/check-links.yml",
-    "search-easter-egg.js",
-    "search-easter-eggs-extra.js",
-    "admin-status.html",
-    "admin-status.js",
+    "AGENTS.md", ".github/copilot-instructions.md", "README.md", "portal-maintenance.json",
+    "portal-updates-curated.json", "portal-updates.json", ".github/workflows/update-portal-updates.yml",
+    ".github/workflows/check-links.yml", "search-easter-egg.js", "search-easter-eggs-extra.js",
+    "admin-status.html", "admin-status.js",
 ]
 for rel in required_paths:
     if not (ROOT / rel).exists():
@@ -68,6 +60,8 @@ if config:
     constraints = config.get("constraints") or {}
     if constraints.get("free_only") is not True:
         error("La contrainte free_only doit rester vraie.")
+    if constraints.get("paid_runtime_dependencies") is not False:
+        error("paid_runtime_dependencies doit rester faux.")
     knowledge = config.get("knowledge") or {}
     if knowledge.get("repository") != "techno-cardi/database" or knowledge.get("path") != "Portail Cardinal-Roy":
         error("Le pointeur vers la documentation durable est incorrect.")
@@ -128,17 +122,8 @@ if not re.search(r"PORTAL_BUILD\s*=\s*['\"][0-9A-Za-z._-]+['\"]", index_text):
 if config:
     school = config.get("school_year") or {}
     expected = {
-        "search-easter-egg.js": [
-            school.get("start"),
-            school.get("end"),
-            school.get("christmas_break"),
-            school.get("spring_break"),
-        ],
-        "search-easter-eggs-extra.js": [
-            school.get("end"),
-            school.get("christmas_break"),
-            school.get("spring_break"),
-        ],
+        "search-easter-egg.js": [school.get("start"), school.get("end"), school.get("christmas_break"), school.get("spring_break")],
+        "search-easter-eggs-extra.js": [school.get("end"), school.get("christmas_break"), school.get("spring_break")],
     }
     for rel, values in expected.items():
         text = (ROOT / rel).read_text(encoding="utf-8", errors="replace")
@@ -153,31 +138,23 @@ if config:
         if today >= review_date:
             warn(f"Révision annuelle à faire: {school.get('label', 'année scolaire')} (seuil {review}).")
 
+# Toute modification de code ou contenu exécuté par le portail doit prendre une
+# décision explicite sur les Nouveautés. C'est un garde de processus, pas une
+# obligation d'annoncer chaque correctif : [sans nouveauté] est toujours permis.
 event_name = os.environ.get("GITHUB_EVENT_NAME", "")
 before = os.environ.get("PORTAL_BEFORE", "").strip()
 if event_name == "push":
     try:
         if before and before != "0" * 40:
-            changed = subprocess.check_output(
-                ["git", "diff", "--name-only", before, "HEAD"],
-                cwd=ROOT,
-                text=True,
-                stderr=subprocess.DEVNULL,
-            ).splitlines()
+            changed = subprocess.check_output(["git", "diff", "--name-only", before, "HEAD"], cwd=ROOT, text=True, stderr=subprocess.DEVNULL).splitlines()
         else:
-            changed = subprocess.check_output(
-                ["git", "diff", "--name-only", "HEAD^", "HEAD"],
-                cwd=ROOT,
-                text=True,
-                stderr=subprocess.DEVNULL,
-            ).splitlines()
+            changed = subprocess.check_output(["git", "diff", "--name-only", "HEAD^", "HEAD"], cwd=ROOT, text=True, stderr=subprocess.DEVNULL).splitlines()
 
-        visible_patterns = [
-            re.compile(r"^body-part-.*\.txt$"),
-            re.compile(r"^source-patches(?:-\d+)?\.js$"),
-            re.compile(r"^(after-ui|procedure-links|depannage-resource)\.js$"),
-        ]
-        visible_change = any(any(p.match(path) for p in visible_patterns) for path in changed)
+        runtime_change = any(
+            re.match(r"^body-part-.*\.txt$", path)
+            or ("/" not in path and path.endswith((".js", ".css", ".html")))
+            for path in changed
+        )
         author = subprocess.check_output(["git", "log", "-1", "--pretty=%an"], cwd=ROOT, text=True).strip()
         message = subprocess.check_output(["git", "log", "-1", "--pretty=%B"], cwd=ROOT, text=True).strip()
         decision = (
@@ -185,8 +162,8 @@ if event_name == "push":
             or "[sans nouveauté]" in message.lower()
             or "[sans nouveaute]" in message.lower()
         )
-        if visible_change and author != "github-actions[bot]" and not decision:
-            warn("Un fichier de contenu visible a changé sans décision de nouveauté. Utiliser `Nouveauté:`, `Mise à jour:` ou `[sans nouveauté]` dans le commit.")
+        if runtime_change and author != "github-actions[bot]" and not decision:
+            error("Du code ou du contenu visible a changé sans décision de nouveauté. Utiliser `Nouveauté:`, `Mise à jour:` ou `[sans nouveauté]` dans le commit.")
     except (subprocess.CalledProcessError, FileNotFoundError):
         warn("Impossible d'évaluer la décision de nouveauté pour ce commit.")
 
