@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-21T13:11:57.708545-04:00",
+  "generated_at": "2026-09-21T15:35:00-04:00",
   "default_lifetime_days": 28,
   "max_visible": 3,
   "items": [
@@ -9,7 +9,8 @@
       "description": "Réserver un local et convoquer un élève en récupération, en mise à jour ou pour un autre motif.",
       "published_at": "2026-09-21",
       "expires_at": "2027-06-30",
-      "target": "#reservation",
+      "target": "https://drive.google.com/file/d/1Ea0rcbyqvFjmXzc_yuNREdgk8Pq4LEQW/view?usp=drivesdk",
+      "target_type": "file",
       "kind": "nouveau"
     },
     {
@@ -18,7 +19,8 @@
       "description": "Configurer ou rétablir l’accès avec Microsoft Authenticator et la double authentification.",
       "published_at": "2026-09-21",
       "expires_at": "2027-06-30",
-      "target": "#app-mot-de-passe",
+      "target": "https://drive.google.com/file/d/1G4QFoa_jyItVPd1OTZkCGGabk9h2gIa6/view?usp=drivesdk",
+      "target_type": "file",
       "kind": "nouveau"
     },
     {
@@ -28,6 +30,7 @@
       "published_at": "2026-09-14",
       "expires_at": "2027-06-30",
       "target": "#tableau-depannage-2026-2027",
+      "target_type": "",
       "kind": "nouveau"
     }
   ]
