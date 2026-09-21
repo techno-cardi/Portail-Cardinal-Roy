@@ -24,6 +24,27 @@
     "max_items": 12,
     "timezone": "America/Toronto"
   },
+  "direct_files": {
+    "reservation-procedure": {
+      "resource_id": "reservation",
+      "url": "https://drive.google.com/file/d/1Ea0rcbyqvFjmXzc_yuNREdgk8Pq4LEQW/view?usp=drivesdk",
+      "title": "Procédure - réservation de locaux et convocations",
+      "action_label": "Accéder au fichier",
+      "search_required_groups": [
+        ["procédure", "procedure", "guide", "tutoriel"],
+        ["réservation", "reservation", "réserver", "reserver", "local", "locaux", "convocation", "convoquer", "récupération", "recuperation"]
+      ]
+    },
+    "double-authentification": {
+      "resource_id": "app-mot-de-passe",
+      "url": "https://drive.google.com/file/d/1G4QFoa_jyItVPd1OTZkCGGabk9h2gIa6/view?usp=drivesdk",
+      "title": "Double authentification - marche à suivre",
+      "action_label": "Accéder au fichier",
+      "search_required_groups": [
+        ["authentification", "authenticator", "multifacteur", "mfa", "2fa"]
+      ]
+    }
+  },
   "annual_resource_ids": [
     "calendrier-scolaire-2026-2027",
     "dates-importantes-2026-2027",
