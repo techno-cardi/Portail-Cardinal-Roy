@@ -5,7 +5,26 @@
       "title": "Nouvelle procédure de réservation et de récupération",
       "description": "Réserver un local et convoquer un élève en récupération, en mise à jour ou pour un autre motif.",
       "published_at": "2026-09-21",
+      "expires_at": "2027-06-30",
       "target": "#reservation",
+      "kind": "nouveau"
+    },
+    {
+      "id": "double-authentification-2026-09-21",
+      "title": "Nouvelle procédure de double authentification",
+      "description": "Configurer ou rétablir l’accès avec Microsoft Authenticator et la double authentification.",
+      "published_at": "2026-09-21",
+      "expires_at": "2027-06-30",
+      "target": "#app-mot-de-passe",
+      "kind": "nouveau"
+    },
+    {
+      "id": "depannage-2026-2027",
+      "title": "Tableau de disponibilités de dépannage 2026-2027",
+      "description": "Consulter les périodes de dépannage obligatoire et les disponibilités volontaires du personnel.",
+      "published_at": "2026-09-14",
+      "expires_at": "2027-06-30",
+      "target": "#tableau-depannage-2026-2027",
       "kind": "nouveau"
     }
   ]
