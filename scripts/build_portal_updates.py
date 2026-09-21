@@ -8,13 +8,14 @@ from zoneinfo import ZoneInfo
 
 CURATED = Path('portal-updates-curated.json')
 OUTPUT = Path('portal-updates.json')
+MAINTENANCE = Path('portal-maintenance.json')
 DEFAULT_LIFETIME_DAYS = 28
 MAX_OUTPUT_ITEMS = 12
 HISTORY_DAYS = 180
 TZ = ZoneInfo('America/Toronto')
 
 PREFIX_RE = re.compile(r'^(Nouveauté|Nouveaute|Mise à jour|Mise a jour)\s*:\s*(.+)$', re.I)
-META_RE = re.compile(r'^(Résumé|Resume|Cible|Lien|Expire|Expiration)\s*:\s*(.+)$', re.I)
+META_RE = re.compile(r'^(Résumé|Resume|Cible|Lien|Expire|Expiration|Type|Type de cible)\s*:\s*(.+)$', re.I)
 DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 
 
@@ -54,6 +55,40 @@ def normalize_kind(value):
     return 'maj' if str(value or '').strip().lower() in {'maj', 'mise à jour', 'mise a jour'} else 'nouveau'
 
 
+def normalize_target_type(value):
+    return 'file' if str(value or '').strip().lower() in {'file', 'fichier'} else ''
+
+
+def direct_files():
+    config = read_json(MAINTENANCE)
+    raw = config.get('direct_files', {}) if isinstance(config, dict) else {}
+    entries = []
+    for key, value in raw.items():
+        if not isinstance(value, dict):
+            continue
+        resource_id = str(value.get('resource_id') or '').strip()
+        url = safe_target(value.get('url'))
+        if resource_id and url.startswith('https://'):
+            entries.append({'key': key, 'resource_id': resource_id, 'url': url})
+    return entries
+
+
+def resolve_target(value, target_type=''):
+    target = safe_target(value)
+    if target_type != 'file':
+        return target
+
+    entries = direct_files()
+    if target.startswith('#'):
+        resource_id = target[1:]
+        match = next((entry for entry in entries if entry['resource_id'] == resource_id), None)
+        return match['url'] if match else ''
+
+    if target.startswith('https://'):
+        return target if any(entry['url'] == target for entry in entries) else ''
+    return ''
+
+
 def normalize_item(raw, fallback_id):
     if not isinstance(raw, dict):
         return None
@@ -62,13 +97,15 @@ def normalize_item(raw, fallback_id):
     if not title or not published_at:
         return None
     expires_at = normalize_date(raw.get('expires_at')) or default_expiration(published_at)
+    target_type = normalize_target_type(raw.get('target_type'))
     return {
         'id': str(raw.get('id') or fallback_id),
         'title': title,
         'description': str(raw.get('description') or '').strip(),
         'published_at': published_at,
         'expires_at': expires_at,
-        'target': safe_target(raw.get('target')),
+        'target': resolve_target(raw.get('target'), target_type),
+        'target_type': target_type,
         'kind': normalize_kind(raw.get('kind')),
     }
 
@@ -139,6 +176,7 @@ def commit_items():
 
         description = metadata.get('résumé') or metadata.get('resume') or (free_lines[0] if free_lines else '')
         target = metadata.get('cible') or metadata.get('lien') or ''
+        target_type = normalize_target_type(metadata.get('type') or metadata.get('type de cible'))
         expires_at = normalize_date(metadata.get('expire') or metadata.get('expiration')) or default_expiration(committed_date)
         kind = 'maj' if prefix.lower().startswith('mise') else 'nouveau'
 
@@ -148,7 +186,8 @@ def commit_items():
             'description': description,
             'published_at': committed_date,
             'expires_at': expires_at,
-            'target': safe_target(target),
+            'target': resolve_target(target, target_type),
+            'target_type': target_type,
             'kind': kind,
         })
     return items
@@ -157,16 +196,12 @@ def commit_items():
 def dedupe_and_filter(items):
     today = datetime.now(TZ).date().isoformat()
     items = [item for item in items if item['published_at'] <= today and item['expires_at'] >= today]
-    # Tri stable : les commits sont fournis avant les entrées de réserve, donc une mise à
-    # jour publiée le même jour remplace bien la carte de réserve correspondante.
     items.sort(key=lambda item: item['published_at'], reverse=True)
 
     seen = set()
     output = []
     for item in items:
         target = item.get('target', '').casefold()
-        # Une même destination représente la même procédure même si son titre change.
-        # Sans cible, on retombe sur le titre pour éviter les doublons textuels.
         key = ('target', target) if target else ('title', item['title'].casefold())
         if key in seen:
             continue
@@ -183,8 +218,6 @@ def current_items():
 
 
 def main():
-    # Les commits passent en premier pour qu'une vraie mise à jour prenne la place de la
-    # carte de réserve si les deux partagent la même date et la même destination.
     items = dedupe_and_filter(commit_items() + curated_items())
     if current_items() == items:
         print('Aucun changement dans les nouveautés du portail.')
