@@ -27,6 +27,7 @@
       "published_at": "2026-09-14",
       "expires_at": "2027-06-30",
       "target": "#tableau-depannage-2026-2027",
+      "target_type": "file",
       "kind": "nouveau"
     }
   ]
