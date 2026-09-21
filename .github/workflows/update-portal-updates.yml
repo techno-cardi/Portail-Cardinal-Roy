@@ -1,0 +1,53 @@
+name: Mise à jour des nouveautés du portail
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'portal-updates.json'
+  schedule:
+    - cron: '17 10 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: portal-updates-sync
+  cancel-in-progress: false
+
+jobs:
+  update-portal-updates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le portail et son historique
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Se synchroniser sur la branche principale
+        shell: bash
+        run: git pull --ff-only origin main
+
+      - name: Préparer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Construire le fil des nouveautés
+        run: python scripts/build_portal_updates.py
+
+      - name: Publier seulement si le fil a changé
+        shell: bash
+        run: |
+          if git diff --quiet -- portal-updates.json; then
+            echo "Aucune modification à publier."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add portal-updates.json
+          git commit -m "Mettre à jour les nouveautés du portail"
+          git pull --rebase origin main
+          git push origin HEAD:main
