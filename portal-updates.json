@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-09-21T15:34:00+00:00",
+  "default_lifetime_days": 28,
+  "max_visible": 3,
+  "items": [
+    {
+      "id": "reservation-recuperation-2026-09-21",
+      "title": "Nouvelle procédure de réservation et de récupération",
+      "description": "Réserver un local et convoquer un élève en récupération, en mise à jour ou pour un autre motif.",
+      "published_at": "2026-09-21",
+      "expires_at": "2026-10-19",
+      "target": "#reservation",
+      "kind": "nouveau"
+    }
+  ]
+}
