@@ -56,6 +56,7 @@ Promise.all(files.map(f=>fetch(versioned(f)).then(r=>{if(!r.ok) throw new Error(
     await loadScript('ped-day-2026-09-18.js');
     await loadScript('portal-flash-controller.js');
     await loadScript('global-search-flash.js');
+    await loadScript('direct-file-navigation.js');
     await loadScript('news-ticker.js');
   })
   .catch(error=>{
