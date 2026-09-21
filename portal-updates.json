@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-21T19:35:54.702720-04:00",
+  "generated_at": "2026-09-21T19:40:00-04:00",
   "default_lifetime_days": 28,
   "max_visible": 3,
   "items": [
@@ -29,8 +29,8 @@
       "description": "Consulter les périodes de dépannage obligatoire et les disponibilités volontaires du personnel.",
       "published_at": "2026-09-14",
       "expires_at": "2027-06-30",
-      "target": "#tableau-depannage-2026-2027",
-      "target_type": "",
+      "target": "https://docs.google.com/document/d/1-hr2ucGHlCGPEhTjHcMBVcoGwCViHWnD/edit?usp=drivesdk&ouid=109187652422234365096&rtpof=true&sd=true",
+      "target_type": "file",
       "kind": "nouveau"
     }
   ]
