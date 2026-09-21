@@ -107,6 +107,15 @@
     ].join(' '));
   };
 
+  const loadDirectFileNavigation = () => {
+    if (document.querySelector('script[data-direct-file-navigation]')) return;
+    const script = document.createElement('script');
+    script.src = 'direct-file-navigation.js?v=20260921-1';
+    script.dataset.directFileNavigation = 'true';
+    document.body.appendChild(script);
+  };
+
   updateMfaProcedure();
   updateReservationProcedure();
+  loadDirectFileNavigation();
 })();
