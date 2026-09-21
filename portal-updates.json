@@ -1,8 +1,98 @@
 {
-  "generated_at": "2026-09-21T15:35:00-04:00",
+  "generated_at": "2026-09-21T19:29:23.312006-04:00",
   "default_lifetime_days": 28,
   "max_visible": 3,
   "items": [
+    {
+      "id": "commit-c140998df6",
+      "title": "rendre le décorateur de nouveautés idempotent",
+      "description": "",
+      "published_at": "2026-09-21",
+      "expires_at": "2026-10-19",
+      "target": "",
+      "target_type": "",
+      "kind": "maj"
+    },
+    {
+      "id": "commit-3f78d8a200",
+      "title": "tester les accès directs aux fichiers",
+      "description": "",
+      "published_at": "2026-09-21",
+      "expires_at": "2026-10-19",
+      "target": "",
+      "target_type": "",
+      "kind": "maj"
+    },
+    {
+      "id": "commit-5be5afa20b",
+      "title": "verrouiller le contrat des fichiers directs",
+      "description": "",
+      "published_at": "2026-09-21",
+      "expires_at": "2026-10-19",
+      "target": "",
+      "target_type": "",
+      "kind": "maj"
+    },
+    {
+      "id": "commit-9f28249077",
+      "title": "publier les liens directs dans les nouveautés",
+      "description": "",
+      "published_at": "2026-09-21",
+      "expires_at": "2026-10-19",
+      "target": "",
+      "target_type": "",
+      "kind": "maj"
+    },
+    {
+      "id": "commit-cbb1b3b333",
+      "title": "résoudre les nouveautés fichier vers leur URL directe",
+      "description": "",
+      "published_at": "2026-09-21",
+      "expires_at": "2026-10-19",
+      "target": "",
+      "target_type": "",
+      "kind": "maj"
+    },
+    {
+      "id": "commit-627f165575",
+      "title": "marquer les nouveautés de type fichier direct",
+      "description": "",
+      "published_at": "2026-09-21",
+      "expires_at": "2026-10-19",
+      "target": "",
+      "target_type": "",
+      "kind": "maj"
+    },
+    {
+      "id": "commit-752d759813",
+      "title": "brancher la navigation directe des fichiers",
+      "description": "",
+      "published_at": "2026-09-21",
+      "expires_at": "2026-10-19",
+      "target": "",
+      "target_type": "",
+      "kind": "maj"
+    },
+    {
+      "id": "commit-69897142d2",
+      "title": "ouvrir les fichiers directs depuis recherche et nouveautés",
+      "description": "",
+      "published_at": "2026-09-21",
+      "expires_at": "2026-10-19",
+      "target": "",
+      "target_type": "",
+      "kind": "maj"
+    },
+    {
+      "id": "commit-a972a6a5c0",
+      "title": "centraliser les fichiers directs du portail",
+      "description": "",
+      "published_at": "2026-09-21",
+      "expires_at": "2026-10-19",
+      "target": "",
+      "target_type": "",
+      "kind": "maj"
+    },
     {
       "id": "reservation-recuperation-2026-09-21",
       "title": "Nouvelle procédure de réservation et de récupération",
