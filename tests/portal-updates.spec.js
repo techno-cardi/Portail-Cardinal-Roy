@@ -87,7 +87,7 @@ test('affiche seulement les 3 nouveautés actives les plus récentes', async ({ 
   const order = await page.evaluate(() => {
     const updates = document.querySelector('#portal-updates');
     const quick = document.querySelector('.quick-area');
-    return updates && quick ? Boolean(updates.compareDocumentPosition(quick) & Node.DOCUMENT_POSITION_FOLLOWING) : false;
+    return updates && quick ? Boolean(quick.compareDocumentPosition(updates) & Node.DOCUMENT_POSITION_FOLLOWING) : false;
   });
   expect(order).toBe(true);
 });
