@@ -157,12 +157,17 @@ def commit_items():
 def dedupe_and_filter(items):
     today = datetime.now(TZ).date().isoformat()
     items = [item for item in items if item['published_at'] <= today and item['expires_at'] >= today]
-    items.sort(key=lambda item: (item['published_at'], item['id']), reverse=True)
+    # Tri stable : les commits sont fournis avant les entrées de réserve, donc une mise à
+    # jour publiée le même jour remplace bien la carte de réserve correspondante.
+    items.sort(key=lambda item: item['published_at'], reverse=True)
 
     seen = set()
     output = []
     for item in items:
-        key = (item['title'].casefold(), item.get('target', ''))
+        target = item.get('target', '').casefold()
+        # Une même destination représente la même procédure même si son titre change.
+        # Sans cible, on retombe sur le titre pour éviter les doublons textuels.
+        key = ('target', target) if target else ('title', item['title'].casefold())
         if key in seen:
             continue
         seen.add(key)
@@ -178,7 +183,9 @@ def current_items():
 
 
 def main():
-    items = dedupe_and_filter(curated_items() + commit_items())
+    # Les commits passent en premier pour qu'une vraie mise à jour prenne la place de la
+    # carte de réserve si les deux partagent la même date et la même destination.
+    items = dedupe_and_filter(commit_items() + curated_items())
     if current_items() == items:
         print('Aucun changement dans les nouveautés du portail.')
         return 0
