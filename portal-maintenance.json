@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "knowledge": {
+    "repository": "techno-cardi/database",
+    "path": "Portail Cardinal-Roy"
+  },
+  "constraints": {
+    "free_only": true,
+    "paid_runtime_dependencies": false,
+    "analytics_optional": true,
+    "resource_addition_must_stay_lightweight": true
+  },
+  "school_year": {
+    "label": "2026-2027",
+    "start": "2026-08-28",
+    "end": "2027-06-23",
+    "christmas_break": "2026-12-21",
+    "spring_break": "2027-03-01",
+    "rollover_review": "2027-04-15"
+  },
+  "annual_resource_ids": [
+    "calendrier-scolaire-2026-2027",
+    "dates-importantes-2026-2027",
+    "horaire-locaux-2026-2027",
+    "horaire-enseignants-2026-2027",
+    "tableau-depannage-2026-2027"
+  ],
+  "generated_files": {
+    "portal-updates.json": "scripts/build_portal_updates.py",
+    "news-feed.json": "scripts/build_news_feed.py",
+    "link-health.json": "scripts/check_links.py"
+  },
+  "workflows": {
+    "updates": "update-portal-updates.yml",
+    "news": "update-news-feed.yml",
+    "links": "check-links.yml",
+    "tests": "portal-tests.yml",
+    "maintenance": "maintenance-guard.yml"
+  }
+}

@@ -12,10 +12,24 @@ on:
       - 'after-ui.js'
       - 'ui-polish.js'
       - 'global-search-flash.js'
+      - 'procedure-links.js'
+      - 'depannage-resource.js'
+      - 'portal-integrity.js'
+      - 'search-easter-egg.js'
+      - 'search-easter-eggs-extra.js'
+      - 'news-ticker.js'
+      - 'portal-updates-curated.json'
+      - 'news-feed.json'
+      - 'index.html'
+      - 'scripts/check_links.py'
       - '.github/workflows/check-links.yml'
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: portal-link-health
+  cancel-in-progress: true
 
 jobs:
   check-links:
@@ -23,109 +37,32 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Vérifier les liens externes et les fichiers locaux
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Vérifier les liens externes et locaux
+        run: python scripts/check_links.py
+      - name: Publier le rapport de santé
+        shell: bash
         run: |
-          python3 <<'PY'
+          if git diff --quiet -- link-health.json; then
+            echo "Rapport inchangé."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add link-health.json
+            git commit -m "Mettre à jour la santé des liens [sans nouveauté]"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Échouer seulement sur un lien réellement brisé
+        run: |
+          python - <<'PY'
+          import json
           from pathlib import Path
-          from urllib.request import Request, urlopen
-          from urllib.error import HTTPError, URLError
-          import base64, html, re, socket, sys, time
-
-          texts = []
-          parts = sorted(Path('.').glob('body-part-*.txt'))
-          if parts:
-              encoded = ''.join(p.read_text(encoding='utf-8') for p in parts)
-              try:
-                  texts.append(base64.b64decode(re.sub(r'\s+', '', encoded)).decode('utf-8', 'replace'))
-              except Exception as exc:
-                  print(f'::warning::Impossible de décoder le contenu historique: {exc}')
-
-          for path in [
-              *Path('.').glob('source-patches*.js'),
-              Path('after-ui.js'), Path('ui-polish.js'), Path('global-search-flash.js'), Path('index.html')
-          ]:
-              if path.exists():
-                  texts.append(path.read_text(encoding='utf-8'))
-
-          joined = '\n'.join(texts)
-          raw_urls = re.findall(r'https?://[^\s\'"`<>]+', joined)
-          urls = sorted({html.unescape(url).rstrip('),.;]}') for url in raw_urls})
-
-          # Les images sont déjà protégées par le workflow de cache des assets.
-          image_ext = re.compile(r'\.(?:png|jpe?g|gif|svg|webp|ico)(?:[?#].*)?$', re.I)
-          ignored_origins = {'https://fonts.googleapis.com', 'https://fonts.gstatic.com'}
-          urls = [
-              u for u in urls
-              if not image_ext.search(u)
-              and 'encrypted-tbn0.gstatic.com/images?' not in u
-              and u.rstrip('/') not in {origin.rstrip('/') for origin in ignored_origins}
-          ]
-
-          hard_failures = []
-          warnings = []
-
-          def check(url):
-              req = Request(url, headers={
-                  'User-Agent': 'Mozilla/5.0 (compatible; Cardinal-Roy-Link-Checker/1.0)',
-                  'Accept': 'text/html,application/xhtml+xml,application/pdf,*/*;q=0.8'
-              })
-              try:
-                  with urlopen(req, timeout=20) as response:
-                      code = getattr(response, 'status', 200)
-                      return code, response.geturl(), None
-              except HTTPError as exc:
-                  return exc.code, exc.geturl(), None
-              except (URLError, socket.timeout, TimeoutError) as exc:
-                  return None, None, str(exc)
-
-          print(f'{len(urls)} liens externes uniques à vérifier.')
-          for url in urls:
-              code = final = error = None
-              for attempt in range(2):
-                  code, final, error = check(url)
-                  if code is not None or attempt == 1:
-                      break
-                  time.sleep(2)
-
-              if code in (404, 410):
-                  hard_failures.append((url, code, final or ''))
-                  print(f'BROKEN {code}: {url}')
-              elif error:
-                  warnings.append((url, error))
-                  print(f'WARNING réseau: {url} -> {error}')
-              elif code is not None and code >= 500:
-                  warnings.append((url, f'HTTP {code}'))
-                  print(f'WARNING serveur {code}: {url}')
-              elif code in (401, 403):
-                  print(f'PROTECTED {code}: {url}')
-              else:
-                  print(f'OK {code}: {url}' + (f' -> {final}' if final and final != url else ''))
-
-          # Vérifie aussi les href/src locaux réellement écrits dans le HTML.
-          # Les expressions de gabarit JS ${...} ne sont pas des chemins de fichiers.
-          local_refs = set()
-          for match in re.findall(r'(?:href|src)=["\']([^"\']+)["\']', joined, flags=re.I):
-              value = html.unescape(match).strip()
-              if (
-                  not value
-                  or '${' in value
-                  or '}' in value
-                  or value.startswith(('#','http://','https://','mailto:','tel:','data:','javascript:'))
-              ):
-                  continue
-              value = value.split('?',1)[0].split('#',1)[0].lstrip('/')
-              if value:
-                  local_refs.add(value)
-
-          for value in sorted(local_refs):
-              if not Path(value).exists():
-                  hard_failures.append((value, 'LOCAL', ''))
-                  print(f'BROKEN local: {value}')
-
-          print(f'\nRésumé: {len(hard_failures)} brisé(s), {len(warnings)} avertissement(s).')
-          if warnings:
-              print('Les erreurs réseau et erreurs serveur temporaires ne font pas échouer le contrôle.')
-          if hard_failures:
-              print('::error::Un ou plusieurs liens sont réellement brisés (404/410 ou fichier local manquant).')
-              sys.exit(1)
+          data = json.loads(Path('link-health.json').read_text(encoding='utf-8'))
+          if data.get('status') == 'broken':
+              raise SystemExit('Un ou plusieurs liens sont réellement brisés. Consultez link-health.json.')
           PY

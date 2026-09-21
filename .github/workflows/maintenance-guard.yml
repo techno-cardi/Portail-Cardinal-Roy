@@ -1,0 +1,50 @@
+name: Garde de maintenance du portail
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'AGENTS.md'
+      - 'README.md'
+      - 'portal-maintenance.json'
+      - 'portal-updates-curated.json'
+      - 'index.html'
+      - 'body-part-*.txt'
+      - 'source-patches*.js'
+      - 'after-ui.js'
+      - 'procedure-links.js'
+      - 'depannage-resource.js'
+      - 'search-easter-egg.js'
+      - 'search-easter-eggs-extra.js'
+      - 'scripts/maintenance_guard.py'
+      - '.github/copilot-instructions.md'
+      - '.github/workflows/update-portal-updates.yml'
+      - '.github/workflows/check-links.yml'
+      - '.github/workflows/maintenance-guard.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portal-maintenance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Vérifier les contrats de maintenance
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          PORTAL_BEFORE: ${{ github.event.before }}
+        run: python scripts/maintenance_guard.py
