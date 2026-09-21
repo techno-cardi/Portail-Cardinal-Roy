@@ -1,0 +1,12 @@
+{
+  "items": [
+    {
+      "id": "reservation-recuperation-2026-09-21",
+      "title": "Nouvelle procédure de réservation et de récupération",
+      "description": "Réserver un local et convoquer un élève en récupération, en mise à jour ou pour un autre motif.",
+      "published_at": "2026-09-21",
+      "target": "#reservation",
+      "kind": "nouveau"
+    }
+  ]
+}
