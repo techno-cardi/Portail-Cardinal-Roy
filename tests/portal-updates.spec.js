@@ -23,8 +23,8 @@ async function waitForPortal(page) {
   await expect(page.locator('#portal-updates')).toHaveAttribute('data-item-count', /\d+/);
 }
 
-test('affiche seulement les 3 nouveautés actives les plus récentes', async ({ page }) => {
-  await mockUpdates(page, [
+function threeActiveItems() {
+  return [
     {
       id: 'recent-1',
       title: 'Ajout le plus récent',
@@ -48,6 +48,12 @@ test('affiche seulement les 3 nouveautés actives les plus récentes', async ({ 
       expires_at: dateKey(20),
       kind: 'nouveau',
     },
+  ];
+}
+
+test('affiche seulement les 3 nouveautés actives les plus récentes', async ({ page }) => {
+  await mockUpdates(page, [
+    ...threeActiveItems(),
     {
       id: 'recent-4',
       title: 'Quatrième ajout masqué',
@@ -92,6 +98,46 @@ test('affiche seulement les 3 nouveautés actives les plus récentes', async ({ 
   expect(order).toBe(true);
 });
 
+test('sur ordinateur les trois nouveautés restent visibles côte à côte', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.startsWith('mobile'), 'Vérification desktop seulement');
+  await mockUpdates(page, threeActiveItems());
+  await waitForPortal(page);
+
+  const cards = page.locator('#portal-updates .portal-update-item');
+  await expect(cards).toHaveCount(3);
+  await expect(cards.nth(0)).toBeVisible();
+  await expect(cards.nth(1)).toBeVisible();
+  await expect(cards.nth(2)).toBeVisible();
+  await expect(page.locator('.portal-updates-controls')).toBeHidden();
+});
+
+test('sur mobile une carte est visible et les flèches permettent de naviguer', async ({ page }, testInfo) => {
+  test.skip(!testInfo.project.name.startsWith('mobile'), 'Vérification mobile seulement');
+  await mockUpdates(page, threeActiveItems());
+  await waitForPortal(page);
+
+  const section = page.locator('#portal-updates');
+  const cards = section.locator('.portal-update-item');
+  const controls = section.locator('.portal-updates-controls');
+  const count = section.locator('.portal-updates-count');
+
+  await expect(section).toHaveAttribute('data-rotation-ms', '6000');
+  await expect(controls).toBeVisible();
+  await expect(cards.nth(0)).toBeVisible();
+  await expect(cards.nth(1)).toBeHidden();
+  await expect(cards.nth(2)).toBeHidden();
+  await expect(count).toHaveText('1/3');
+
+  await section.locator('.portal-updates-next').click();
+  await expect(cards.nth(0)).toBeHidden();
+  await expect(cards.nth(1)).toBeVisible();
+  await expect(count).toHaveText('2/3');
+
+  await section.locator('.portal-updates-prev').click();
+  await expect(cards.nth(0)).toBeVisible();
+  await expect(count).toHaveText('1/3');
+});
+
 test('un lien interne ouvre directement la procédure correspondante', async ({ page }) => {
   await mockUpdates(page, [
     {
@@ -110,6 +156,24 @@ test('un lien interne ouvre directement la procédure correspondante', async ({ 
   await card.click();
   await expect(page.locator('#reservation')).toHaveAttribute('open', '');
   await expect(page).toHaveURL(/#reservation$/);
+});
+
+test('un lien vers une sous-ressource interne conserve une navigation utile', async ({ page }) => {
+  await mockUpdates(page, [
+    {
+      id: 'mfa-link',
+      title: 'Double authentification',
+      published_at: dateKey(0),
+      expires_at: dateKey(20),
+      target: '#app-mot-de-passe',
+      kind: 'nouveau',
+    },
+  ]);
+
+  await waitForPortal(page);
+  await expect(page.locator('#app-mot-de-passe')).toHaveCount(1);
+  await page.locator('#portal-updates a.portal-update-item').click();
+  await expect(page).toHaveURL(/#app-mot-de-passe$/);
 });
 
 test('masque toute la section quand aucune nouveauté active ne reste', async ({ page }) => {
