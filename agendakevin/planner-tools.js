@@ -84,7 +84,11 @@
     const [planDate, periodKey] = splitNoteId(cell?.dataset.noteCell || '');
     if (!planDate || !periodKey) return '';
     const body = bodyFromCell(cell);
-    await api('', { method: 'POST', body: JSON.stringify({ action: 'save_note', plan_date: planDate, period_key: periodKey, body }) });
+    if (window.CardinalAgendaPersistence?.saveNote) {
+      await window.CardinalAgendaPersistence.saveNote(planDate, periodKey, body);
+    } else {
+      await api('', { method: 'POST', body: JSON.stringify({ action: 'save_note', plan_date: planDate, period_key: periodKey, body }) });
+    }
     return body;
   }
 

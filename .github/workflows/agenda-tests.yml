@@ -1,0 +1,63 @@
+name: Tests Agenda
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'agendakevin/**'
+      - 'tests/agenda-*.spec.js'
+      - '.github/workflows/agenda-tests.yml'
+      - 'package.json'
+      - 'playwright.config.js'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'agendakevin/**'
+      - 'tests/agenda-*.spec.js'
+      - '.github/workflows/agenda-tests.yml'
+      - 'package.json'
+      - 'playwright.config.js'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agenda-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: desktop-chromium
+            browser: chromium
+            label: Agenda Chrome desktop
+          - project: desktop-firefox
+            browser: firefox
+            label: Agenda Firefox desktop
+          - project: desktop-webkit
+            browser: webkit
+            label: Agenda Safari / WebKit desktop
+          - project: mobile-chromium
+            browser: chromium
+            label: Agenda Android / Chromium
+          - project: mobile-webkit
+            browser: webkit
+            label: Agenda iOS / WebKit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Installer les dépendances
+        run: npm install --no-audit --no-fund
+      - name: Installer le navigateur de test
+        run: npx playwright install --with-deps "${{ matrix.browser }}"
+      - name: Tester Agenda
+        run: npx playwright test tests/agenda-reliability.spec.js --project="${{ matrix.project }}"

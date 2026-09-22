@@ -74,6 +74,7 @@
     calendar: new Map(),
     notes: new Map(),
     saveTimers: new Map(),
+    saveQueues: new Map(),
     loading: false,
     installPrompt: null,
     undoStack: [],
@@ -182,6 +183,28 @@
     localStorage.removeItem(key);
     return true;
   }
+  function enqueueNoteSave(id, body) {
+    const previous = state.saveQueues.get(id) || Promise.resolve();
+    const task = previous.catch(() => {}).then(async () => {
+      const [planDate, periodKey] = splitNoteId(id);
+      await api('', { method: 'POST', body: JSON.stringify({ action: 'save_note', plan_date: planDate, period_key: periodKey, body }) });
+      return clearDraftIfCurrent(id, body);
+    });
+    state.saveQueues.set(id, task);
+    task.finally(() => {
+      if (state.saveQueues.get(id) === task) state.saveQueues.delete(id);
+    }).catch(() => {});
+    return task;
+  }
+  async function persistNoteNow(planDate, periodKey, body) {
+    const id = noteId(planDate, periodKey);
+    state.notes.set(id, body);
+    localStorage.setItem(`${DRAFT_PREFIX}${id}`, body);
+    const cleared = await enqueueNoteSave(id, body);
+    if (cleared) document.querySelector(`[data-note-cell="${CSS.escape(id)}"]`)?.classList.remove('dirty');
+    return body;
+  }
+  window.CardinalAgendaPersistence = Object.assign(window.CardinalAgendaPersistence || {}, { saveNote: persistNoteNow });
   async function loadCurrent({ merge = false, renderAfter = true } = {}) {
     if (!state.key) return;
     const [from, to] = rangeForCurrentView();
@@ -376,14 +399,16 @@
     if (!navigator.onLine) { setSaveStatus('Hors ligne · gardé sur cet appareil', 'error'); return; }
     setSaveStatus('Sauvegarde…', 'saving');
     try {
-      await api('', { method: 'POST', body: JSON.stringify({ action: 'save_note', plan_date: planDate, period_key: periodKey, body }) });
-      if (clearDraftIfCurrent(id, body)) {
+      const cleared = await enqueueNoteSave(id, body);
+      if (cleared) {
         document.querySelector(`[data-note-cell="${CSS.escape(id)}"]`)?.classList.remove('dirty');
-        if (!state.saveTimers.has(id)) setSaveStatus('Sauvegardé', 'saved');
+        if (!state.saveTimers.has(id) && !state.saveQueues.has(id)) setSaveStatus('Sauvegardé', 'saved');
       } else {
         setSaveStatus('Modification…', 'saving');
       }
-    } catch { setSaveStatus('À resynchroniser', 'error'); }
+    } catch {
+      setSaveStatus(state.saveQueues.has(id) ? 'Modification…' : 'À resynchroniser', state.saveQueues.has(id) ? 'saving' : 'error');
+    }
   }
 
   function updateHistoryButtons() {
@@ -410,10 +435,8 @@
     render();
     await Promise.all(changes.map(async c => {
       const body = useAfter ? c.after : c.before;
-      const [date, period] = splitNoteId(c.id);
       try {
-        await api('', { method: 'POST', body: JSON.stringify({ action: 'save_note', plan_date: date, period_key: period, body }) });
-        clearDraftIfCurrent(c.id, body);
+        await enqueueNoteSave(c.id, body);
       } catch { }
     }));
     const pending = changes.some(c => localStorage.getItem(`${DRAFT_PREFIX}${c.id}`) !== null);
@@ -660,10 +683,9 @@
     if (!state.key || !navigator.onLine) return;
     const drafts = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k?.startsWith(DRAFT_PREFIX)) drafts.push(k); }
     for (const k of drafts) {
-      const id = k.slice(DRAFT_PREFIX.length), [d, p] = splitNoteId(id), body = localStorage.getItem(k) || '';
+      const id = k.slice(DRAFT_PREFIX.length), body = localStorage.getItem(k) || '';
       try {
-        await api('', { method: 'POST', body: JSON.stringify({ action: 'save_note', plan_date: d, period_key: p, body }) });
-        clearDraftIfCurrent(id, body);
+        await enqueueNoteSave(id, body);
       } catch { break; }
     }
     if (drafts.length && !state.drag && !state.activeEdit) loadCurrent();
