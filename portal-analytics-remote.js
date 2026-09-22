@@ -52,7 +52,8 @@
     }
   };
 
-  if (!analytics.remoteHooksInstalled) {
+  const hooksAlreadyInstalled = analytics.remoteHooksInstalled || analytics.remoteAvailable;
+  if (!hooksAlreadyInstalled) {
     const localRecordSearch = analytics.recordSearch.bind(analytics);
     const localRecordOpen = analytics.recordOpen.bind(analytics);
 
@@ -73,9 +74,8 @@
       send({ type: 'open', resourceId: id });
       return result;
     };
-
-    analytics.remoteHooksInstalled = true;
   }
+  analytics.remoteHooksInstalled = true;
 
   analytics.remoteHealth = async () => {
     const response = await fetch(`${ENDPOINT}?health=1`, {
