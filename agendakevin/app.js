@@ -176,6 +176,12 @@
       if (state.calendar.has(date)) state.notes.set(id, localStorage.getItem(k) || '');
     }
   }
+  function clearDraftIfCurrent(id, body) {
+    const key = `${DRAFT_PREFIX}${id}`;
+    if (localStorage.getItem(key) !== body) return false;
+    localStorage.removeItem(key);
+    return true;
+  }
   async function loadCurrent({ merge = false, renderAfter = true } = {}) {
     if (!state.key) return;
     const [from, to] = rangeForCurrentView();
@@ -188,16 +194,28 @@
       mergeLoadedData(data);
       setSaveStatus('Synchronisé', 'saved');
     } catch (err) {
-      const cached = localStorage.getItem(cacheKey(from, to));
-      if (cached) {
-        if (!merge) { state.calendar = new Map(); state.notes = new Map(); }
-        mergeLoadedData(JSON.parse(cached));
-        setSaveStatus('Hors ligne · copie locale', 'error');
-      } else if (err.status === 401) {
+      if (err.status === 401) {
         localStorage.removeItem(ACCESS_STORAGE);
         state.key = '';
         showAccess('Ta clé d’accès doit être entrée de nouveau.');
         return;
+      }
+      const key = cacheKey(from, to);
+      const cached = localStorage.getItem(key);
+      if (cached) {
+        try {
+          if (!merge) { state.calendar = new Map(); state.notes = new Map(); }
+          mergeLoadedData(JSON.parse(cached));
+          setSaveStatus('Hors ligne · copie locale', 'error');
+        } catch {
+          localStorage.removeItem(key);
+          if (!merge) {
+            state.calendar = new Map(); state.notes = new Map();
+            el.planner.innerHTML = '<div class="error-card"><div><strong>Copie locale illisible.</strong><br><small>Reconnecte-toi pour recharger la planification.</small></div></div>';
+            setSaveStatus('Copie locale à renouveler', 'error');
+            return;
+          }
+        }
       } else if (!merge) {
         state.calendar = new Map(); state.notes = new Map();
         el.planner.innerHTML = '<div class="error-card"><div><strong>Impossible de charger la planification.</strong><br><small>Vérifie ta connexion puis réessaie.</small></div></div>';
@@ -359,9 +377,12 @@
     setSaveStatus('Sauvegarde…', 'saving');
     try {
       await api('', { method: 'POST', body: JSON.stringify({ action: 'save_note', plan_date: planDate, period_key: periodKey, body }) });
-      localStorage.removeItem(`${DRAFT_PREFIX}${id}`);
-      document.querySelector(`[data-note-cell="${CSS.escape(id)}"]`)?.classList.remove('dirty');
-      setSaveStatus('Sauvegardé', 'saved');
+      if (clearDraftIfCurrent(id, body)) {
+        document.querySelector(`[data-note-cell="${CSS.escape(id)}"]`)?.classList.remove('dirty');
+        if (!state.saveTimers.has(id)) setSaveStatus('Sauvegardé', 'saved');
+      } else {
+        setSaveStatus('Modification…', 'saving');
+      }
     } catch { setSaveStatus('À resynchroniser', 'error'); }
   }
 
@@ -392,10 +413,14 @@
       const [date, period] = splitNoteId(c.id);
       try {
         await api('', { method: 'POST', body: JSON.stringify({ action: 'save_note', plan_date: date, period_key: period, body }) });
-        localStorage.removeItem(`${DRAFT_PREFIX}${c.id}`);
+        clearDraftIfCurrent(c.id, body);
       } catch { }
     }));
-    setSaveStatus(navigator.onLine ? 'Sauvegardé' : 'Hors ligne · gardé sur cet appareil', navigator.onLine ? 'saved' : 'error');
+    const pending = changes.some(c => localStorage.getItem(`${DRAFT_PREFIX}${c.id}`) !== null);
+    setSaveStatus(
+      pending ? (navigator.onLine ? 'À resynchroniser' : 'Hors ligne · gardé sur cet appareil') : 'Sauvegardé',
+      pending ? 'error' : 'saved'
+    );
   }
   async function undo() {
     if (state.drag) { cancelDrag(); return; }
@@ -634,8 +659,14 @@
   async function retryDrafts() {
     if (!state.key || !navigator.onLine) return;
     const drafts = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k?.startsWith(DRAFT_PREFIX)) drafts.push(k); }
-    for (const k of drafts) { const id = k.slice(DRAFT_PREFIX.length), [d, p] = splitNoteId(id), body = localStorage.getItem(k) || ''; try { await api('', { method: 'POST', body: JSON.stringify({ action: 'save_note', plan_date: d, period_key: p, body }) }); localStorage.removeItem(k); } catch { break; } }
-    if (drafts.length && !state.drag) loadCurrent();
+    for (const k of drafts) {
+      const id = k.slice(DRAFT_PREFIX.length), [d, p] = splitNoteId(id), body = localStorage.getItem(k) || '';
+      try {
+        await api('', { method: 'POST', body: JSON.stringify({ action: 'save_note', plan_date: d, period_key: p, body }) });
+        clearDraftIfCurrent(id, body);
+      } catch { break; }
+    }
+    if (drafts.length && !state.drag && !state.activeEdit) loadCurrent();
   }
   function shift(direction) { if (state.drag) return; commitActiveEdit(); state.focusDate = state.view === 'week' ? addDays(state.focusDate, 7 * direction) : nextWeekday(state.focusDate, direction); state.focusDate = clampSchool(state.focusDate); loadCurrent(); }
   function goToday() { if (state.drag) return; commitActiveEdit(); state.focusDate = usefulDate(new Date()); loadCurrent(); }
@@ -699,6 +730,9 @@
     el.resetKey.addEventListener('click', () => { localStorage.removeItem(ACCESS_STORAGE); state.key = ''; el.settingsDialog.close(); showAccess('Entre la nouvelle clé d’accès.'); });
     el.install.addEventListener('click', installHelp); el.installHelp.addEventListener('click', installHelp);
     addEventListener('online', updateNetwork); addEventListener('offline', updateNetwork);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && navigator.onLine) retryDrafts();
+    });
     addEventListener('beforeinstallprompt', e => { e.preventDefault(); state.installPrompt = e; el.install.hidden = false; });
     addEventListener('appinstalled', () => { state.installPrompt = null; el.install.hidden = true; toast('Application installée.'); });
     addEventListener('keydown', e => {
@@ -711,8 +745,20 @@
     injectRefinementStyles(); dragUi(); wireUi(); updateNetwork(); updateHistoryButtons();
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
     if (!state.key) { showAccess(); return; }
-    try { await api('?action=ping'); el.shell.hidden = false; await loadCurrent(); }
-    catch { localStorage.removeItem(ACCESS_STORAGE); state.key = ''; showAccess('Ta clé d’accès doit être entrée de nouveau.'); }
+    try {
+      await api('?action=ping');
+      el.shell.hidden = false;
+      await loadCurrent();
+    } catch (err) {
+      if (err.status === 401) {
+        localStorage.removeItem(ACCESS_STORAGE);
+        state.key = '';
+        showAccess('Ta clé d’accès doit être entrée de nouveau.');
+        return;
+      }
+      el.shell.hidden = false;
+      await loadCurrent();
+    }
   }
 
   boot();
