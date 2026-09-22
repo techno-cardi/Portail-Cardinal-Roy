@@ -95,6 +95,13 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    (() => {
+      const narrowScreen = matchMedia('(max-width: 900px)').matches;
+      const touchOnly = matchMedia('(pointer: coarse)').matches && matchMedia('(hover: none)').matches;
+      if (narrowScreen || touchOnly) localStorage.setItem('cr-planner-view-v1', 'day');
+    })();
+  </script>
   <script src="app.js?v=20260913-4" defer></script>
   <script src="rich-text.js?v=20260921-1" defer></script>
   <script src="editor-enter.js?v=20260921-1" defer></script>
