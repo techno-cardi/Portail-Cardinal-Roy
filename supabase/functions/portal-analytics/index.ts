@@ -1,4 +1,4 @@
-const VERSION = '2026-09-09.1';
+const VERSION = '2026-09-21.2';
 
 const ALLOWED_ORIGINS = new Set([
   'https://techno-cardi.github.io'
@@ -29,6 +29,11 @@ const normalizeQuery = (value: unknown) => {
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 64);
+};
+
+const normalizeVisitorId = (value: unknown) => {
+  const raw = String(value ?? '').trim().toLowerCase();
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(raw) ? raw : '';
 };
 
 const getSecretKey = () => {
@@ -114,7 +119,8 @@ Deno.serve(async (req: Request) => {
     event_type: eventType,
     query: null,
     result_count: null,
-    resource_id: null
+    resource_id: null,
+    visitor_id: null
   };
 
   if (eventType === 'search') {
@@ -129,6 +135,12 @@ Deno.serve(async (req: Request) => {
       return Response.json({ error: 'invalid_resource_id' }, { status: 400, headers });
     }
     row.resource_id = resourceId;
+  } else if (eventType === 'visit') {
+    const visitorId = normalizeVisitorId(body.visitorId);
+    if (body.visitorId && !visitorId) {
+      return Response.json({ error: 'invalid_visitor_id' }, { status: 400, headers });
+    }
+    row.visitor_id = visitorId || null;
   }
 
   const insert = await fetch(`${supabaseUrl}/rest/v1/portal_analytics_events`, {
