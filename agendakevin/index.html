@@ -95,16 +95,8 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script>
-    (() => {
-      const narrowScreen = matchMedia('(max-width: 900px)').matches;
-      const touchOnly = matchMedia('(pointer: coarse)').matches && matchMedia('(hover: none)').matches;
-      if (narrowScreen || touchOnly) localStorage.setItem('cr-planner-view-v1', 'day');
-    })();
-  </script>
   <script src="app.js?v=20260913-4" defer></script>
-  <script src="rich-text.js?v=20260921-1" defer></script>
-  <script src="editor-enter.js?v=20260921-1" defer></script>
+  <script src="editor-enter.js?v=20260914-1" defer></script>
   <script src="course-meta.js?v=20260914-4" defer></script>
   <script src="planner-tools.js?v=20260913-2" defer></script>
   <script src="agenda-tools.js?v=20260913-1" defer></script>
@@ -118,7 +110,7 @@
   <script src="board-homework-guard.js?v=20260917-1" defer></script>
   <script src="classroom-publish-format.js?v=20260915-1" defer></script>
   <script src="classroom-linking.js?v=20260915-2" defer></script>
-  <script src="auto-label-format.js?v=20260921-1" defer></script>
+  <script src="auto-label-format.js?v=20260915-1" defer></script>
   <script src="title-edit.js?v=20260913-2" defer></script>
 </body>
 </html>
