@@ -3,70 +3,6 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <script>
-    (() => {
-      const android = /Android/i.test(navigator.userAgent || '');
-      const touch = (navigator.maxTouchPoints || 0) > 0;
-      if (!android || !touch) return;
-
-      let target = Math.min(Number(screen.width) || 0, Number(screen.height) || 0);
-      if (target < 320 || target > 600) target = 412;
-      const layout = window.innerWidth || document.documentElement.clientWidth || target;
-
-      document.documentElement.classList.add('force-mobile');
-      document.documentElement.style.setProperty('--forced-mobile-width', `${target}px`);
-      localStorage.setItem('cr-planner-view-v1', 'day');
-
-      if (layout > target * 1.25) {
-        document.documentElement.style.zoom = String(layout / target);
-      }
-    })();
-  </script>
-  <style>
-    html.force-mobile{
-      width:var(--forced-mobile-width,412px)!important;
-      max-width:var(--forced-mobile-width,412px)!important;
-      overflow-x:hidden!important;
-    }
-    html.force-mobile body{
-      width:100%!important;
-      max-width:100%!important;
-      overflow-x:hidden!important;
-    }
-    html.force-mobile main{padding:12px 10px 22px!important}
-    html.force-mobile .topbar{min-height:70px!important;padding:11px 14px!important}
-    html.force-mobile .brand{gap:9px!important}
-    html.force-mobile .brand-logo{width:44px!important;height:44px!important;flex-basis:44px!important}
-    html.force-mobile .brand h1{font-size:1.16rem!important}
-    html.force-mobile .eyebrow{display:none!important}
-    html.force-mobile .toolbar{
-      grid-template-columns:1fr auto!important;
-      grid-template-areas:"heading segment" "nav nav"!important;
-      gap:9px!important;
-      top:6px!important;
-      padding:9px!important;
-    }
-    html.force-mobile .period-heading{grid-area:heading!important;min-width:0!important;text-align:left!important;padding-left:3px!important}
-    html.force-mobile .period-title{font-size:.94rem!important}
-    html.force-mobile .status-row{justify-content:flex-start!important;gap:4px!important;flex-wrap:wrap!important}
-    html.force-mobile .save-status{font-size:.68rem!important}
-    html.force-mobile .history-button span{display:none!important}
-    html.force-mobile .history-button{width:30px!important;padding:0!important;font-size:1rem!important}
-    html.force-mobile .segmented{grid-area:segment!important}
-    html.force-mobile .segmented button{padding:0 12px!important}
-    html.force-mobile .nav-group{grid-area:nav!important;width:100%!important;justify-content:space-between!important}
-    html.force-mobile .today-button{flex:1!important}
-    html.force-mobile .planner{width:100%!important;max-width:100%!important}
-    html.force-mobile .day-view{width:100%!important;max-width:100%!important}
-    html.force-mobile .day-card{grid-template-columns:92px minmax(0,1fr)!important;min-height:118px!important}
-    html.force-mobile .day-period{padding:9px!important}
-    html.force-mobile .day-card .block-text{font-size:.98rem!important}
-    html.force-mobile .mobile-day-head{padding:13px 14px!important}
-    html.force-mobile .mobile-day-title strong{font-size:1.08rem!important}
-    html.force-mobile .numbered-block{grid-template-columns:25px 27px minmax(0,1fr)!important;padding:7px 7px 7px 3px!important}
-    html.force-mobile .block-editor{gap:7px!important}
-    html.force-mobile .footer{padding:8px 14px 24px!important}
-  </style>
   <meta name="theme-color" content="#07577f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -159,8 +95,17 @@
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    (() => {
+      const repairKey = 'cr-agenda-restore-stable-20260922';
+      const androidPwa = /Android/i.test(navigator.userAgent || '') && matchMedia('(display-mode: standalone)').matches;
+      if (androidPwa && !localStorage.getItem(repairKey)) {
+        localStorage.setItem('cr-planner-view-v1', 'week');
+        localStorage.setItem(repairKey, '1');
+      }
+    })();
+  </script>
   <script src="app.js?v=20260913-4" defer></script>
-  <script src="editor-clipboard.js?v=20260922-1" defer></script>
   <script src="editor-enter.js?v=20260914-1" defer></script>
   <script src="course-meta.js?v=20260914-4" defer></script>
   <script src="planner-tools.js?v=20260913-2" defer></script>
