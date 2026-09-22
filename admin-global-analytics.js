@@ -57,24 +57,27 @@
       const totals = summary?.totals || {};
       const periods = summary?.periods || {};
       const topOpens = Array.isArray(summary?.topOpens) ? summary.topOpens : [];
+      const uniqueStarted = summary?.uniqueTrackingSince ? formatDateTime(summary.uniqueTrackingSince) : 'en attente de la première visite';
 
       section.innerHTML = `
         <h2>Consultation du portail</h2>
-        <p class="muted">Une « visite » est comptée au maximum une fois par navigateur toutes les 30 minutes. Aucun compte utilisateur, adresse IP ou identifiant de personne n’est enregistré. Dernière activité : ${escapeHtml(formatDateTime(summary?.lastEventAt))}.</p>
+        <p class="muted">Les visiteurs uniques sont comptés par navigateur à l’aide d’un identifiant aléatoire anonyme conservé localement. Aucune adresse IP, aucun compte utilisateur et aucune identité personnelle ne sont enregistrés. Une session est comptée au maximum une fois par navigateur toutes les 30 minutes. La page admin et son audit caché ne comptent pas comme visite. Dernière activité : ${escapeHtml(formatDateTime(summary?.lastEventAt))}.</p>
 
         <div class="summary" style="margin-top:12px">
-          <div class="metric"><strong>${escapeHtml(periods.visitsToday || 0)}</strong><span>visites aujourd’hui</span></div>
-          <div class="metric"><strong>${escapeHtml(periods.visits7Days || 0)}</strong><span>visites - 7 jours</span></div>
-          <div class="metric"><strong>${escapeHtml(periods.visits30Days || totals.visits || 0)}</strong><span>visites - 30 jours</span></div>
+          <div class="metric"><strong>${escapeHtml(periods.uniqueVisitorsToday || 0)}</strong><span>visiteurs uniques aujourd’hui</span></div>
+          <div class="metric"><strong>${escapeHtml(periods.uniqueVisitors7Days || 0)}</strong><span>visiteurs uniques - 7 jours</span></div>
+          <div class="metric"><strong>${escapeHtml(periods.uniqueVisitors30Days || 0)}</strong><span>visiteurs uniques - 30 jours</span></div>
+          <div class="metric"><strong>${escapeHtml(periods.visitsToday || 0)}</strong><span>sessions aujourd’hui</span></div>
+        </div>
+
+        <div class="summary" style="margin-top:12px">
+          <div class="metric"><strong>${escapeHtml(periods.visits7Days || 0)}</strong><span>sessions - 7 jours</span></div>
+          <div class="metric"><strong>${escapeHtml(periods.visits30Days || totals.visits || 0)}</strong><span>sessions - 30 jours</span></div>
           <div class="metric"><strong>${escapeHtml(periods.opens30Days || totals.opens || 0)}</strong><span>ressources ouvertes - 30 jours</span></div>
+          <div class="metric"><strong>${escapeHtml(periods.searches30Days || totals.searches || 0)}</strong><span>recherches - 30 jours</span></div>
         </div>
 
-        <div class="summary" style="margin-top:12px">
-          <div class="metric"><strong>${escapeHtml(periods.opensToday || 0)}</strong><span>ouvertures aujourd’hui</span></div>
-          <div class="metric"><strong>${escapeHtml(periods.opens7Days || 0)}</strong><span>ouvertures - 7 jours</span></div>
-          <div class="metric"><strong>${escapeHtml(periods.searches30Days || totals.searches || 0)}</strong><span>recherches - 30 jours</span></div>
-          <div class="metric"><strong>${escapeHtml(totals.noResults || 0)}</strong><span>recherches sans résultat - 30 jours</span></div>
-        </div>
+        <p class="note">Le suivi des visiteurs uniques a commencé ${escapeHtml(uniqueStarted)}. Les totaux uniques sur 7 et 30 jours seront donc partiels jusqu’à ce que cette période soit entièrement couverte. Les anciennes statistiques de sessions sont conservées.</p>
 
         <div style="margin-top:18px">
           <strong>Ressources les plus consultées - 30 jours</strong>
