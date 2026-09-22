@@ -1,5 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
+test.use({ serviceWorkers: 'block' });
+
 test('Agenda conserve la clé locale lors d’une panne transitoire de l’API', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('cr-planner-access-v1', 'cle-test-locale');
