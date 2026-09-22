@@ -1,14 +1,7 @@
 (() => {
   'use strict';
 
-  function rich() {
-    return window.CRAgendaRichText || null;
-  }
-
   function selectionOffsets(textEl) {
-    const rt = rich();
-    if (rt?.visibleSelectionOffsets) return rt.visibleSelectionOffsets(textEl);
-
     const textLength = (textEl.textContent || '').length;
     const selection = window.getSelection();
     if (!selection || !selection.rangeCount) return { start: textLength, end: textLength };
@@ -31,12 +24,6 @@
   }
 
   function setCaret(textEl, offset = 0) {
-    const rt = rich();
-    if (rt?.restoreVisibleSelection) {
-      rt.restoreVisibleSelection(textEl, { start: offset, end: offset }, true);
-      return;
-    }
-
     textEl.focus();
     const selection = window.getSelection();
     if (!selection) return;
@@ -86,7 +73,6 @@
     textEl.setAttribute('spellcheck', 'true');
     textEl.dataset.placeholder = 'Écrire…';
     textEl.textContent = text;
-    rich()?.renderTokens?.(textEl, text, false);
     block.appendChild(textEl);
     return block;
   }
@@ -97,30 +83,21 @@
     block.classList.remove('numbered-block');
     block.classList.add('plain-block');
     textEl.textContent = '';
-    textEl.dataset.rtReady = '1';
     textEl.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertParagraph' }));
     requestAnimationFrame(() => setCaret(textEl, 0));
   }
 
   function splitBlock(block, textEl, kind, start, end) {
-    const rt = rich();
-    const original = rt?.tokensFromElement?.(textEl) ?? (textEl.textContent || '');
-
-    let left;
-    let right;
-    if (rt?.splitTokensAtVisibleRange) {
-      ({ left, right } = rt.splitTokensAtVisibleRange(original, start, end));
-    } else {
-      left = original.slice(0, start);
-      right = original.slice(end);
-    }
+    const original = textEl.textContent || '';
+    const left = original.slice(0, start);
+    const right = original.slice(end);
 
     textEl.textContent = left;
-    rt?.renderTokens?.(textEl, left, false);
-
     const newBlock = makeBlock(kind, right);
     block.after(newBlock);
 
+    // L'Agenda écoute déjà l'événement input pour renuméroter,
+    // marquer la cellule modifiée et lancer la sauvegarde automatique.
     textEl.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertParagraph' }));
     requestAnimationFrame(() => setCaret(newBlock.querySelector('.block-text'), 0));
   }
@@ -133,14 +110,15 @@
     const editor = textEl?.closest('.block-editor');
     if (!textEl || !block || !editor) return;
 
+    // On prend le contrôle avant le gestionnaire historique d'app.js.
     event.preventDefault();
     event.stopImmediatePropagation();
 
-    const rt = rich();
-    const currentTokens = rt?.tokensFromElement?.(textEl) ?? (textEl.textContent || '');
-    const currentText = rt?.stripMarkers?.(currentTokens) ?? currentTokens;
     const isNumbered = block.dataset.kind === 'numbered';
+    const currentText = textEl.textContent || '';
 
+    // Deuxième Entrée sur un nouvel élément numéroté vide : on sort de la liste
+    // sans changer de ligne ni créer un bloc supplémentaire.
     if (!event.shiftKey && isNumbered && currentText.trim() === '') {
       convertEmptyNumberedToPlain(block, textEl);
       return;
