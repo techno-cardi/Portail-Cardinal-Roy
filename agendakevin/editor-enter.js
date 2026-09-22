@@ -86,7 +86,7 @@
     textEl.setAttribute('spellcheck', 'true');
     textEl.dataset.placeholder = 'Écrire…';
     textEl.textContent = text;
-    rich()?.renderTokens?.(textEl, text, { preserveSelection: false });
+    rich()?.renderTokens?.(textEl, text, false);
     block.appendChild(textEl);
     return block;
   }
@@ -116,7 +116,7 @@
     }
 
     textEl.textContent = left;
-    rt?.renderTokens?.(textEl, left, { preserveSelection: false });
+    rt?.renderTokens?.(textEl, left, false);
 
     const newBlock = makeBlock(kind, right);
     block.after(newBlock);
