@@ -50,9 +50,18 @@ function state(){
  const tb=document.getElementById('agendaRichTextToolbar');if(!tb)return;const ok=!!lastEl?.isConnected;tb.querySelectorAll('button').forEach(b=>{b.disabled=!ok;b.classList.remove('active')});
  if(!ok)return;for(const [k,c] of Object.entries(ST)){let on=false;try{on=document.queryCommandState(c)}catch{}tb.querySelector(`[data-k="${k}"]`)?.classList.toggle('active',!!on)}
 }
+function materialize(e,o){
+ e.querySelectorAll('.rt-mark').forEach(n=>n.remove());
+ e.querySelectorAll('[data-rt="1"]').forEach(n=>delete n.dataset.rt);
+ e.dataset.rtReady='0';restore(e,o,true);
+}
 function cmd(k,e=lastEl){
- if(!e?.matches?.('.block-text'))return;if(!e.contains(getSelection()?.anchorNode)&&!restoreLast())return;
- try{document.execCommand(ST[k],false,null)}catch{}normalize(e,true);e.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:k==='b'?'formatBold':k==='i'?'formatItalic':'formatUnderline'}));queueMicrotask(remember);
+ if(!e?.matches?.('.block-text'))return;const sel=getSelection();if(!e.contains(sel?.anchorNode)&&!restoreLast())return;
+ const range=getSelection()?.rangeCount?getSelection().getRangeAt(0):null,collapsed=!range||range.collapsed,o=offsets(e);
+ materialize(e,o);
+ try{document.execCommand(ST[k],false,null)}catch{}
+ if(collapsed){remember();return}
+ normalize(e,true);e.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:k==='b'?'formatBold':k==='i'?'formatItalic':'formatUnderline'}));queueMicrotask(remember);
 }
 function idx(t,w){let v=0,i=0;while(i<t.length){if(t[i]===M.b||t[i]===M.i||t[i]===M.u){i++;continue}if(v>=w)break;v++;i++}while(i<t.length&&(t[i]===M.b||t[i]===M.i||t[i]===M.u))i++;return i}
 function active(t,n){const a={b:false,i:false,u:false};for(let i=0;i<n;i++){const k=t[i]===M.b?'b':t[i]===M.i?'i':t[i]===M.u?'u':'';if(k)a[k]=!a[k]}return a}
@@ -68,6 +77,7 @@ function setup(){
  document.addEventListener('compositionstart',e=>{if(e.target.closest?.('.block-text'))composing=true},true);
  document.addEventListener('compositionend',e=>{composing=false;const x=e.target.closest?.('.block-text');if(x)normalize(x,true)},true);
  document.addEventListener('focusin',e=>{const x=e.target.closest?.('.block-text');if(x){lastEl=x;normalize(x);queueMicrotask(remember)}});
+ document.addEventListener('focusout',e=>{const x=e.target.closest?.('.block-text');if(x&&x.dataset.rtReady==='0')normalize(x,true)},true);
  document.addEventListener('input',e=>{const x=e.target.closest?.('.block-text');if(x&&!composing){normalize(x);lastEl=x;queueMicrotask(remember)}},true);
  document.addEventListener('keydown',e=>{const x=e.target.closest?.('.block-text');if(!x||e.isComposing)return;if(e.key==='Backspace'&&!strip(x.textContent).trim()){x.replaceChildren();x.dataset.rtReady='1';return}if(!(e.ctrlKey||e.metaKey)||e.altKey||e.shiftKey)return;const k=e.key.toLowerCase(),m=k==='b'?'b':k==='i'?'i':k==='u'?'u':'';if(!m)return;e.preventDefault();e.stopImmediatePropagation();lastEl=x;remember();cmd(m,x)},true);
  new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1)within(n)}).observe(document.body,{childList:true,subtree:true});
