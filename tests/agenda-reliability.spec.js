@@ -47,9 +47,10 @@ test('une ancienne réponse de sauvegarde ne peut pas effacer un brouillon plus 
   const retryDrafts = source.slice(retryStart, retryEnd);
 
   expect(source).toContain('function clearDraftIfCurrent(id, body)');
-  expect(saveNote).toContain('clearDraftIfCurrent(id, body)');
+  expect(source).toContain('function enqueueNoteSave(id, body)');
+  expect(saveNote).toContain('await enqueueNoteSave(id, body)');
   expect(saveNote).not.toContain('localStorage.removeItem(`${DRAFT_PREFIX}${id}`)');
-  expect(retryDrafts).toContain('clearDraftIfCurrent(id, body)');
+  expect(retryDrafts).toContain('await enqueueNoteSave(id, body)');
 });
 
 
