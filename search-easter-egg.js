@@ -170,8 +170,8 @@
     return `${formatNumber(weeks)} ${label}`;
   };
 
-  const dayLabel = count => `${count} ${count === 1 ? 'jour d’école' : 'jours d’école'}`;
-  const courseDayLabel = count => `${count} ${count === 1 ? 'jour de cours' : 'jours de cours'}`;
+  const dayLabel = count => `${count} ${count <= 1 ? 'jour d’école' : 'jours d’école'}`;
+  const courseDayLabel = count => `${count} ${count <= 1 ? 'jour de cours' : 'jours de cours'}`;
 
   const countdownLine = (days, label) => `
     <div class="search-countdown-line">
