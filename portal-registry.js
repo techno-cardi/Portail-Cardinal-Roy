@@ -87,7 +87,7 @@
 
   const extractExplicitDate = text => {
     const normalized = normalize(text);
-    const match = normalized.match(/(?:mis a jour(?: le)?|mise a jour(?: le)?|version du|actualise(?: le)?|date du dernier depot)\s*:?[ ]*(\d{1,2})\s+(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\s+(20\d{2})/);
+    const match = normalized.match(/(?:mis a jour(?: le)?|mise a jour(?: le)?|version du|actualise(?: le)?|date du dernier depot)\s*:?[ ]*(\d{1,2})(?:er)?\s+(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\s+(20\d{2})/);
     if (!match) return '';
     const day = Number(match[1]);
     const month = MONTHS[match[2]];
