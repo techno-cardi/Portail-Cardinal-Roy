@@ -2,6 +2,7 @@ const { test, expect } = require('@playwright/test');
 
 const RESERVATION_FILE = 'https://drive.google.com/file/d/1Ea0rcbyqvFjmXzc_yuNREdgk8Pq4LEQW/view?usp=drivesdk';
 const MFA_FILE = 'https://drive.google.com/file/d/1G4QFoa_jyItVPd1OTZkCGGabk9h2gIa6/view?usp=drivesdk';
+const SERVICES_APPUI_FILE = 'https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link';
 
 async function openPortal(page) {
   await page.goto('/');
@@ -32,6 +33,30 @@ test('la double authentification ouvre directement le fichier', async ({ page })
   await expect(first).toHaveAttribute('data-direct-file-suggestion', 'double-authentification');
   await expect(first).toHaveAttribute('href', MFA_FILE);
   await expect(first).toContainText('Accéder au fichier');
+});
+
+test('une demande de services d’appui ouvre directement le formulaire', async ({ page }) => {
+  await openPortal(page);
+  const first = await search(page, 'demande psychoéducation');
+  await expect(first).toBeVisible();
+  await expect(first).toHaveAttribute('data-direct-file-suggestion', 'services-appui-identification');
+  await expect(first).toHaveAttribute('href', SERVICES_APPUI_FILE);
+  await expect(first).toContainText('Accéder au fichier');
+});
+
+test('la fiche de services d’appui contient le lien direct vers le formulaire', async ({ page }) => {
+  await openPortal(page);
+  const link = page.locator('#aide-eleve-services-appui a').filter({ hasText: 'Accéder au fichier' });
+  await expect(link).toHaveCount(1);
+  await expect(link).toHaveAttribute('href', SERVICES_APPUI_FILE);
+  await expect(link).toHaveAttribute('target', '_blank');
+});
+
+test('une recherche générale en orthopédagogie conserve la fiche de services d’appui', async ({ page }) => {
+  await openPortal(page);
+  await search(page, 'orthopédagogie');
+  await expect(page.locator('#search-suggestions [data-direct-file-suggestion="services-appui-identification"]')).toHaveCount(0);
+  await expect(page.locator('#search-suggestions .smart-suggestion[data-open-id="aide-eleve-services-appui"]')).toBeVisible();
 });
 
 test('une recherche générique réservation ne force pas la procédure', async ({ page }) => {

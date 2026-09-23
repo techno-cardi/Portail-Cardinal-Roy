@@ -28,7 +28,10 @@
     "source": "portal-updates-curated.json",
     "technical_commits_are_public_updates": false,
     "require_explicit_target_type": true,
-    "allowed_target_types": ["file", "section"],
+    "allowed_target_types": [
+      "file",
+      "section"
+    ],
     "file_action_label": "Accéder au fichier"
   },
   "direct_files": {
@@ -39,8 +42,24 @@
       "action_label": "Accéder au fichier",
       "source_file": "procedure-links.js",
       "search_required_groups": [
-        ["procédure", "procedure", "guide", "tutoriel"],
-        ["réservation", "reservation", "réserver", "reserver", "local", "locaux", "convocation", "convoquer", "récupération", "recuperation"]
+        [
+          "procédure",
+          "procedure",
+          "guide",
+          "tutoriel"
+        ],
+        [
+          "réservation",
+          "reservation",
+          "réserver",
+          "reserver",
+          "local",
+          "locaux",
+          "convocation",
+          "convoquer",
+          "récupération",
+          "recuperation"
+        ]
       ]
     },
     "double-authentification": {
@@ -50,7 +69,13 @@
       "action_label": "Accéder au fichier",
       "source_file": "procedure-links.js",
       "search_required_groups": [
-        ["authentification", "authenticator", "multifacteur", "mfa", "2fa"]
+        [
+          "authentification",
+          "authenticator",
+          "multifacteur",
+          "mfa",
+          "2fa"
+        ]
       ]
     },
     "tableau-depannage": {
@@ -60,8 +85,57 @@
       "action_label": "Accéder au fichier",
       "source_file": "depannage-resource.js",
       "search_required_groups": [
-        ["tableau", "disponibilités", "disponibilite", "horaire"],
-        ["dépannage", "depannage", "suppléance", "suppleance"]
+        [
+          "tableau",
+          "disponibilités",
+          "disponibilite",
+          "horaire"
+        ],
+        [
+          "dépannage",
+          "depannage",
+          "suppléance",
+          "suppleance"
+        ]
+      ]
+    },
+    "services-appui-identification": {
+      "resource_id": "aide-eleve-services-appui",
+      "url": "https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link",
+      "title": "Formulaire - accès aux services d’appui et identification",
+      "action_label": "Accéder au fichier",
+      "source_file": "source-patches-9.js",
+      "search_required_groups": [
+        [
+          "formulaire",
+          "demande",
+          "accès",
+          "acces"
+        ],
+        [
+          "services d appui",
+          "services appui",
+          "services complémentaires",
+          "services complementaires",
+          "orthopédagogie",
+          "orthopedagogie",
+          "orthopédagogue",
+          "orthopedagogue",
+          "psychoéducation",
+          "psychoeducation",
+          "psychoéducateur",
+          "psychoeducateur",
+          "orientation",
+          "conseiller orientation",
+          "psychologue",
+          "psychologie",
+          "orthophoniste",
+          "orthophonie",
+          "tes",
+          "plan d intervention",
+          "ehdaa",
+          "hdaa"
+        ]
       ]
     }
   },

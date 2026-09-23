@@ -47,3 +47,41 @@
   const body = card.querySelector('.card-body') || card;
   if (!body.querySelector('[data-evaluation-drive-folders]')) body.insertAdjacentHTML('beforeend', DRIVE_BLOCK);
 })();
+
+/* Formulaire officiel pour demander des services d'appui ou une identification pour un élève. */
+(() => {
+  'use strict';
+
+  const root = document.getElementById('legacy-source');
+  const card = root?.querySelector('#aide-eleve-services-appui');
+  if (!card) return;
+
+  const FORM_URL = 'https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link';
+  const extraKeywords = [
+    'formulaire demande services demande de services demande appui demande aide accès services acces services services appui services d appui services complémentaires services complementaires',
+    'direction demande direction formulaire direction soutien élève soutien eleve aide élève aide eleve élève à risque eleve a risque difficulté adaptation difficulte adaptation difficulté apprentissage difficulte apprentissage EHDAA HDAA identification',
+    'orthopédagogie orthopedagogie orthopédagogue orthopedagogue orthopédagogique orthopedagogique',
+    'psychoéducation psychoeducation psychoéducateur psychoeducateur psychoéducatrice psychoeducatrice',
+    'orientation scolaire conseiller orientation conseillère orientation conseillere orientation c.o.',
+    'psychologie psychologue orthophonie orthophoniste TES technicien éducation spécialisée technicien education specialisee éducateur spécialisé educateur specialise',
+    'plan intervention plan d intervention PI services externes CLSC équipe régionale soutien equipe regionale soutien classe spécialisée classe specialisee',
+    'lecture écriture ecriture mathématique mathematique langage comportement attention concentration difficultés difficultes besoins élève besoins eleve'
+  ].join(' ');
+  card.dataset.keywords = `${card.dataset.keywords || ''} ${extraKeywords}`.replace(/\s+/g, ' ').trim();
+
+  const body = card.querySelector('.card-body') || card;
+  let block = body.querySelector('[data-services-appui-formulaire]');
+  if (!block) {
+    block = document.createElement('div');
+    block.className = 'callout';
+    block.dataset.servicesAppuiFormulaire = 'true';
+    body.appendChild(block);
+  }
+
+  block.innerHTML = `
+    <strong>Demande de services d’appui à la direction</strong>
+    <p>Formulaire officiel pour demander des services ou une identification pour un élève en difficulté, notamment en orthopédagogie, psychologie, orthophonie, TES, services externes ou autre service complémentaire.</p>
+    <div class="links">
+      <a class="btn primary" href="${FORM_URL}" target="_blank" rel="noopener noreferrer">Accéder au fichier</a>
+    </div>`;
+})();

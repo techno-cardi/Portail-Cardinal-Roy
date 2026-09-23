@@ -1,6 +1,16 @@
 {
   "items": [
     {
+      "id": "services-appui-eleve-2026-09-23",
+      "title": "Nouveau formulaire de demande de services d’appui",
+      "description": "Faire une demande à la direction pour obtenir ou identifier des services d’appui pour un élève.",
+      "published_at": "2026-09-23",
+      "expires_at": "2027-06-30",
+      "target": "#aide-eleve-services-appui",
+      "target_type": "file",
+      "kind": "nouveau"
+    },
+    {
       "id": "reservation-recuperation-2026-09-21",
       "title": "Nouvelle procédure de réservation et de récupération",
       "description": "Réserver un local et convoquer un élève en récupération, en mise à jour ou pour un autre motif.",
