@@ -79,10 +79,10 @@
   ticker.setAttribute('data-refresh-ms', String(REFRESH_MS));
   ticker.innerHTML = `
     <a class="school-news-badge" href="${DATES_PDF_URL}" target="_blank" rel="noopener noreferrer" title="Ouvrir Dates importantes 2026-2027"><span aria-hidden="true">📅</span> Dates importantes</a>
-    <a class="school-news-track" aria-live="polite">
+    <span class="school-news-track" aria-live="polite">
       <span class="school-news-date"></span>
       <span class="school-news-text"></span>
-    </a>
+    </span>
     <span class="school-news-controls">
       <button class="school-news-nav school-news-prev" type="button" aria-label="Date importante précédente">‹</button>
       <span class="school-news-count" aria-hidden="true"></span>
@@ -152,16 +152,14 @@
     const url = actionUrl(item);
     track.classList.toggle('school-news-action', Boolean(url));
     if (url) {
-      track.href = url;
-      track.target = '_blank';
-      track.rel = 'noopener noreferrer';
+      track.setAttribute('role', 'link');
+      track.setAttribute('tabindex', '0');
       track.title = 'Ouvrir directement l’horaire de la journée pédagogique du 18 septembre';
       track.dataset.pedDayLink = '2026-09-18';
       track.dataset.pedDayUrl = url;
     } else {
-      track.removeAttribute('href');
-      track.removeAttribute('target');
-      track.removeAttribute('rel');
+      track.removeAttribute('role');
+      track.removeAttribute('tabindex');
       track.removeAttribute('title');
       delete track.dataset.pedDayLink;
       delete track.dataset.pedDayUrl;
@@ -258,6 +256,18 @@
     }
   };
 
+  const openTrackAction = () => {
+    const url = track.dataset.pedDayUrl || '';
+    if (!url) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+  track.addEventListener('click', openTrackAction);
+  track.addEventListener('keydown', event => {
+    if ((event.key === 'Enter' || event.key === ' ') && track.dataset.pedDayUrl) {
+      event.preventDefault();
+      openTrackAction();
+    }
+  });
   prevButton.addEventListener('click', () => browse(-1));
   nextButton.addEventListener('click', () => browse(1));
   document.addEventListener('visibilitychange', () => {
