@@ -1,8 +1,18 @@
 {
-  "generated_at": "2026-09-21T19:40:00-04:00",
+  "generated_at": "2026-09-23T13:58:44.026740-04:00",
   "default_lifetime_days": 28,
   "max_visible": 3,
   "items": [
+    {
+      "id": "services-appui-eleve-2026-09-23",
+      "title": "Nouveau formulaire de demande de services d’appui",
+      "description": "Faire une demande à la direction pour obtenir ou identifier des services d’appui pour un élève.",
+      "published_at": "2026-09-23",
+      "expires_at": "2027-06-30",
+      "target": "https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link",
+      "target_type": "file",
+      "kind": "nouveau"
+    },
     {
       "id": "reservation-recuperation-2026-09-21",
       "title": "Nouvelle procédure de réservation et de récupération",
