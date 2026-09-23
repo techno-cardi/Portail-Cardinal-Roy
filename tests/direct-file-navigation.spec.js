@@ -52,12 +52,31 @@ test('la fiche de services d’appui contient le lien direct vers le formulaire'
   await expect(link).toHaveAttribute('target', '_blank');
 });
 
-test('une recherche générale en orthopédagogie conserve la fiche de services d’appui', async ({ page }) => {
+test('la fiche de services d’appui est classée dans Suivre un élève', async ({ page }) => {
   await openPortal(page);
-  await search(page, 'orthopédagogie');
-  await expect(page.locator('#search-suggestions [data-direct-file-suggestion="services-appui-identification"]')).toHaveCount(0);
-  await expect(page.locator('#search-suggestions .smart-suggestion[data-open-id="aide-eleve-services-appui"]')).toBeVisible();
+  const section = page.locator('#section-suivi');
+  await expect(section.locator('#aide-eleve-services-appui')).toHaveCount(1);
+  await expect(section.locator('#aide-eleve-services-appui')).toContainText('Aide et services d’appui pour un élève');
 });
+
+for (const query of ['ortho', 'orthopédagogue', 'orthopédagogie', 'psychoéducation', 'orientation']) {
+  test(`la recherche générale « ${query} » trouve la fiche de services d’appui`, async ({ page }) => {
+    await openPortal(page);
+    await search(page, query);
+    const result = page.locator('#search-suggestions .suggestion[data-search-open="aide-eleve-services-appui"]');
+    await expect(result).toBeVisible();
+  });
+}
+
+for (const query of ['demande ortho', 'demande orthopédagogue', 'demande psychoéducation', 'demande orientation']) {
+  test(`la recherche précise « ${query} » ouvre directement le formulaire`, async ({ page }) => {
+    await openPortal(page);
+    const first = await search(page, query);
+    await expect(first).toBeVisible();
+    await expect(first).toHaveAttribute('data-direct-file-suggestion', 'services-appui-identification');
+    await expect(first).toHaveAttribute('href', SERVICES_APPUI_FILE);
+  });
+}
 
 test('une recherche générique réservation ne force pas la procédure', async ({ page }) => {
   await openPortal(page);

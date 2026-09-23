@@ -123,7 +123,7 @@
   const exactCategoryById = new Map([
     ['connexion-appsp','commencer'], ['chrome','commencer'],
     ['sortie','classe'], ['presences','classe'], ['avis','classe'], ['planclasse','classe'],
-    ['tourtable','suivi'], ['pi','suivi'], ['notes','suivi'], ['courriels','suivi'],
+    ['tourtable','suivi'], ['pi','suivi'], ['notes','suivi'], ['courriels','suivi'], ['aide-eleve-services-appui','suivi'],
     ['reservation','organisation'], ['chromebook','organisation'], ['monhoraire','organisation'],
     ['drive','outils']
   ]);

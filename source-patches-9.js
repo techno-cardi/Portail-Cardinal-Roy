@@ -53,20 +53,49 @@
   'use strict';
 
   const root = document.getElementById('legacy-source');
-  const card = root?.querySelector('#aide-eleve-services-appui');
-  if (!card) return;
+  if (!root) return;
 
   const FORM_URL = 'https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link';
   const extraKeywords = [
     'formulaire demande services demande de services demande appui demande aide accès services acces services services appui services d appui services complémentaires services complementaires',
-    'direction demande direction formulaire direction soutien élève soutien eleve aide élève aide eleve élève à risque eleve a risque difficulté adaptation difficulte adaptation difficulté apprentissage difficulte apprentissage EHDAA HDAA identification',
-    'orthopédagogie orthopedagogie orthopédagogue orthopedagogue orthopédagogique orthopedagogique',
-    'psychoéducation psychoeducation psychoéducateur psychoeducateur psychoéducatrice psychoeducatrice',
-    'orientation scolaire conseiller orientation conseillère orientation conseillere orientation c.o.',
-    'psychologie psychologue orthophonie orthophoniste TES technicien éducation spécialisée technicien education specialisee éducateur spécialisé educateur specialise',
+    'demande ortho ortho aide ortho service ortho référence reference référer referer demande à la direction demande a la direction formulaire direction',
+    'soutien élève soutien eleve aide élève aide eleve élève à risque eleve a risque difficulté adaptation difficulte adaptation difficulté apprentissage difficulte apprentissage EHDAA HDAA identification',
+    'orthopédagogie orthopedagogie orthopédagogue orthopedagogue orthopédagogique orthopedagogique ortho',
+    'psychoéducation psychoeducation psychoéducateur psychoeducateur psychoéducatrice psychoeducatrice psycho éducateur psycho educateur psycho educatrice',
+    'orientation orientation scolaire conseiller orientation conseillère orientation conseillere orientation conseiller en orientation conseillère en orientation co c.o.',
+    'psychologie psychologue orthophonie orthophoniste orthophoniste ortho TES technicien éducation spécialisée technicien education specialisee éducateur spécialisé educateur specialise',
     'plan intervention plan d intervention PI services externes CLSC équipe régionale soutien equipe regionale soutien classe spécialisée classe specialisee',
     'lecture écriture ecriture mathématique mathematique langage comportement attention concentration difficultés difficultes besoins élève besoins eleve'
   ].join(' ');
+
+  let card = root.querySelector('#aide-eleve-services-appui');
+  if (!card) {
+    card = document.createElement('section');
+    card.className = 'card searchable';
+    card.id = 'aide-eleve-services-appui';
+    card.dataset.title = 'Aide et services d’appui pour un élève';
+    card.dataset.icon = '🧩';
+    card.innerHTML = `
+      <div class="card-head">
+        <img class="app-logo" src="assets/portal/aide-eleve.png" alt="Aide et services d’appui pour un élève">
+        <div>
+          <h3>Aide et services d’appui pour un élève</h3>
+          <div class="card-sub">Demande à la direction pour des services complémentaires ou une identification</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <p>Utilisez le formulaire officiel pour demander à la direction des services d’appui ou une identification lorsqu’un élève présente des besoins ou des difficultés.</p>
+        <div class="callout" data-services-appui-formulaire="true">
+          <strong>Services et besoins visés</strong>
+          <p>Orthopédagogie, psychoéducation, psychologie, orthophonie, TES, orientation ou autre service complémentaire selon les besoins de l’élève.</p>
+          <div class="links">
+            <a class="btn primary" href="${FORM_URL}" target="_blank" rel="noopener noreferrer">Accéder au fichier</a>
+          </div>
+        </div>
+      </div>`;
+    root.appendChild(card);
+  }
+
   card.dataset.keywords = `${card.dataset.keywords || ''} ${extraKeywords}`.replace(/\s+/g, ' ').trim();
 
   const body = card.querySelector('.card-body') || card;
@@ -78,10 +107,13 @@
     body.appendChild(block);
   }
 
-  block.innerHTML = `
-    <strong>Demande de services d’appui à la direction</strong>
-    <p>Formulaire officiel pour demander des services ou une identification pour un élève en difficulté, notamment en orthopédagogie, psychologie, orthophonie, TES, services externes ou autre service complémentaire.</p>
-    <div class="links">
-      <a class="btn primary" href="${FORM_URL}" target="_blank" rel="noopener noreferrer">Accéder au fichier</a>
-    </div>`;
+  const existingLink = [...block.querySelectorAll('a[href]')].find(link =>
+    (link.getAttribute('href') || '').includes('17R4NSbb1JJInv61vJobHIZvBvNOPOH0H')
+  );
+  if (!existingLink) {
+    block.insertAdjacentHTML('beforeend', `
+      <div class="links">
+        <a class="btn primary" href="${FORM_URL}" target="_blank" rel="noopener noreferrer">Accéder au fichier</a>
+      </div>`);
+  }
 })();

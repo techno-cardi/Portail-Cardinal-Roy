@@ -158,7 +158,8 @@
     ['ordi',['ordinateur','chromebook']], ['pc',['ordinateur']], ['paye',['paie','salaire']], ['paie',['paye','salaire']],
     ['mfa',['multifacteur','authenticator']], ['2fa',['multifacteur','authenticator']], ['tbi',['tableau','interactif']],
     ['photocopieuse',['photocopieur','reprographie']], ['photocopie',['reprographie','repro']], ['supp',['suppleance','remplacement']],
-    ['remplacant',['suppleant','suppleance']], ['mdp',['mot','passe']], ['techno',['technopedagogue','informatique']]
+    ['remplacant',['suppleant','suppleance']], ['mdp',['mot','passe']], ['techno',['technopedagogue','informatique']],
+    ['ortho',['orthopedagogie','orthopedagogue','orthophonie','orthophoniste']], ['psycho',['psychoeducation','psychoeducateur','psychologue']]
   ]);
 
   const editDistance = (a,b) => {
