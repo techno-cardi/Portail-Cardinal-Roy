@@ -296,6 +296,7 @@
     }
     retries = 0;
     retryPlacement();
+    window.PORTAL_DAILY_THOUGHT = '1.0';
   };
 
   document.addEventListener('click', () => closePopover());
@@ -305,6 +306,13 @@
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) placeControl(true);
   });
+
+  const legacyObserver = new MutationObserver(() => {
+    if (!document.querySelector('#daily-thought,#daily-thought-fallback,.daily-thought-button-row')) return;
+    retries = 0;
+    retryPlacement();
+  });
+  legacyObserver.observe(document.body, { childList: true, subtree: true });
 
   ensureStyles();
   loadThoughts();
