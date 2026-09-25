@@ -141,10 +141,47 @@
     { id:'pedago-2026-09-18-direct', title:'Horaire de la journée pédagogique du 18 septembre', url:PED_DAY_URL, subtitle:'Vendredi 18 septembre 2026', icon:'🗓️', requiresElement:'journee-pedagogique-2026-09-18', keywords:'pédago pedago pédagogie pedagogie journée pédago journee pedago journée pédagogique journee pedagogique pédagogique pedagogique vendredi 18 septembre 2026 ordre du jour OJ JP', excludeBareQueries:['horaire'] }
   ].map(resource => ({ ...resource, titleNorm:normalize(resource.title), searchText:normalize(`${resource.title} ${resource.keywords || ''}`) }));
 
-  const resolvedDirectResources = () => directTemplates
-    .filter(resource => !resource.requiresElement || document.getElementById(resource.requiresElement))
-    .map(resource => ({ ...resource, kind:'direct', url:resource.url || linkFromProcedure(resource.procedureId, resource.linkText) }))
-    .filter(resource => /^https?:\/\//i.test(resource.url || ''));
+  const directGroupMatches = (query, group) => {
+    const tokens = query.split(' ').filter(Boolean);
+    return Array.isArray(group) && group.some(rawTerm => {
+      const term = normalize(rawTerm);
+      if (!term) return false;
+      if (term.includes(' ')) return query.includes(term);
+      return tokens.some(token => token === term || token.includes(term) || term.includes(token));
+    });
+  };
+
+  const manifestDirectResources = () => (Array.isArray(window.PORTAL_DIRECT_FILES) ? window.PORTAL_DIRECT_FILES : [])
+    .map(entry => {
+      const requiredGroups = Array.isArray(entry.search_required_groups) ? entry.search_required_groups : [];
+      const keywords = requiredGroups.flat().join(' ');
+      return {
+        id: entry.key || entry.resource_id,
+        title: entry.title || entry.resource_id,
+        url: entry.url,
+        subtitle: entry.action_label || 'Accéder au fichier',
+        icon: '📁',
+        requiredGroups,
+        titleNorm: normalize(entry.title || entry.resource_id),
+        searchText: normalize(`${entry.title || ''} ${keywords}`)
+      };
+    })
+    .filter(resource => resource.id && /^https?:\/\//i.test(resource.url || ''));
+
+  const resolvedDirectResources = () => {
+    const builtIn = directTemplates
+      .filter(resource => !resource.requiresElement || document.getElementById(resource.requiresElement))
+      .map(resource => ({ ...resource, kind:'direct', url:resource.url || linkFromProcedure(resource.procedureId, resource.linkText) }))
+      .filter(resource => /^https?:\/\//i.test(resource.url || ''));
+
+    const merged = [...builtIn, ...manifestDirectResources().map(resource => ({ ...resource, kind:'direct' }))];
+    const seenUrls = new Set();
+    return merged.filter(resource => {
+      if (seenUrls.has(resource.url)) return false;
+      seenUrls.add(resource.url);
+      return true;
+    });
+  };
 
   const publishDirectRegistry = resources => {
     const simple = resources.map(({id,title,url}) => ({id,title,url}));
@@ -223,7 +260,8 @@
     publishDirectRegistry(resources);
     return resources.map(resource => {
       if ((resource.excludeBareQueries || []).map(normalize).includes(query)) return null;
-      if (!tokens.every(token => resource.searchText.includes(token))) return null;
+      if (resource.requiredGroups?.length && !resource.requiredGroups.every(group => directGroupMatches(query, group))) return null;
+      if (!resource.requiredGroups?.length && !tokens.every(token => resource.searchText.includes(token))) return null;
       let score = resource.titleNorm === query ? 500 : resource.titleNorm.startsWith(query) ? 350 : resource.titleNorm.includes(query) ? 300 : 0;
       if (resource.searchText.includes(query)) score += 170;
       tokens.forEach(token => { score += resource.titleNorm.includes(token) ? 55 : 25; });
@@ -302,6 +340,11 @@
       : `<button type="button" class="suggestion" role="option" aria-selected="false" data-search-index="${index}" ${entry.type === 'subresource' ? `data-search-subresource="${escapeHtml(entry.id)}"` : `data-search-open="${escapeHtml(entry.id)}"`}>${entry.visual}<span class="suggestion-copy"><strong>${safeHighlight(entry.title,tokens)}</strong>${entry.subtitle ? `<small>${safeHighlight(entry.subtitle,tokens)}</small>` : ''}</span><span class="suggestion-arrow" aria-hidden="true">→</span></button>`
     ).join('');
   };
+
+  window.addEventListener('portal:direct-files-ready', () => {
+    publishDirectRegistry(resolvedDirectResources());
+    if (input.value.trim()) renderSuggestions();
+  });
 
   const openInternal = entry => {
     if (!entry?.node) return;
