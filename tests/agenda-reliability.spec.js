@@ -182,8 +182,21 @@ test('les raccourcis d’édition restaurés fonctionnent sans barre de texte ri
   expect(await blocks.nth(1).evaluate(el => el.textContent.includes('\u2062'))).toBeTruthy();
 
   await third.click();
-  await page.keyboard.type('"bonjour"');
-  expect(await third.evaluate(el => el.textContent)).toBe('«bonjour»');
+  await page.keyboard.type('"Le Passeur"');
+  expect(await third.evaluate(el => el.textContent)).toBe('« Le Passeur »');
+
+  await third.evaluate(el => { el.textContent = 'Texte'; });
+  await third.focus();
+  await page.evaluate(() => {
+    const textEl = document.querySelectorAll('#agenda-editor-fixture .block-text')[2];
+    const range = document.createRange();
+    range.selectNodeContents(textEl);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+  await page.keyboard.type('"');
+  expect(await third.evaluate(el => el.textContent)).toBe('« Texte »');
 
   await expect(page.locator('#agendaRichTextToolbar')).toHaveCount(0);
 });
