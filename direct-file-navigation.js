@@ -48,6 +48,13 @@
     });
   };
 
+  const isActiveEntry = entry => {
+    const expiresAt = String(entry?.expires_at || '').trim();
+    if (!expiresAt) return true;
+    const timestamp = Date.parse(expiresAt);
+    return !Number.isNaN(timestamp) && Date.now() < timestamp;
+  };
+
   const matchesDirectIntent = (query, entry) => {
     const normalizedQuery = normalize(query);
     if (normalizedQuery.length < 3) return false;
@@ -168,7 +175,7 @@
       const config = await response.json();
       const entries = Object.entries(config.direct_files || {})
         .map(([key, value]) => ({ key, ...value }))
-        .filter(entry => entry.resource_id && /^https:\/\//i.test(entry.url || '') && entry.action_label);
+        .filter(entry => entry.resource_id && /^https:\/\//i.test(entry.url || '') && entry.action_label && isActiveEntry(entry));
       if (!entries.length) return;
 
       window.PORTAL_DIRECT_FILES = entries;
