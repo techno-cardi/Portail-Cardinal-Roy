@@ -145,6 +145,27 @@
           "conseillere en orientation"
         ]
       ]
+    },
+    "rencontre-parents-2026-09-29": {
+      "resource_id": "rencontre-parents-2026-09-29",
+      "url": "https://drive.google.com/drive/folders/12H3rEFMgOWAfFQaaiJcAXK2egsyHvQZD",
+      "title": "Rencontre de parents - dossier du 29 septembre",
+      "action_label": "Accéder au fichier",
+      "source_file": "news-ticker.js",
+      "expires_at": "2026-09-30T00:00:00-04:00",
+      "search_required_groups": [
+        [
+          "rencontre de parents",
+          "rencontre parents",
+          "rencontre parent",
+          "réunion de parents",
+          "reunion de parents",
+          "assemblée générale des parents",
+          "assemblee generale des parents",
+          "assemblée des parents",
+          "assemblee des parents"
+        ]
+      ]
     }
   },
   "annual_resource_ids": [
