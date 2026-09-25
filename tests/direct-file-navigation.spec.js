@@ -3,6 +3,7 @@ const { test, expect } = require('@playwright/test');
 const RESERVATION_FILE = 'https://drive.google.com/file/d/1Ea0rcbyqvFjmXzc_yuNREdgk8Pq4LEQW/view?usp=drivesdk';
 const MFA_FILE = 'https://drive.google.com/file/d/1G4QFoa_jyItVPd1OTZkCGGabk9h2gIa6/view?usp=drivesdk';
 const SERVICES_APPUI_FILE = 'https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link';
+const PARENTS_MEETING_FOLDER = 'https://drive.google.com/drive/folders/12H3rEFMgOWAfFQaaiJcAXK2egsyHvQZD';
 
 async function openPortal(page) {
   await page.goto('/');
@@ -77,6 +78,27 @@ for (const query of ['demande ortho', 'demande orthopédagogue', 'demande psycho
     await expect(first).toHaveAttribute('href', SERVICES_APPUI_FILE);
   });
 }
+
+test('la recherche rencontre de parents ouvre directement le dossier avant son expiration', async ({ page }) => {
+  await page.addInitScript(() => {
+    Date.now = () => new Date('2026-09-25T10:00:00-04:00').getTime();
+  });
+  await openPortal(page);
+  const first = await search(page, 'rencontre de parents');
+  await expect(first).toBeVisible();
+  await expect(first).toHaveAttribute('data-direct-file-suggestion', 'rencontre-parents-2026-09-29');
+  await expect(first).toHaveAttribute('href', PARENTS_MEETING_FOLDER);
+  await expect(first).toContainText('Accéder au fichier');
+});
+
+test('la recherche rencontre de parents n’injecte plus le dossier après le 29 septembre', async ({ page }) => {
+  await page.addInitScript(() => {
+    Date.now = () => new Date('2026-09-30T00:00:01-04:00').getTime();
+  });
+  await openPortal(page);
+  await search(page, 'rencontre de parents');
+  await expect(page.locator('#search-suggestions [data-direct-file-suggestion="rencontre-parents-2026-09-29"]')).toHaveCount(0);
+});
 
 test('une recherche générique réservation ne force pas la procédure', async ({ page }) => {
   await openPortal(page);
