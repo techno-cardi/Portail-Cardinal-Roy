@@ -138,7 +138,9 @@
     if (!entry) return;
 
     suggestions.querySelectorAll(`.smart-suggestion[data-open-id="${CSS.escape(entry.resource_id)}"]`).forEach(node => node.remove());
-    suggestions.prepend(makeSuggestion(entry));
+    const nativeDirect = [...suggestions.querySelectorAll('[data-direct-search-resource][href]')]
+      .find(node => node.getAttribute('href') === entry.url || node.href === entry.url);
+    if (!nativeDirect) suggestions.prepend(makeSuggestion(entry));
     [...suggestions.querySelectorAll('.suggestion')].slice(7).forEach(node => node.remove());
     suggestions.hidden = false;
     input.setAttribute('aria-expanded', 'true');
