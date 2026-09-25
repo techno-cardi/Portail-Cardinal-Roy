@@ -233,11 +233,22 @@
       if (node !== editor) delete node.dataset.fullSelection;
     });
 
-    const range = document.createRange();
-    range.selectNodeContents(editor);
-    selection.removeAllRanges();
-    selection.addRange(range);
     editor.dataset.fullSelection = '1';
+
+    // Chromium ne permet pas une sélection native continue entre plusieurs
+    // racines contenteditable. On garde donc une sélection logique sur toute
+    // la case et une sélection DOM valide dans le bloc actif.
+    const active = document.activeElement?.closest?.('.block-text');
+    const textEl = active && editor.contains(active)
+      ? active
+      : editor.querySelector('.block-text');
+
+    if (textEl) {
+      const range = document.createRange();
+      range.selectNodeContents(textEl);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
   }
 
   function clearFullSelection(editor) {
@@ -427,7 +438,7 @@
     if (!document.getElementById('agendaTextToolsStyle')) {
       const style = document.createElement('style');
       style.id = 'agendaTextToolsStyle';
-      style.textContent = '.rt-mark{display:none!important}';
+      style.textContent = '.rt-mark{display:none!important}.block-editor[data-full-selection="1"] .block-text{background:rgba(11,107,150,.18)!important}';
       document.head.append(style);
     }
 
@@ -478,13 +489,45 @@
       }
 
       if (!command && !event.altKey && event.key === '"') {
-        insertSmartQuote(event, textEl);
+        if (editor.dataset.fullSelection === '1') {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          replaceEditor(editor, '«');
+        } else {
+          insertSmartQuote(event, textEl);
+        }
+        return;
+      }
+
+      if (editor.dataset.fullSelection === '1' && event.key === 'Enter') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        replaceEditor(editor, '');
         return;
       }
 
       if (editor.dataset.fullSelection === '1'
-        && !(command && ['a', 'c', 'x', 'v', 'i'].includes(key))) {
+        && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Escape', 'Tab'].includes(event.key)) {
         clearFullSelection(editor);
+      }
+    }, true);
+
+    document.addEventListener('beforeinput', event => {
+      const textEl = event.target?.closest?.('.block-text');
+      const editor = textEl?.closest('.block-editor');
+      if (!editor || editor.dataset.fullSelection !== '1') return;
+
+      if (event.inputType === 'insertText' && typeof event.data === 'string') {
+        event.preventDefault();
+        replaceEditor(editor, event.data);
+        return;
+      }
+
+      if (event.inputType === 'deleteContentBackward'
+        || event.inputType === 'deleteContentForward'
+        || event.inputType === 'deleteByCut') {
+        event.preventDefault();
+        replaceEditor(editor, '');
       }
     }, true);
 
@@ -512,11 +555,8 @@
       replaceEditor(editor, text);
     }, true);
 
-    document.addEventListener('pointerdown', event => {
-      const editor = event.target?.closest?.('.block-editor');
-      document.querySelectorAll('.block-editor[data-full-selection="1"]').forEach(node => {
-        if (node === editor || node !== editor) clearFullSelection(node);
-      });
+    document.addEventListener('pointerdown', () => {
+      document.querySelectorAll('.block-editor[data-full-selection="1"]').forEach(clearFullSelection);
     }, true);
 
     new MutationObserver(mutations => {
