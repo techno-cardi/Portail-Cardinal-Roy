@@ -173,23 +173,13 @@ test('les raccourcis d’édition restaurés fonctionnent sans barre de texte ri
     selection.addRange(range);
   });
   await page.keyboard.press('Control+A');
-  const selected = await page.evaluate(() => window.getSelection()?.toString() || '');
-  expect(selected).toContain('Premier bloc');
-  expect(selected).toContain('Deuxième bloc');
+  expect(await page.locator('#agenda-editor-fixture .block-editor').getAttribute('data-full-selection')).toBe('1');
 
-  await first.click();
-  await page.evaluate(() => {
-    const textEl = document.querySelector('#agenda-editor-fixture .block-text');
-    textEl.focus();
-    const range = document.createRange();
-    range.selectNodeContents(textEl);
-    const selection = window.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(range);
-  });
   await page.keyboard.press('Control+I');
   await expect.poll(() => first.evaluate(el => el.innerHTML)).toContain('<em');
+  await expect.poll(() => blocks.nth(1).evaluate(el => el.innerHTML)).toContain('<em');
   expect(await first.evaluate(el => el.textContent.includes('\u2062'))).toBeTruthy();
+  expect(await blocks.nth(1).evaluate(el => el.textContent.includes('\u2062'))).toBeTruthy();
 
   await third.click();
   await page.keyboard.type('"bonjour"');
