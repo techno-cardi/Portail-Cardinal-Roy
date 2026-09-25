@@ -3,6 +3,7 @@
 
   const LABEL_CLASS = 'agenda-auto-label';
   const LABEL_RE = /^((?:Devoirs?|Rappels?)\s*:)([\s\S]*)$/i;
+  const RICH_MARK_RE = /[\u2062]/;
 
   function injectStyle() {
     if (document.getElementById('agendaAutoLabelStyle')) return;
@@ -78,6 +79,7 @@
     if (!(textEl instanceof HTMLElement) || !textEl.matches('.block-text')) return;
 
     const raw = textEl.textContent || '';
+    if (RICH_MARK_RE.test(raw)) return;
     const match = raw.match(LABEL_RE);
     const currentLabel = textEl.querySelector(`:scope > .${LABEL_CLASS}`);
 
