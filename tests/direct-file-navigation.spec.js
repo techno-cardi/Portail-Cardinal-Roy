@@ -79,17 +79,20 @@ for (const query of ['demande ortho', 'demande orthopédagogue', 'demande psycho
   });
 }
 
-test('la recherche rencontre de parents ouvre directement le dossier avant son expiration', async ({ page }) => {
-  await page.addInitScript(() => {
-    Date.now = () => new Date('2026-09-25T10:00:00-04:00').getTime();
+for (const query of ['rencontre', 'rencontre de parents']) {
+  test(`la recherche « ${query} » ouvre directement le dossier de la rencontre de parents`, async ({ page }) => {
+    await page.addInitScript(() => {
+      Date.now = () => new Date('2026-09-25T10:00:00-04:00').getTime();
+    });
+    await openPortal(page);
+    const input = page.locator('#guide-search');
+    await input.fill(query);
+    const result = page.locator(`#search-suggestions a[href="${PARENTS_MEETING_FOLDER}"]`).first();
+    await expect(result).toBeVisible();
+    await expect(result).toContainText('Rencontre de parents');
+    await expect(result).toContainText('Accéder au fichier');
   });
-  await openPortal(page);
-  const first = await search(page, 'rencontre de parents');
-  await expect(first).toBeVisible();
-  await expect(first).toHaveAttribute('data-direct-file-suggestion', 'rencontre-parents-2026-09-29');
-  await expect(first).toHaveAttribute('href', PARENTS_MEETING_FOLDER);
-  await expect(first).toContainText('Accéder au fichier');
-});
+}
 
 test('la recherche rencontre de parents n’injecte plus le dossier après le 29 septembre', async ({ page }) => {
   await page.addInitScript(() => {
@@ -97,7 +100,7 @@ test('la recherche rencontre de parents n’injecte plus le dossier après le 29
   });
   await openPortal(page);
   await search(page, 'rencontre de parents');
-  await expect(page.locator('#search-suggestions [data-direct-file-suggestion="rencontre-parents-2026-09-29"]')).toHaveCount(0);
+  await expect(page.locator(`#search-suggestions a[href="${PARENTS_MEETING_FOLDER}"]`)).toHaveCount(0);
 });
 
 test('une recherche générique réservation ne force pas la procédure', async ({ page }) => {
