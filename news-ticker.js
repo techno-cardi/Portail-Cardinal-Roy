@@ -11,6 +11,8 @@
   const DATES_PDF_URL = 'https://drive.google.com/file/d/1bfyqip0TJWvj58fUznfQzTx4Oc21i3PN/view?usp=drivesdk';
   const PED_DAY_URL = 'https://drive.google.com/file/d/1SUkoCJa-kxqqFMQQDMBTskOIFqdM3Wwt/view?usp=drivesdk';
   const PED_DAY_EXPIRES_AT = Date.parse('2026-09-19T00:00:00-04:00');
+  const PARENTS_MEETING_URL = 'https://drive.google.com/drive/folders/12H3rEFMgOWAfFQaaiJcAXK2egsyHvQZD';
+  const PARENTS_MEETING_EXPIRES_AT = Date.parse('2026-09-30T00:00:00-04:00');
 
   if (!document.getElementById('school-news-ticker-style')) {
     const style = document.createElement('style');
@@ -137,7 +139,28 @@
   const isSeptemberPedDay = item =>
     normalize(item?.title) === 'pedagogique' && String(item?.start || '').startsWith('2026-09-18');
 
-  const actionUrl = item => isSeptemberPedDay(item) && Date.now() < PED_DAY_EXPIRES_AT ? PED_DAY_URL : '';
+  const isSeptemberParentsMeeting = item =>
+    String(item?.start || '').startsWith('2026-09-29') && normalize(item?.title).includes('parents');
+
+  const actionFor = item => {
+    if (isSeptemberPedDay(item) && Date.now() < PED_DAY_EXPIRES_AT) {
+      return {
+        url: PED_DAY_URL,
+        title: 'Ouvrir directement l’horaire de la journée pédagogique du 18 septembre',
+        key: 'ped-day-2026-09-18',
+        kind: 'ped-day'
+      };
+    }
+    if (isSeptemberParentsMeeting(item) && Date.now() < PARENTS_MEETING_EXPIRES_AT) {
+      return {
+        url: PARENTS_MEETING_URL,
+        title: 'Ouvrir le dossier de la rencontre de parents du 29 septembre',
+        key: 'parents-meeting-2026-09-29',
+        kind: 'parents-meeting'
+      };
+    }
+    return null;
+  };
 
   const isUpcoming = item => {
     if (isSeptemberPedDay(item) && Date.now() >= PED_DAY_EXPIRES_AT) return false;
@@ -149,22 +172,40 @@
   const itemKey = item => `${item.title || ''}|${item.start || ''}|${item.end || ''}`;
 
   const syncAction = item => {
-    const url = actionUrl(item);
-    track.classList.toggle('school-news-action', Boolean(url));
-    if (url) {
-      track.href = url;
+    const action = actionFor(item);
+    track.classList.toggle('school-news-action', Boolean(action));
+    if (action) {
+      track.href = action.url;
       track.target = '_blank';
       track.rel = 'noopener noreferrer';
-      track.title = 'Ouvrir directement l’horaire de la journée pédagogique du 18 septembre';
-      track.dataset.pedDayLink = '2026-09-18';
-      track.dataset.pedDayUrl = url;
+      track.title = action.title;
+      track.dataset.schoolNewsAction = action.key;
+
+      if (action.kind === 'ped-day') {
+        track.dataset.pedDayLink = '2026-09-18';
+        track.dataset.pedDayUrl = action.url;
+      } else {
+        delete track.dataset.pedDayLink;
+        delete track.dataset.pedDayUrl;
+      }
+
+      if (action.kind === 'parents-meeting') {
+        track.dataset.parentsMeetingLink = '2026-09-29';
+        track.dataset.parentsMeetingUrl = action.url;
+      } else {
+        delete track.dataset.parentsMeetingLink;
+        delete track.dataset.parentsMeetingUrl;
+      }
     } else {
       track.removeAttribute('href');
       track.removeAttribute('target');
       track.removeAttribute('rel');
       track.removeAttribute('title');
+      delete track.dataset.schoolNewsAction;
       delete track.dataset.pedDayLink;
       delete track.dataset.pedDayUrl;
+      delete track.dataset.parentsMeetingLink;
+      delete track.dataset.parentsMeetingUrl;
     }
   };
 
