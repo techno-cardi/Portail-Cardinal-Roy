@@ -122,3 +122,69 @@ test('le service worker ne renvoie index.html que pour une navigation', async ({
   expect(source).toContain("if(e.request.mode==='navigate') return caches.match('./index.html')");
   expect(source).toContain('return Response.error()');
 });
+
+
+test('les raccourcis d’édition restaurés fonctionnent sans barre de texte riche', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('cr-planner-access-v1', 'cle-test-locale');
+  });
+
+  await page.route('**/functions/v1/planner-api**', async route => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get('action') === 'ping') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ calendar: [], notes: [] })
+    });
+  });
+
+  await page.goto('/agendakevin/');
+  await expect(page.locator('#appShell')).toBeVisible();
+
+  await page.evaluate(() => {
+    const fixture = document.createElement('div');
+    fixture.id = 'agenda-editor-fixture';
+    fixture.innerHTML = [
+      '<div class="block-editor">',
+      '<div class="editor-block plain-block" data-kind="plain"><div class="block-text" contenteditable="true">Premier bloc</div></div>',
+      '<div class="editor-block plain-block" data-kind="plain"><div class="block-text" contenteditable="true">Deuxième bloc</div></div>',
+      '<div class="editor-block plain-block" data-kind="plain"><div class="block-text" contenteditable="true"></div></div>',
+      '</div>'
+    ].join('');
+    document.body.appendChild(fixture);
+  });
+
+  const blocks = page.locator('#agenda-editor-fixture .block-text');
+  const first = blocks.nth(0);
+  const third = blocks.nth(2);
+
+  await first.click();
+  await page.keyboard.press('Control+A');
+  const selected = await page.evaluate(() => window.getSelection()?.toString() || '');
+  expect(selected).toContain('Premier bloc');
+  expect(selected).toContain('Deuxième bloc');
+
+  await first.click();
+  await page.evaluate(() => {
+    const textEl = document.querySelector('#agenda-editor-fixture .block-text');
+    textEl.focus();
+    const range = document.createRange();
+    range.selectNodeContents(textEl);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+  await page.keyboard.press('Control+I');
+  await expect.poll(() => first.evaluate(el => el.innerHTML)).toContain('<em');
+  expect(await first.evaluate(el => el.textContent.includes('\u2062'))).toBeTruthy();
+
+  await third.click();
+  await page.keyboard.type('"bonjour"');
+  expect(await third.evaluate(el => el.textContent)).toBe('«bonjour»');
+
+  await expect(page.locator('#agendaRichTextToolbar')).toHaveCount(0);
+});
