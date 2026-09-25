@@ -43,6 +43,14 @@ def valid_date(value):
         return False
 
 
+def valid_timestamp(value):
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        return parsed.tzinfo is not None
+    except ValueError:
+        return False
+
+
 required_paths = [
     "AGENTS.md", ".github/copilot-instructions.md", "README.md", "portal-maintenance.json",
     "portal-updates-curated.json", "portal-updates.json", ".github/workflows/update-portal-updates.yml",
@@ -114,6 +122,7 @@ if config:
             title = str(entry.get("title") or "").strip()
             action_label = str(entry.get("action_label") or "").strip()
             source_file = str(entry.get("source_file") or "").strip()
+            expires_at = str(entry.get("expires_at") or "").strip()
             groups = entry.get("search_required_groups")
             if not resource_id:
                 error(f"Fichier direct {key}: resource_id manquant.")
@@ -125,6 +134,8 @@ if config:
                 error(f"Fichier direct {key}: titre manquant.")
             if action_label != "Accéder au fichier":
                 error(f"Fichier direct {key}: action_label doit être exactement « Accéder au fichier ».")
+            if expires_at and not valid_timestamp(expires_at):
+                error(f"Fichier direct {key}: expires_at doit être un horodatage ISO avec fuseau horaire.")
             if not source_file:
                 error(f"Fichier direct {key}: source_file manquant.")
             else:
