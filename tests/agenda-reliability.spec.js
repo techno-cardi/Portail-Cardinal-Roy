@@ -162,7 +162,16 @@ test('les raccourcis d’édition restaurés fonctionnent sans barre de texte ri
   const first = blocks.nth(0);
   const third = blocks.nth(2);
 
-  await first.click();
+  await first.focus();
+  await page.evaluate(() => {
+    const textEl = document.querySelector('#agenda-editor-fixture .block-text');
+    const range = document.createRange();
+    range.selectNodeContents(textEl);
+    range.collapse(false);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
   await page.keyboard.press('Control+A');
   const selected = await page.evaluate(() => window.getSelection()?.toString() || '');
   expect(selected).toContain('Premier bloc');
