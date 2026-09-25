@@ -407,18 +407,25 @@
     const visible = stripMarkers(tokensFromElement(textEl));
 
     if (offsets.start !== offsets.end) {
+      const selectedText = range.toString();
       const contents = range.extractContents();
-      const left = document.createTextNode('«');
-      const right = document.createTextNode('»');
+      const left = document.createTextNode(/^\s/.test(selectedText) ? '«' : '« ');
+      const right = document.createTextNode(/\s$/.test(selectedText) ? '»' : ' »');
       const fragment = document.createDocumentFragment();
       fragment.append(left, contents, right);
       range.insertNode(fragment);
       range.setStartAfter(right);
       range.collapse(true);
     } else {
+      const before = visible.slice(0, offsets.start);
       const previous = offsets.start > 0 ? visible[offsets.start - 1] : '';
-      const opening = offsets.start === 0 || /[\s([{«‹:;!?]/.test(previous);
-      const quote = document.createTextNode(opening ? '«' : '»');
+      const next = offsets.start < visible.length ? visible[offsets.start] : '';
+      const insideQuotes = before.lastIndexOf('«') > before.lastIndexOf('»');
+      const opening = !insideQuotes && (offsets.start === 0 || /[\s([{‹:;!?]/.test(previous));
+      const quoteText = opening
+        ? (next && /\s/.test(next) ? '«' : '« ')
+        : (previous && /\s/.test(previous) ? '»' : ' »');
+      const quote = document.createTextNode(quoteText);
       range.deleteContents();
       range.insertNode(quote);
       range.setStartAfter(quote);
@@ -492,7 +499,7 @@
         if (editor.dataset.fullSelection === '1') {
           event.preventDefault();
           event.stopImmediatePropagation();
-          replaceEditor(editor, '«');
+          replaceEditor(editor, '« ');
         } else {
           insertSmartQuote(event, textEl);
         }
