@@ -122,8 +122,25 @@
     root.querySelectorAll?.('.block-text').forEach(formatTextEl);
   }
 
+  function ensureWorkTitleFormatter() {
+    if (window.CRAgendaWorkTitles) return;
+
+    const existing = document.querySelector('script[data-agenda-work-title-loader], script[src*="work-title-format.js"]');
+    if (existing) {
+      existing.addEventListener('load', () => formatWithin(document), { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'work-title-format.js?v=20260928-2';
+    script.dataset.agendaWorkTitleLoader = '1';
+    script.addEventListener('load', () => formatWithin(document), { once: true });
+    document.head.appendChild(script);
+  }
+
   function start() {
     injectStyle();
+    ensureWorkTitleFormatter();
     formatWithin(document);
 
     document.addEventListener('input', event => {
