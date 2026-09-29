@@ -35,6 +35,11 @@
     return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
   }
 
+  function inlineHtml(value) {
+    const formatter = window.CRAgendaWorkTitles;
+    return formatter?.html ? formatter.html(value) : escapeHtml(value);
+  }
+
   function groupNumber(group) {
     return String(group || '').match(/(31|32|51)$/)?.[1] || '';
   }
@@ -128,13 +133,13 @@
       if (numbered) {
         const n = Number(numbered[1]);
         const marker = NUMBER_EMOJIS[n - 1] || `${n}.`;
-        parts.push(`<p>${marker} ${escapeHtml(numbered[2])}</p>`);
+        parts.push(`<p>${marker} ${inlineHtml(numbered[2])}</p>`);
       } else if (line.trim()) {
-        parts.push(`<p>${escapeHtml(line)}</p>`);
+        parts.push(`<p>${inlineHtml(line)}</p>`);
       }
     }
-    if (String(devoir).trim()) parts.push(`<p><b>Devoir :</b> ${escapeHtml(String(devoir).trim())}</p>`);
-    if (String(rappel).trim()) parts.push(`<p><b>Rappel :</b> ${escapeHtml(String(rappel).trim())}</p>`);
+    if (String(devoir).trim()) parts.push(`<p><b>Devoir :</b> ${inlineHtml(String(devoir).trim())}</p>`);
+    if (String(rappel).trim()) parts.push(`<p><b>Rappel :</b> ${inlineHtml(String(rappel).trim())}</p>`);
     return parts.join('');
   }
 
@@ -319,9 +324,9 @@
     let number = 0;
     return noteLines(info.body).map(line => {
       const match = line.match(/^\s*\d+\.\s*(.*)$/);
-      if (match) return `<div class="cr-board-item"><span class="cr-board-number">${++number}.</span><span>${escapeHtml(match[1])}</span></div>`;
+      if (match) return `<div class="cr-board-item"><span class="cr-board-number">${++number}.</span><span>${inlineHtml(match[1])}</span></div>`;
       if (!line.trim()) return '';
-      return `<div class="cr-board-plain">${escapeHtml(line)}</div>`;
+      return `<div class="cr-board-plain">${inlineHtml(line)}</div>`;
     }).join('');
   }
 
