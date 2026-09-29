@@ -2,7 +2,7 @@
   'use strict';
 
   const LABEL_CLASS = 'agenda-auto-label';
-  const LABEL_RE = /^((?:Devoirs?|Rappels?)\s*:)([\s\S]*)$/i;
+  const LABEL_RE = /^((?:Devoirs?|Rappels?|Dates? importantes?)\s*:)([\s\S]*)$/i;
   const RICH_MARK_RE = /[\u2062]/;
 
   function injectStyle() {
