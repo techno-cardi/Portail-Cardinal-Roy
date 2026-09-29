@@ -86,3 +86,63 @@ test('l’événement des parents du 29 septembre ouvre directement le dossier a
   await expect(track).toHaveAttribute('data-parents-meeting-link', '2026-09-29');
 });
 
+
+test('la pédagogique du 5 octobre ouvre directement son horaire dans Dates importantes', async ({ page }) => {
+  await page.addInitScript(() => {
+    Date.now = () => new Date('2026-10-02T10:00:00-04:00').getTime();
+  });
+  await page.route('**/news-feed.json*', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        generated_at: '2026-10-02T10:00:00-04:00',
+        source: 'test',
+        items: [{
+          title: 'Pédagogique',
+          start: '2026-10-05T00:00:00-04:00',
+          end: '2026-10-06T00:00:00-04:00',
+          all_day: true,
+          kind: 'pedagogique',
+          icon: '📚'
+        }]
+      })
+    });
+  });
+
+  await page.goto('/');
+  await expect(page.locator('#guide-search')).toBeVisible();
+  const track = page.locator('#school-news-ticker .school-news-track');
+  await expect(track).toContainText('Pédagogique');
+  await expect(track).toHaveAttribute('href', 'https://drive.google.com/file/d/1zyMK5pY5kGBVr1qbrBGyNWrJRpuTGHDs/view?usp=drivesdk');
+  await expect(track).toHaveAttribute('target', '_blank');
+  await expect(track).toHaveAttribute('data-october-ped-day-link', '2026-10-05');
+});
+
+test('la pédagogique du 5 octobre disparaît du bandeau après cette journée', async ({ page }) => {
+  await page.addInitScript(() => {
+    Date.now = () => new Date('2026-10-06T00:00:01-04:00').getTime();
+  });
+  await page.route('**/news-feed.json*', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        generated_at: '2026-10-06T00:00:01-04:00',
+        source: 'test',
+        items: [{
+          title: 'Pédagogique',
+          start: '2026-10-05T00:00:00-04:00',
+          end: '2026-10-06T00:00:00-04:00',
+          all_day: true,
+          kind: 'pedagogique',
+          icon: '📚'
+        }]
+      })
+    });
+  });
+
+  await page.goto('/');
+  await expect(page.locator('#guide-search')).toBeVisible();
+  await expect(page.locator('#school-news-ticker')).toBeHidden();
+});
