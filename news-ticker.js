@@ -13,6 +13,8 @@
   const PED_DAY_EXPIRES_AT = Date.parse('2026-09-19T00:00:00-04:00');
   const PARENTS_MEETING_URL = 'https://drive.google.com/drive/folders/12H3rEFMgOWAfFQaaiJcAXK2egsyHvQZD';
   const PARENTS_MEETING_EXPIRES_AT = Date.parse('2026-09-30T00:00:00-04:00');
+  const OCTOBER_PED_DAY_URL = 'https://drive.google.com/file/d/1zyMK5pY5kGBVr1qbrBGyNWrJRpuTGHDs/view?usp=drivesdk';
+  const OCTOBER_PED_DAY_EXPIRES_AT = Date.parse('2026-10-06T00:00:00-04:00');
 
   if (!document.getElementById('school-news-ticker-style')) {
     const style = document.createElement('style');
@@ -142,6 +144,9 @@
   const isSeptemberParentsMeeting = item =>
     String(item?.start || '').startsWith('2026-09-29') && normalize(item?.title).includes('parents');
 
+  const isOctoberPedDay = item =>
+    normalize(item?.title) === 'pedagogique' && String(item?.start || '').startsWith('2026-10-05');
+
   const actionFor = item => {
     if (isSeptemberPedDay(item) && Date.now() < PED_DAY_EXPIRES_AT) {
       return {
@@ -159,11 +164,20 @@
         kind: 'parents-meeting'
       };
     }
+    if (isOctoberPedDay(item) && Date.now() < OCTOBER_PED_DAY_EXPIRES_AT) {
+      return {
+        url: OCTOBER_PED_DAY_URL,
+        title: 'Ouvrir directement l’horaire de la journée pédagogique du 5 octobre',
+        key: 'ped-day-2026-10-05',
+        kind: 'october-ped-day'
+      };
+    }
     return null;
   };
 
   const isUpcoming = item => {
     if (isSeptemberPedDay(item) && Date.now() >= PED_DAY_EXPIRES_AT) return false;
+    if (isOctoberPedDay(item) && Date.now() >= OCTOBER_PED_DAY_EXPIRES_AT) return false;
     const end = new Date(item.end || item.start);
     if (Number.isNaN(end.getTime())) return false;
     return end.getTime() >= Date.now() - 15 * 60 * 1000;
@@ -196,6 +210,14 @@
         delete track.dataset.parentsMeetingLink;
         delete track.dataset.parentsMeetingUrl;
       }
+
+      if (action.kind === 'october-ped-day') {
+        track.dataset.octoberPedDayLink = '2026-10-05';
+        track.dataset.octoberPedDayUrl = action.url;
+      } else {
+        delete track.dataset.octoberPedDayLink;
+        delete track.dataset.octoberPedDayUrl;
+      }
     } else {
       track.removeAttribute('href');
       track.removeAttribute('target');
@@ -206,6 +228,8 @@
       delete track.dataset.pedDayUrl;
       delete track.dataset.parentsMeetingLink;
       delete track.dataset.parentsMeetingUrl;
+      delete track.dataset.octoberPedDayLink;
+      delete track.dataset.octoberPedDayUrl;
     }
   };
 
