@@ -4,6 +4,7 @@ const RESERVATION_FILE = 'https://drive.google.com/file/d/1Ea0rcbyqvFjmXzc_yuNRE
 const MFA_FILE = 'https://drive.google.com/file/d/1G4QFoa_jyItVPd1OTZkCGGabk9h2gIa6/view?usp=drivesdk';
 const SERVICES_APPUI_FILE = 'https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link';
 const PARENTS_MEETING_FOLDER = 'https://drive.google.com/drive/folders/12H3rEFMgOWAfFQaaiJcAXK2egsyHvQZD';
+const OCTOBER_PED_DAY_FILE = 'https://drive.google.com/file/d/1zyMK5pY5kGBVr1qbrBGyNWrJRpuTGHDs/view?usp=drivesdk';
 
 async function openPortal(page) {
   await page.goto('/');
@@ -101,6 +102,40 @@ test('la recherche rencontre de parents n’injecte plus le dossier après le 29
   await openPortal(page);
   await search(page, 'rencontre de parents');
   await expect(page.locator(`#search-suggestions a[href="${PARENTS_MEETING_FOLDER}"]`)).toHaveCount(0);
+});
+
+for (const query of ['pédago', 'pedago', 'pédagogique', 'journée pédagogique', 'horaire pédago', 'pédagogique 5 octobre']) {
+  test(`la recherche « ${query} » ouvre directement l’horaire de la pédagogique du 5 octobre`, async ({ page }) => {
+    await page.addInitScript(() => {
+      Date.now = () => new Date('2026-10-02T10:00:00-04:00').getTime();
+    });
+    await openPortal(page);
+    const first = await search(page, query);
+    await expect(first).toBeVisible();
+    await expect(first).toHaveAttribute('data-direct-file-suggestion', 'pedagogique-2026-10-05');
+    await expect(first).toHaveAttribute('href', OCTOBER_PED_DAY_FILE);
+    await expect(first).toContainText('Horaire de la journée pédagogique - 5 octobre 2026');
+    await expect(first).toContainText('Accéder au fichier');
+  });
+}
+
+test('l’horaire de la pédagogique du 5 octobre disparaît de la recherche après cette journée', async ({ page }) => {
+  await page.addInitScript(() => {
+    Date.now = () => new Date('2026-10-06T00:00:01-04:00').getTime();
+  });
+  await openPortal(page);
+  await search(page, 'pédago');
+  await expect(page.locator(`#search-suggestions a[href="${OCTOBER_PED_DAY_FILE}"]`)).toHaveCount(0);
+});
+
+test('une recherche générique horaire ne force pas l’horaire de la pédagogique', async ({ page }) => {
+  await page.addInitScript(() => {
+    Date.now = () => new Date('2026-10-02T10:00:00-04:00').getTime();
+  });
+  await openPortal(page);
+  const first = await search(page, 'horaire');
+  await expect(first).toBeVisible();
+  await expect(first).not.toHaveAttribute('data-direct-file-suggestion', 'pedagogique-2026-10-05');
 });
 
 test('une recherche générique réservation ne force pas la procédure', async ({ page }) => {
