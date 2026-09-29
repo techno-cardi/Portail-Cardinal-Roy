@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260928-1';
+  const VERSION = '20260928-2';
   const TITLES = [
     'Nébulosité croissante en fin de journée',
     'Ahayute et le mangeur de nuages',
@@ -41,6 +41,7 @@
   const normalizedTitles = TITLES.map(title => ({
     title,
     normalized: normalize(title),
+    caseSensitive: title === 'Rage',
   }));
 
   function matches(value) {
@@ -60,7 +61,8 @@
         const after = normalized[end] || '';
         const leftOk = !isWordChar(first) || !isWordChar(before);
         const rightOk = !isWordChar(last) || !isWordChar(after);
-        if (leftOk && rightOk) candidates.push({ start, end, title: entry.title });
+        const caseOk = !entry.caseSensitive || text.slice(start, end) === entry.title;
+        if (leftOk && rightOk && caseOk) candidates.push({ start, end, title: entry.title });
         from = start + 1;
       }
     }
