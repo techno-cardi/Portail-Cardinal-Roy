@@ -167,6 +167,33 @@
           "assemblee des parents"
         ]
       ]
+    },
+    "pedagogique-2026-10-05": {
+      "resource_id": "pedagogique-2026-10-05",
+      "url": "https://drive.google.com/file/d/1zyMK5pY5kGBVr1qbrBGyNWrJRpuTGHDs/view?usp=drivesdk",
+      "title": "Horaire de la journée pédagogique - 5 octobre 2026",
+      "action_label": "Accéder au fichier",
+      "source_file": "news-ticker.js",
+      "expires_at": "2026-10-06T00:00:00-04:00",
+      "search_required_groups": [
+        [
+          "pédago",
+          "pedago",
+          "pédagogique",
+          "pedagogique",
+          "journée pédagogique",
+          "journee pedagogique",
+          "journée pédago",
+          "journee pedago",
+          "horaire pédagogique",
+          "horaire pedagogique",
+          "horaire pédago",
+          "horaire pedago",
+          "jp 5 octobre",
+          "pédagogique 5 octobre",
+          "pedagogique 5 octobre"
+        ]
+      ]
     }
   },
   "annual_resource_ids": [
