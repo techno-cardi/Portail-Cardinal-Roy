@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const LABEL_RE = /^((?:Devoirs?|Rappels?)\s*:)([\s\S]*)$/i;
+  const LABEL_RE = /^((?:Devoirs?|Rappels?|Dates? importantes?)\s*:)([\s\S]*)$/i;
 
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>'"]/g, char => ({
