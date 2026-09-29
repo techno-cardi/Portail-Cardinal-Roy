@@ -35,9 +35,18 @@
     return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
   }
 
+  const PLAN_LABEL_RE = /^((?:Devoirs?|Rappels?|Dates? importantes?)\s*:)([\s\S]*)$/i;
+
   function inlineHtml(value) {
     const formatter = window.CRAgendaWorkTitles;
     return formatter?.html ? formatter.html(value) : escapeHtml(value);
+  }
+
+  function planLineHtml(value) {
+    const raw = String(value ?? '');
+    const match = raw.match(PLAN_LABEL_RE);
+    if (!match) return inlineHtml(raw);
+    return '<b><u>' + escapeHtml(match[1]) + '</u></b>' + inlineHtml(match[2]);
   }
 
   function groupNumber(group) {
@@ -135,11 +144,11 @@
         const marker = NUMBER_EMOJIS[n - 1] || `${n}.`;
         parts.push(`<p>${marker} ${inlineHtml(numbered[2])}</p>`);
       } else if (line.trim()) {
-        parts.push(`<p>${inlineHtml(line)}</p>`);
+        parts.push(`<p>${planLineHtml(line)}</p>`);
       }
     }
-    if (String(devoir).trim()) parts.push(`<p><b>Devoir :</b> ${inlineHtml(String(devoir).trim())}</p>`);
-    if (String(rappel).trim()) parts.push(`<p><b>Rappel :</b> ${inlineHtml(String(rappel).trim())}</p>`);
+    if (String(devoir).trim()) parts.push(`<p><b><u>Devoir :</u></b> ${inlineHtml(String(devoir).trim())}</p>`);
+    if (String(rappel).trim()) parts.push(`<p><b><u>Rappel :</u></b> ${inlineHtml(String(rappel).trim())}</p>`);
     return parts.join('');
   }
 
