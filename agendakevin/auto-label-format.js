@@ -2,21 +2,18 @@
   'use strict';
 
   const LABEL_CLASS = 'agenda-auto-label';
+  const TITLE_CLASS = 'agenda-auto-work-title';
   const LABEL_RE = /^((?:Devoirs?|Rappels?|Dates? importantes?)\s*:)([\s\S]*)$/i;
   const RICH_MARK_RE = /[\u2062]/;
+  const lastFormat = new WeakMap();
 
   function injectStyle() {
     if (document.getElementById('agendaAutoLabelStyle')) return;
     const style = document.createElement('style');
     style.id = 'agendaAutoLabelStyle';
-    style.textContent = `
-      .${LABEL_CLASS}{
-        font-weight:800;
-        text-decoration-line:underline;
-        text-underline-offset:2px;
-        text-decoration-thickness:1.5px;
-      }
-    `;
+    style.textContent =
+      '.' + LABEL_CLASS + '{font-weight:800;text-decoration-line:underline;text-underline-offset:2px;text-decoration-thickness:1.5px}' +
+      '.' + TITLE_CLASS + '{font-style:italic}';
     document.head.appendChild(style);
   }
 
@@ -31,48 +28,50 @@
     return before.toString().length;
   }
 
-  function restorePlainCaret(textEl, offset) {
+  function restoreCaret(textEl, offset) {
     if (offset == null) return;
-    const node = textEl.firstChild || textEl.appendChild(document.createTextNode(''));
-    const selection = window.getSelection();
-    if (!selection) return;
-    const range = document.createRange();
-    range.setStart(node, Math.max(0, Math.min(offset, node.nodeValue?.length || 0)));
-    range.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(range);
-  }
-
-  function restoreFormattedCaret(textEl, offset, labelLength) {
-    if (offset == null) return;
-    const label = textEl.firstChild;
-    const tail = textEl.childNodes[1] || textEl.appendChild(document.createTextNode(''));
-    const selection = window.getSelection();
-    if (!selection) return;
-    const range = document.createRange();
-
-    if (offset < labelLength) {
-      const node = label?.firstChild || label;
-      if (!node) return;
-      range.setStart(node, Math.max(0, Math.min(offset, node.nodeValue?.length || 0)));
-    } else {
-      range.setStart(tail, Math.max(0, Math.min(offset - labelLength, tail.nodeValue?.length || 0)));
+    let remaining = Math.max(0, offset);
+    let last = null;
+    const walker = document.createTreeWalker(textEl, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      last = node;
+      const length = node.nodeValue?.length || 0;
+      if (remaining <= length) {
+        const selection = window.getSelection();
+        if (!selection) return;
+        const range = document.createRange();
+        range.setStart(node, remaining);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        return;
+      }
+      remaining -= length;
     }
 
+    const node = last || textEl.appendChild(document.createTextNode(''));
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    range.setStart(node, node.nodeValue?.length || 0);
     range.collapse(true);
     selection.removeAllRanges();
     selection.addRange(range);
   }
 
-  function alreadyFormatted(textEl, label, tail) {
-    const first = textEl.firstChild;
-    const second = textEl.childNodes[1];
-    return textEl.childNodes.length === 2
-      && first?.nodeType === Node.ELEMENT_NODE
-      && first.classList?.contains(LABEL_CLASS)
-      && first.textContent === label
-      && second?.nodeType === Node.TEXT_NODE
-      && second.nodeValue === tail;
+  function appendWorkText(target, value) {
+    const formatter = window.CRAgendaWorkTitles;
+    if (formatter?.fragment) {
+      target.appendChild(formatter.fragment(value));
+      return;
+    }
+    target.appendChild(document.createTextNode(String(value ?? '')));
+  }
+
+  function expectedAutoNodes(textEl, hasLabel, hasTitle) {
+    if (hasLabel && !textEl.querySelector(':scope > .' + LABEL_CLASS)) return false;
+    if (hasTitle && !textEl.querySelector('.' + TITLE_CLASS)) return false;
+    return true;
   }
 
   function formatTextEl(textEl) {
@@ -80,29 +79,42 @@
 
     const raw = textEl.textContent || '';
     if (RICH_MARK_RE.test(raw)) return;
-    const match = raw.match(LABEL_RE);
-    const currentLabel = textEl.querySelector(`:scope > .${LABEL_CLASS}`);
 
-    if (!match) {
-      if (!currentLabel) return;
-      const offset = document.activeElement === textEl ? caretOffset(textEl) : null;
-      textEl.textContent = raw;
-      if (offset != null) restorePlainCaret(textEl, offset);
+    const labelMatch = raw.match(LABEL_RE);
+    const formatter = window.CRAgendaWorkTitles;
+    const hasTitle = Boolean(formatter?.hasMatch?.(raw));
+    const hasLabel = Boolean(labelMatch);
+    const currentAuto = textEl.querySelector(':scope > .' + LABEL_CLASS + ', .' + TITLE_CLASS);
+
+    if (!hasLabel && !hasTitle) {
+      if (currentAuto) {
+        const offset = document.activeElement === textEl ? caretOffset(textEl) : null;
+        textEl.textContent = raw;
+        if (offset != null) restoreCaret(textEl, offset);
+      }
+      lastFormat.set(textEl, raw);
       return;
     }
 
-    const label = match[1];
-    const tail = match[2];
-    if (alreadyFormatted(textEl, label, tail)) return;
+    const signature = (formatter?.version || '') + '|' + raw;
+    if (lastFormat.get(textEl) === signature && expectedAutoNodes(textEl, hasLabel, hasTitle)) return;
 
     const offset = document.activeElement === textEl ? caretOffset(textEl) : null;
-    const labelEl = document.createElement('span');
-    labelEl.className = LABEL_CLASS;
-    labelEl.textContent = label;
-    const tailNode = document.createTextNode(tail);
-    textEl.replaceChildren(labelEl, tailNode);
+    const fragment = document.createDocumentFragment();
 
-    if (offset != null) restoreFormattedCaret(textEl, offset, label.length);
+    if (labelMatch) {
+      const labelEl = document.createElement('span');
+      labelEl.className = LABEL_CLASS;
+      labelEl.textContent = labelMatch[1];
+      fragment.appendChild(labelEl);
+      appendWorkText(fragment, labelMatch[2]);
+    } else {
+      appendWorkText(fragment, raw);
+    }
+
+    textEl.replaceChildren(fragment);
+    lastFormat.set(textEl, signature);
+    if (offset != null) restoreCaret(textEl, offset);
   }
 
   function formatWithin(root) {
