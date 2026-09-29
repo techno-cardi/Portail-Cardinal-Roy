@@ -104,7 +104,7 @@ test('la recherche rencontre de parents n’injecte plus le dossier après le 29
   await expect(page.locator(`#search-suggestions a[href="${PARENTS_MEETING_FOLDER}"]`)).toHaveCount(0);
 });
 
-for (const query of ['pédago', 'pedago', 'pédagogique', 'journée pédagogique', 'horaire pédago', 'pédagogique 5 octobre']) {
+for (const query of ['pédago', 'pedago', 'péda', 'peda', 'pédagogique', 'pédagogie', 'journée pédagogique', 'journée péda', 'horaire pédago', 'jp', 'pédagogique 5 octobre']) {
   test(`la recherche « ${query} » ouvre directement l’horaire de la pédagogique du 5 octobre`, async ({ page }) => {
     await page.addInitScript(() => {
       Date.now = () => new Date('2026-10-02T10:00:00-04:00').getTime();
