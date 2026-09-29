@@ -765,7 +765,7 @@
 
   async function boot() {
     injectRefinementStyles(); dragUi(); wireUi(); updateNetwork(); updateHistoryButtons();
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(registration => registration.update()).catch(() => {});
     if (!state.key) { showAccess(); return; }
     try {
       await api('?action=ping');
