@@ -9,16 +9,26 @@
     }[char]));
   }
 
+  function inlineHtml(value) {
+    const formatter = window.CRAgendaWorkTitles;
+    return formatter?.html ? formatter.html(value) : escapeHtml(value);
+  }
+
   function formatParagraph(paragraph) {
     if (!(paragraph instanceof HTMLElement) || paragraph.tagName !== 'P') return;
-    const match = (paragraph.textContent || '').match(LABEL_RE);
-    if (!match) return;
 
-    const current = paragraph.querySelector(':scope > b > u, :scope > strong > u');
-    if (current && current.textContent === match[1]) return;
+    const raw = paragraph.textContent || '';
+    const match = raw.match(LABEL_RE);
+    const hasTitle = Boolean(window.CRAgendaWorkTitles?.hasMatch?.(raw));
+    if (!match && !hasTitle) return;
 
-    paragraph.dataset.pdcAutoLabel = '1';
-    paragraph.innerHTML = `<b><u>${escapeHtml(match[1])}</u></b>${escapeHtml(match[2])}`;
+    const nextHtml = match
+      ? '<b><u>' + escapeHtml(match[1]) + '</u></b>' + inlineHtml(match[2])
+      : inlineHtml(raw);
+
+    if (paragraph.innerHTML === nextHtml) return;
+    paragraph.dataset.pdcAutoFormat = '1';
+    paragraph.innerHTML = nextHtml;
   }
 
   function formatPreview(root = document) {
