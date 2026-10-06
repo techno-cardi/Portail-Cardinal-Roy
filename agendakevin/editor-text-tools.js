@@ -3,10 +3,50 @@
 
   const ITALIC_MARK = '\u2062';
   const MARK_RE = /\u2062/g;
+  const URL_RE = /\bhttps?:\/\/[^\s<>"']+/i;
   let composing = false;
+  let pointerSelection = null;
 
   function stripMarkers(value) {
     return String(value ?? '').replace(MARK_RE, '');
+  }
+
+  function detectedUrl(value) {
+    const match = stripMarkers(value).match(URL_RE);
+    if (!match) return '';
+    return match[0].replace(/[),.;!?]+$/g, '');
+  }
+
+  function syncLinkChip(block) {
+    if (!(block instanceof HTMLElement) || !block.classList.contains('editor-block')) return;
+    const textEl = block.querySelector('.block-text');
+    const url = detectedUrl(textEl?.textContent || '');
+    let chip = block.querySelector(':scope > .agenda-link-chip');
+
+    if (!url) {
+      chip?.remove();
+      return;
+    }
+
+    if (!chip) {
+      chip = document.createElement('a');
+      chip.className = 'agenda-link-chip';
+      chip.contentEditable = 'false';
+      chip.target = '_blank';
+      chip.rel = 'noopener noreferrer';
+      chip.textContent = '↗';
+      chip.setAttribute('aria-label', 'Ouvrir le lien');
+      block.appendChild(chip);
+    }
+
+    chip.href = url;
+    chip.title = 'Ouvrir le document';
+  }
+
+  function syncLinksWithin(root) {
+    if (!(root instanceof Element) && root !== document) return;
+    if (root instanceof HTMLElement && root.classList.contains('editor-block')) syncLinkChip(root);
+    root.querySelectorAll?.('.editor-block').forEach(syncLinkChip);
   }
 
   function styleOf(node) {
@@ -441,15 +481,110 @@
     }));
   }
 
+  function caretPointAt(x, y) {
+    if (document.caretPositionFromPoint) {
+      const pos = document.caretPositionFromPoint(x, y);
+      if (pos?.offsetNode) return { node: pos.offsetNode, offset: pos.offset };
+    }
+    if (document.caretRangeFromPoint) {
+      const range = document.caretRangeFromPoint(x, y);
+      if (range) return { node: range.startContainer, offset: range.startOffset };
+    }
+    return null;
+  }
+
+  function textRootForPoint(point) {
+    const node = point?.node;
+    if (!node) return null;
+    const element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+    return element?.closest?.('.block-text') || null;
+  }
+
+  function compareCaretPoints(a, b) {
+    const left = document.createRange();
+    left.setStart(a.node, a.offset);
+    left.collapse(true);
+    const right = document.createRange();
+    right.setStart(b.node, b.offset);
+    right.collapse(true);
+    return left.compareBoundaryPoints(Range.START_TO_START, right);
+  }
+
+  function applyCrossBlockSelection(anchor, current) {
+    const editor = pointerSelection?.editor;
+    const anchorRoot = textRootForPoint(anchor);
+    const currentRoot = textRootForPoint(current);
+    if (!editor || !anchorRoot || !currentRoot || anchorRoot === currentRoot) return false;
+    if (!editor.contains(anchorRoot) || !editor.contains(currentRoot)) return false;
+
+    let start = anchor;
+    let end = current;
+    if (compareCaretPoints(anchor, current) > 0) {
+      start = current;
+      end = anchor;
+    }
+
+    const range = document.createRange();
+    range.setStart(start.node, start.offset);
+    range.setEnd(end.node, end.offset);
+    const selection = window.getSelection();
+    if (!selection) return false;
+    selection.removeAllRanges();
+    selection.addRange(range);
+    pointerSelection.last = current;
+    return true;
+  }
+
+  function beginPointerSelection(event) {
+    if (event.button !== 0 || event.pointerType !== 'mouse') return;
+    const textEl = event.target?.closest?.('.block-text');
+    const editor = textEl?.closest?.('.block-editor');
+    if (!textEl || !editor) return;
+    const anchor = caretPointAt(event.clientX, event.clientY);
+    if (!anchor || textRootForPoint(anchor) !== textEl) return;
+    pointerSelection = {
+      pointerId: event.pointerId,
+      editor,
+      anchor,
+      last: anchor,
+    };
+  }
+
+  function extendPointerSelection(event) {
+    if (!pointerSelection || event.pointerId !== pointerSelection.pointerId || !(event.buttons & 1)) return;
+    const current = caretPointAt(event.clientX, event.clientY);
+    if (!current) return;
+    if (applyCrossBlockSelection(pointerSelection.anchor, current) && event.cancelable) {
+      event.preventDefault();
+    }
+  }
+
+  function finishPointerSelection(event) {
+    if (!pointerSelection || event.pointerId !== pointerSelection.pointerId) return;
+    const finalState = pointerSelection;
+    const current = caretPointAt(event.clientX, event.clientY) || finalState.last;
+    pointerSelection = finalState;
+    if (current) applyCrossBlockSelection(finalState.anchor, current);
+    const anchor = finalState.anchor;
+    const last = finalState.last;
+    pointerSelection = null;
+    requestAnimationFrame(() => {
+      pointerSelection = { editor: finalState.editor, anchor, last };
+      if (last) applyCrossBlockSelection(anchor, last);
+      pointerSelection = null;
+    });
+  }
+
   function setup() {
     if (!document.getElementById('agendaTextToolsStyle')) {
       const style = document.createElement('style');
       style.id = 'agendaTextToolsStyle';
-      style.textContent = '.rt-mark{display:none!important}.block-editor[data-full-selection="1"] .block-text{background:rgba(11,107,150,.18)!important}';
+      style.textContent = '.rt-mark{display:none!important}.block-editor[data-full-selection="1"] .block-text{background:rgba(11,107,150,.18)!important}.agenda-link-chip{position:absolute;right:6px;top:5px;z-index:4;display:grid;place-items:center;width:22px;height:22px;border:1px solid rgba(7,87,127,.24);border-radius:7px;background:#eef8fc;color:#07577f;font-weight:900;text-decoration:none;box-shadow:0 1px 3px rgba(35,78,101,.08)}.agenda-link-chip:hover,.agenda-link-chip:focus-visible{background:#dff2fa;outline:2px solid rgba(11,107,150,.22);outline-offset:1px}.editor-block:has(.agenda-link-chip) .block-text{padding-right:32px}';
       document.head.append(style);
     }
 
     normalizeWithin(document);
+    syncLinksWithin(document);
 
     document.addEventListener('compositionstart', event => {
       if (event.target.closest?.('.block-text')) composing = true;
@@ -468,7 +603,10 @@
 
     document.addEventListener('input', event => {
       const textEl = event.target.closest?.('.block-text');
-      if (textEl && !composing) normalize(textEl);
+      if (textEl && !composing) {
+        normalize(textEl);
+        syncLinkChip(textEl.closest('.editor-block'));
+      }
     }, true);
 
     document.addEventListener('keydown', event => {
@@ -562,14 +700,21 @@
       replaceEditor(editor, text);
     }, true);
 
-    document.addEventListener('pointerdown', () => {
+    document.addEventListener('pointerdown', event => {
       document.querySelectorAll('.block-editor[data-full-selection="1"]').forEach(clearFullSelection);
+      beginPointerSelection(event);
     }, true);
+    document.addEventListener('pointermove', extendPointerSelection, true);
+    document.addEventListener('pointerup', finishPointerSelection, true);
+    document.addEventListener('pointercancel', () => { pointerSelection = null; }, true);
 
     new MutationObserver(mutations => {
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
-          if (node.nodeType === Node.ELEMENT_NODE) normalizeWithin(node);
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            normalizeWithin(node);
+            syncLinksWithin(node);
+          }
         }
       }
     }).observe(document.body, { childList: true, subtree: true });
