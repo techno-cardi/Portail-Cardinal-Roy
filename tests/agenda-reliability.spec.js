@@ -230,15 +230,17 @@ test('un lien de planification reste ouvrable dans Agenda et le glisser-surligne
     fixture.innerHTML = [
       '<div class="block-editor">',
       '<div class="editor-block plain-block" data-kind="plain"><div class="block-text" contenteditable="true">ALPHA premier point</div></div>',
-      '<div class="editor-block plain-block" data-kind="plain"><div class="block-text" contenteditable="true">OMEGA deuxième point https://example.com/document</div></div>',
+      '<div class="editor-block plain-block" data-kind="plain"><div class="block-text" contenteditable="true">OMEGA « Document test » | https://example.com/document</div></div>',
       '</div>'
     ].join('');
     document.body.appendChild(fixture);
   });
 
-  const link = page.locator('#agenda-link-selection-fixture .agenda-link-chip');
+  const link = page.locator('#agenda-link-selection-fixture .agenda-inline-link');
   await expect(link).toHaveAttribute('href', 'https://example.com/document');
   await expect(link).toHaveAttribute('target', '_blank');
+  await expect(link).toHaveText('« Document test »');
+  await expect(page.locator('#agenda-link-selection-fixture .agenda-link-source')).toBeHidden();
 
   const first = page.locator('#agenda-link-selection-fixture .block-text').nth(0);
   const second = page.locator('#agenda-link-selection-fixture .block-text').nth(1);
@@ -250,11 +252,15 @@ test('un lien de planification reste ouvrable dans Agenda et le glisser-surligne
   await page.mouse.move(secondBox.x + Math.max(8, secondBox.width - 45), secondBox.y + secondBox.height / 2);
   await page.mouse.down();
   await page.mouse.move(firstBox.x + 5, firstBox.y + firstBox.height / 2, { steps: 12 });
-  await page.mouse.up();
 
-  const selected = await page.evaluate(() => window.getSelection()?.toString() || '');
-  expect(selected).toContain('ALPHA');
-  expect(selected).toContain('OMEGA');
+  const selectedWhileDragging = await page.evaluate(() => window.getSelection()?.toString() || '');
+  expect(selectedWhileDragging).toContain('ALPHA');
+  expect(selectedWhileDragging).toContain('OMEGA');
+
+  await page.mouse.up();
+  const selectedAfterRelease = await page.evaluate(() => window.getSelection()?.toString() || '');
+  expect(selectedAfterRelease).toContain('ALPHA');
+  expect(selectedAfterRelease).toContain('OMEGA');
 });
 
 test('Mode Tableau et publication Classroom masquent les URL de la planification', async ({ page }) => {
