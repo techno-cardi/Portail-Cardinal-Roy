@@ -200,3 +200,105 @@ test('les raccourcis d’édition restaurés fonctionnent sans barre de texte ri
 
   await expect(page.locator('#agendaRichTextToolbar')).toHaveCount(0);
 });
+
+
+test('un lien de planification reste ouvrable dans Agenda et le glisser-surligner traverse plusieurs points', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('cr-planner-access-v1', 'cle-test-locale');
+  });
+
+  await page.route('**/functions/v1/planner-api**', async route => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get('action') === 'ping') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ calendar: [], notes: [] })
+    });
+  });
+
+  await page.goto('/agendakevin/');
+  await expect(page.locator('#appShell')).toBeVisible();
+
+  await page.evaluate(() => {
+    const fixture = document.createElement('div');
+    fixture.id = 'agenda-link-selection-fixture';
+    fixture.style.width = '520px';
+    fixture.innerHTML = [
+      '<div class="block-editor">',
+      '<div class="editor-block plain-block" data-kind="plain"><div class="block-text" contenteditable="true">ALPHA premier point</div></div>',
+      '<div class="editor-block plain-block" data-kind="plain"><div class="block-text" contenteditable="true">OMEGA deuxième point https://example.com/document</div></div>',
+      '</div>'
+    ].join('');
+    document.body.appendChild(fixture);
+  });
+
+  const link = page.locator('#agenda-link-selection-fixture .agenda-link-chip');
+  await expect(link).toHaveAttribute('href', 'https://example.com/document');
+  await expect(link).toHaveAttribute('target', '_blank');
+
+  const first = page.locator('#agenda-link-selection-fixture .block-text').nth(0);
+  const second = page.locator('#agenda-link-selection-fixture .block-text').nth(1);
+  const firstBox = await first.boundingBox();
+  const secondBox = await second.boundingBox();
+  expect(firstBox).toBeTruthy();
+  expect(secondBox).toBeTruthy();
+
+  await page.mouse.move(secondBox.x + Math.max(8, secondBox.width - 45), secondBox.y + secondBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(firstBox.x + 5, firstBox.y + firstBox.height / 2, { steps: 12 });
+  await page.mouse.up();
+
+  const selected = await page.evaluate(() => window.getSelection()?.toString() || '');
+  expect(selected).toContain('ALPHA');
+  expect(selected).toContain('OMEGA');
+});
+
+test('Mode Tableau et publication Classroom masquent les URL de la planification', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('cr-planner-access-v1', 'cle-test-locale');
+  });
+
+  await page.route('**/functions/v1/planner-api**', async route => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get('action') === 'ping') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ calendar: [], notes: [] })
+    });
+  });
+
+  await page.goto('/agendakevin/');
+  await expect(page.locator('#appShell')).toBeVisible();
+
+  await page.evaluate(() => {
+    const fixture = document.createElement('div');
+    fixture.id = 'agenda-classroom-url-fixture';
+    fixture.dataset.noteCell = '2026-10-08:p1';
+    fixture.innerHTML = [
+      '<div class="course-strip" data-course-group="FRA5SE-51"><span class="course-strip-name">FRA5SE-51</span></div>',
+      '<div class="block-editor">',
+      '<div class="editor-block numbered-block" data-kind="numbered"><span class="number-badge">1.</span><div class="block-text" contenteditable="true">Atelier atmosphère - sections 1 à 4 | https://example.com/document</div></div>',
+      '</div>'
+    ].join('');
+    document.body.appendChild(fixture);
+  });
+
+  await page.locator('#agenda-classroom-url-fixture .course-strip-name').dispatchEvent('dblclick');
+  await expect(page.locator('#classroomBoard')).toBeVisible();
+  await expect(page.locator('#classroomBoard .cr-board-plan')).toContainText('Atelier atmosphère - sections 1 à 4');
+  await expect(page.locator('#classroomBoard .cr-board-plan')).not.toContainText('https://example.com/document');
+
+  await page.locator('#classroomBoard .cr-board-close').click();
+  await page.locator('#agenda-classroom-url-fixture .course-strip-name').dispatchEvent('click');
+  await expect(page.locator('#classroomPublishDialog')).toHaveJSProperty('open', true);
+  await expect(page.locator('#crpPreview')).toContainText('Atelier atmosphère - sections 1 à 4');
+  await expect(page.locator('#crpPreview')).not.toContainText('https://example.com/document');
+});
