@@ -67,7 +67,7 @@ test('la fiche Étude surveillée contient la liste des élèves non autorisés 
   await expect(link).toHaveClass(/\bbtn\b/);
 });
 
-for (const query of ['autorisation de quitter', 'refus de départ', 'liste 15h30', 'départ étude surveillée']) {
+for (const query of ['étude', 'etude', 'autorisation', 'autorisation de quitter', 'refus de départ', 'liste 15h30', 'départ étude surveillée']) {
   test(`la recherche précise « ${query} » ouvre directement la liste SAÉ`, async ({ page }) => {
     await openPortal(page);
     const first = await search(page, query);
@@ -79,7 +79,7 @@ for (const query of ['autorisation de quitter', 'refus de départ', 'liste 15h30
   });
 }
 
-for (const query of ['étude surveillée', 'récupération', 'SAÉ']) {
+for (const query of ['récupération', 'SAÉ']) {
   test(`la recherche générale « ${query} » ne force pas la liste des départs SAÉ`, async ({ page }) => {
     await openPortal(page);
     const first = await search(page, query);
