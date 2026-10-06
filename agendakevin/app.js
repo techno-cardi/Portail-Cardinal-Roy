@@ -260,7 +260,7 @@
   }
 
   function parseBody(body) {
-    const raw = String(body || '').replace(/\r/g, '');
+    const raw = String(body || '').replace(/\r/g, '').replace(/^(?:[ \\t]*\\n)+/, '');
     if (!raw) return [{ kind: 'plain', text: '' }];
     const blocks = raw.split('\n').map(line => {
       const m = line.match(/^\s*\d+\.\s*(.*)$/);
@@ -275,6 +275,7 @@
       const text = String(b.text ?? '').replace(/[\r\n]+/g, ' ').trimEnd();
       return b.kind === 'numbered' ? `${++n}. ${text}`.trimEnd() : text;
     });
+    while (lines.length && !lines[0].trim()) lines.shift();
     while (lines.length && !lines.at(-1).trim()) lines.pop();
     return lines.join('\n');
   }
