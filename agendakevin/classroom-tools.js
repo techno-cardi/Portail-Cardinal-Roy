@@ -36,6 +36,16 @@
   }
 
   const PLAN_LABEL_RE = /^((?:Devoirs?|Rappels?|Dates? importantes?)\s*:)([\s\S]*)$/i;
+  const AGENDA_URL_RE = /https?:\/\/[^\s<>"']+/gi;
+
+  function stripAgendaUrls(value) {
+    const cleaned = String(value ?? '')
+      .replace(/\s*\|\s*https?:\/\/[^\s<>"']+/gi, '')
+      .replace(AGENDA_URL_RE, '')
+      .replace(/[ \t]{2,}/g, ' ')
+      .trimEnd();
+    return /^(?:document|lien|ressource)\s*:?\s*$/i.test(cleaned.trim()) ? '' : cleaned;
+  }
 
   function inlineHtml(value) {
     const formatter = window.CRAgendaWorkTitles;
@@ -69,7 +79,9 @@
     for (const block of editor.children) {
       if (!block.classList.contains('editor-block')) continue;
       if (block.classList.contains('drag-source') || block.classList.contains('drag-placeholder')) continue;
-      const text = $('.block-text', block)?.textContent?.replace(/[\r\n]+/g, ' ').trimEnd() ?? '';
+      const rawText = $('.block-text', block)?.textContent?.replace(/[\r\n]+/g, ' ').trimEnd() ?? '';
+      const text = stripAgendaUrls(rawText);
+      if (!text.trim()) continue;
       if (block.dataset.kind === 'numbered') lines.push(`${++number}. ${text}`.trimEnd());
       else lines.push(text);
     }
