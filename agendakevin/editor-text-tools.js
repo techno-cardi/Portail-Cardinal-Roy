@@ -5,7 +5,7 @@
   const MARK_RE = /\u2062/g;
   const URL_RE = /\bhttps?:\/\/[^\s<>"']+/i;
   let composing = false;
-  let pointerSelection = null;
+  let nativeDragSelection = null;
 
   function stripMarkers(value) {
     return String(value ?? '').replace(MARK_RE, '');
@@ -17,36 +17,59 @@
     return match[0].replace(/[),.;!?]+$/g, '');
   }
 
-  function syncLinkChip(block) {
+  function syncInlineLink(block) {
     if (!(block instanceof HTMLElement) || !block.classList.contains('editor-block')) return;
     const textEl = block.querySelector('.block-text');
-    const url = detectedUrl(textEl?.textContent || '');
-    let chip = block.querySelector(':scope > .agenda-link-chip');
+    if (!textEl) return;
 
-    if (!url) {
-      chip?.remove();
-      return;
-    }
+    const raw = stripMarkers(textEl.textContent || '');
+    const url = detectedUrl(raw);
+    if (!url) return;
+    if (textEl.dataset.agendaLinkReady === url && textEl.querySelector('.agenda-inline-link')) return;
 
-    if (!chip) {
-      chip = document.createElement('a');
-      chip.className = 'agenda-link-chip';
-      chip.contentEditable = 'false';
-      chip.target = '_blank';
-      chip.rel = 'noopener noreferrer';
-      chip.textContent = '↗';
-      chip.setAttribute('aria-label', 'Ouvrir le lien');
-      block.appendChild(chip);
-    }
+    const separatorIndex = raw.lastIndexOf('|');
+    if (separatorIndex < 0 || separatorIndex > raw.indexOf(url)) return;
+    if (tokensFromElement(textEl).includes(ITALIC_MARK)) return;
 
-    chip.href = url;
-    chip.title = 'Ouvrir le document';
+    const visible = raw.slice(0, separatorIndex).trimEnd();
+    const source = raw.slice(separatorIndex);
+    const quoted = visible.match(/«[^»]+»/);
+    const start = quoted ? quoted.index : 0;
+    const end = quoted ? start + quoted[0].length : visible.length;
+    const linkedText = visible.slice(start, end).trim();
+    if (!linkedText) return;
+
+    const fragment = document.createDocumentFragment();
+    fragment.append(document.createTextNode(visible.slice(0, start)));
+
+    const link = document.createElement('a');
+    link.className = 'agenda-inline-link';
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.contentEditable = 'false';
+    link.textContent = visible.slice(start, end);
+    link.title = 'Ouvrir le document';
+    fragment.append(link);
+
+    fragment.append(document.createTextNode(visible.slice(end)));
+
+    const hiddenSource = document.createElement('span');
+    hiddenSource.className = 'agenda-link-source';
+    hiddenSource.contentEditable = 'false';
+    hiddenSource.setAttribute('aria-hidden', 'true');
+    hiddenSource.textContent = source;
+    fragment.append(hiddenSource);
+
+    textEl.replaceChildren(fragment);
+    textEl.dataset.agendaLinkReady = url;
+    textEl.dataset.rtReady = '1';
   }
 
   function syncLinksWithin(root) {
     if (!(root instanceof Element) && root !== document) return;
-    if (root instanceof HTMLElement && root.classList.contains('editor-block')) syncLinkChip(root);
-    root.querySelectorAll?.('.editor-block').forEach(syncLinkChip);
+    if (root instanceof HTMLElement && root.classList.contains('editor-block')) syncInlineLink(root);
+    root.querySelectorAll?.('.editor-block').forEach(syncInlineLink);
   }
 
   function styleOf(node) {
@@ -493,93 +516,85 @@
     return null;
   }
 
-  function textRootForPoint(point) {
-    const node = point?.node;
-    if (!node) return null;
-    const element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
-    return element?.closest?.('.block-text') || null;
-  }
-
-  function compareCaretPoints(a, b) {
-    const left = document.createRange();
-    left.setStart(a.node, a.offset);
-    left.collapse(true);
-    const right = document.createRange();
-    right.setStart(b.node, b.offset);
-    right.collapse(true);
-    return left.compareBoundaryPoints(Range.START_TO_START, right);
-  }
-
-  function applyCrossBlockSelection(anchor, current) {
-    const editor = pointerSelection?.editor;
-    const anchorRoot = textRootForPoint(anchor);
-    const currentRoot = textRootForPoint(current);
-    if (!editor || !anchorRoot || !currentRoot || anchorRoot === currentRoot) return false;
-    if (!editor.contains(anchorRoot) || !editor.contains(currentRoot)) return false;
-
-    let start = anchor;
-    let end = current;
-    if (compareCaretPoints(anchor, current) > 0) {
-      start = current;
-      end = anchor;
-    }
-
-    const range = document.createRange();
-    range.setStart(start.node, start.offset);
-    range.setEnd(end.node, end.offset);
+  function restoreCaretAt(textEl, x, y) {
+    textEl?.focus({ preventScroll: true });
+    const point = caretPointAt(x, y);
+    if (!point || !textEl?.contains(point.node)) return;
     const selection = window.getSelection();
-    if (!selection) return false;
-    selection.removeAllRanges();
-    selection.addRange(range);
-    pointerSelection.last = current;
-    return true;
+    if (!selection) return;
+    const range = document.createRange();
+    try {
+      range.setStart(point.node, point.offset);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    } catch {}
   }
 
-  function beginPointerSelection(event) {
+  function beginNativeDragSelection(event) {
     if (event.button !== 0 || event.pointerType !== 'mouse') return;
+    if (event.target?.closest?.('.agenda-inline-link')) return;
     const textEl = event.target?.closest?.('.block-text');
     const editor = textEl?.closest?.('.block-editor');
     if (!textEl || !editor) return;
-    const anchor = caretPointAt(event.clientX, event.clientY);
-    if (!anchor || textRootForPoint(anchor) !== textEl) return;
-    pointerSelection = {
+
+    const roots = [...editor.querySelectorAll(':scope > .editor-block .block-text')];
+    nativeDragSelection = {
       pointerId: event.pointerId,
       editor,
-      anchor,
-      last: anchor,
+      textEl,
+      x: event.clientX,
+      y: event.clientY,
+      roots: roots.map(node => ({
+        node,
+        value: node.getAttribute('contenteditable'),
+      })),
     };
-  }
 
-  function extendPointerSelection(event) {
-    if (!pointerSelection || event.pointerId !== pointerSelection.pointerId || !(event.buttons & 1)) return;
-    const current = caretPointAt(event.clientX, event.clientY);
-    if (!current) return;
-    if (applyCrossBlockSelection(pointerSelection.anchor, current) && event.cancelable) {
-      event.preventDefault();
+    // Pendant le glisser, les lignes deviennent du texte ordinaire dans une
+    // même zone de sélection. Chromium affiche alors la surbrillance native
+    // en continu au lieu d'attendre qu'on change de racine contenteditable.
+    for (const item of nativeDragSelection.roots) {
+      item.node.setAttribute('contenteditable', 'false');
     }
+    editor.dataset.nativeSelecting = '1';
   }
 
-  function finishPointerSelection(event) {
-    if (!pointerSelection || event.pointerId !== pointerSelection.pointerId) return;
-    const finalState = pointerSelection;
-    const current = caretPointAt(event.clientX, event.clientY) || finalState.last;
-    pointerSelection = finalState;
-    if (current) applyCrossBlockSelection(finalState.anchor, current);
-    const anchor = finalState.anchor;
-    const last = finalState.last;
-    pointerSelection = null;
-    requestAnimationFrame(() => {
-      pointerSelection = { editor: finalState.editor, anchor, last };
-      if (last) applyCrossBlockSelection(anchor, last);
-      pointerSelection = null;
-    });
+  function finishNativeDragSelection(event) {
+    if (!nativeDragSelection || event.pointerId !== nativeDragSelection.pointerId) return;
+    const state = nativeDragSelection;
+    nativeDragSelection = null;
+    state.x = event.clientX;
+    state.y = event.clientY;
+
+    setTimeout(() => {
+      const selection = window.getSelection();
+      const ranges = [];
+      if (selection?.rangeCount) {
+        for (let i = 0; i < selection.rangeCount; i += 1) ranges.push(selection.getRangeAt(i).cloneRange());
+      }
+      const hadVisibleSelection = Boolean(selection && !selection.isCollapsed && selection.toString());
+
+      for (const item of state.roots) {
+        if (item.value == null) item.node.removeAttribute('contenteditable');
+        else item.node.setAttribute('contenteditable', item.value);
+      }
+      delete state.editor.dataset.nativeSelecting;
+
+      if (hadVisibleSelection && selection && ranges.length) {
+        selection.removeAllRanges();
+        for (const range of ranges) selection.addRange(range);
+      } else {
+        restoreCaretAt(state.textEl, state.x, state.y);
+      }
+    }, 0);
   }
 
   function setup() {
     if (!document.getElementById('agendaTextToolsStyle')) {
       const style = document.createElement('style');
       style.id = 'agendaTextToolsStyle';
-      style.textContent = '.rt-mark{display:none!important}.block-editor[data-full-selection="1"] .block-text{background:rgba(11,107,150,.18)!important}.agenda-link-chip{position:absolute;right:6px;top:5px;z-index:4;display:grid;place-items:center;width:22px;height:22px;border:1px solid rgba(7,87,127,.24);border-radius:7px;background:#eef8fc;color:#07577f;font-weight:900;text-decoration:none;box-shadow:0 1px 3px rgba(35,78,101,.08)}.agenda-link-chip:hover,.agenda-link-chip:focus-visible{background:#dff2fa;outline:2px solid rgba(11,107,150,.22);outline-offset:1px}.editor-block:has(.agenda-link-chip) .block-text{padding-right:32px}';
+      style.textContent = '.rt-mark{display:none!important}.block-editor[data-full-selection="1"] .block-text{background:rgba(11,107,150,.18)!important}.agenda-link-source{display:none!important}.agenda-inline-link{color:#07577f;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:2px;cursor:pointer;font-weight:inherit}.agenda-inline-link:hover{color:#043f5d}.agenda-inline-link:focus-visible{outline:2px solid rgba(11,107,150,.25);outline-offset:2px;border-radius:2px}';
       document.head.append(style);
     }
 
@@ -605,7 +620,7 @@
       const textEl = event.target.closest?.('.block-text');
       if (textEl && !composing) {
         normalize(textEl);
-        syncLinkChip(textEl.closest('.editor-block'));
+        syncInlineLink(textEl.closest('.editor-block'));
       }
     }, true);
 
@@ -702,11 +717,10 @@
 
     document.addEventListener('pointerdown', event => {
       document.querySelectorAll('.block-editor[data-full-selection="1"]').forEach(clearFullSelection);
-      beginPointerSelection(event);
+      beginNativeDragSelection(event);
     }, true);
-    document.addEventListener('pointermove', extendPointerSelection, true);
-    document.addEventListener('pointerup', finishPointerSelection, true);
-    document.addEventListener('pointercancel', () => { pointerSelection = null; }, true);
+    document.addEventListener('pointerup', finishNativeDragSelection, true);
+    document.addEventListener('pointercancel', event => finishNativeDragSelection(event), true);
 
     new MutationObserver(mutations => {
       for (const mutation of mutations) {
