@@ -346,7 +346,7 @@
   }
 
   function parsePlainText(text) {
-    const raw = String(text || '').replace(/\r/g, '');
+    const raw = String(text || '').replace(/\r/g, '').replace(/^(?:[ \\t]*\\n)+/, '');
     if (!raw) return [{ kind: 'plain', text: '' }];
 
     const blocks = raw.split('\n').map(line => {
