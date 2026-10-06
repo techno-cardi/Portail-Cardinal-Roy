@@ -1,8 +1,18 @@
 {
-  "generated_at": "2026-10-06T10:04:23.283882-04:00",
+  "generated_at": "2026-10-06T18:13:34.138704-04:00",
   "default_lifetime_days": 28,
   "max_visible": 3,
   "items": [
+    {
+      "id": "etude-surveillee-depart-2026-10-06",
+      "title": "Élèves devant demeurer à l’école jusqu’à 15 h 30 (SAÉ)",
+      "description": "Consulter la liste des élèves qui n’ont pas l’autorisation de quitter après une récupération, une mise à jour ou une reprise d’évaluation.",
+      "published_at": "2026-10-06",
+      "expires_at": "2027-06-30",
+      "target": "https://drive.google.com/file/d/12YBznVgyomW8O0Fhtdzeoh7TmSi_O-Im/view",
+      "target_type": "file",
+      "kind": "nouveau"
+    },
     {
       "id": "services-appui-eleve-2026-09-23",
       "title": "Nouveau formulaire de demande de services d’appui",
