@@ -346,7 +346,7 @@
   }
 
   function parsePlainText(text) {
-    const raw = String(text || '').replace(/\r/g, '').replace(/^(?:[ \\t]*\\n)+/, '');
+    const raw = String(text || '').replace(/\r/g, '');
     if (!raw) return [{ kind: 'plain', text: '' }];
 
     const blocks = raw.split('\n').map(line => {
@@ -354,6 +354,9 @@
       return match ? { kind: 'numbered', text: match[1] } : { kind: 'plain', text: line };
     });
 
+    while (blocks.length > 1 && blocks[0].kind === 'plain' && !blocks[0].text.trim()) {
+      blocks.shift();
+    }
     while (blocks.length > 1 && blocks.at(-1).kind === 'plain' && blocks.at(-1).text === '') {
       blocks.pop();
     }
