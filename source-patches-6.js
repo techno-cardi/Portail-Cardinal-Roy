@@ -6,6 +6,7 @@
     absencesProlongees: 'https://drive.google.com/file/d/13132IYLhGN-9RtfOtpMGiF9Ygn552CmQ/view?usp=drivesdk',
     misesAJour: 'https://drive.google.com/file/d/1U0w6HqhsmsXLX4DGh5olu3_2SHlONSSB/view?usp=drivesdk',
     etudeSurveillee: 'https://drive.google.com/file/d/1oErx2Xyu3gIDGTmWTc2y1nJaFPl-K7zM/view?usp=drivesdk',
+    etudeSurveilleeDepart: 'https://drive.google.com/file/d/12YBznVgyomW8O0Fhtdzeoh7TmSi_O-Im/view',
     sosGroupe: 'https://drive.google.com/file/d/1NZd8m5X1MC3ZBhjDE-X01UbLHyXyd5zJ/view?usp=drivesdk',
     commotion: 'https://drive.google.com/file/d/12XT_0ra4HdMArr3rfLVknSP316nHboT2/view?usp=drivesdk',
     sortieAutorisation: 'https://drive.google.com/file/d/1WensOESymMJx7jDgCt45hqB1qK79TlkT/view?usp=drivesdk',
@@ -118,7 +119,9 @@
       'récupération terminée recuperation terminee mise à jour terminée mise a jour terminee période restante periode restante',
       'convocation convoquer sur convocation AppSP Réservation Reservation 48 h 48 heures règle 48 heures regle 48 heures',
       'départ étude depart etude parent vient chercher élève quitte seul eleve quitte seul autorisation parentale',
-      'SAÉ AM SAE AM SAÉ PM SAE PM 10 h 45 10h45 15 h 30 15h30 étude am etude am étude pm etude pm'
+      'liste élèves départ liste eleves depart liste des élèves qui n ont pas l autorisation de quitter élèves doivent rester eleves doivent rester élèves doivent demeurer eleves doivent demeurer refus de départ refus de depart interdiction de départ interdiction de depart',
+      'autorisation de quitter autorisation départ autorisation depart non autorisé à quitter non autorise a quitter pas autorisé à quitter pas autorise a quitter départ après récupération depart apres recuperation départ après mise à jour depart apres mise a jour départ après reprise depart apres reprise',
+      'SAÉ AM SAE AM SAÉ PM SAE PM 10 h 45 10h45 15 h 30 15h30 étude am etude am étude pm etude pm sport-arts-études sport études sport-etudes arts études arts-etudes'
     ].join(' '),
     body: `
       <p>Repères pour savoir quand utiliser l’étude surveillée, quels élèves peuvent y être convoqués et quelles modalités respecter pour une reprise d’évaluation ou un accueil temporaire.</p>
@@ -126,6 +129,7 @@
       <div class="callout"><strong>À consulter :</strong> l’aide-mémoire précise les situations admissibles, la règle des 48 heures et les modalités de départ.</div>
       <div class="links">
         <a class="btn primary" href="${URLS.etudeSurveillee}" target="_blank" rel="noopener noreferrer">Ouvrir l’aide-mémoire</a>
+        <a class="btn" href="${URLS.etudeSurveilleeDepart}" target="_blank" rel="noopener noreferrer">Consulter la liste des élèves qui n'ont pas l'autorisation de quitter</a>
         <a class="btn" href="${URLS.reservation}" target="_blank" rel="noopener noreferrer">Connexion à Réservation</a>
       </div>`
   });

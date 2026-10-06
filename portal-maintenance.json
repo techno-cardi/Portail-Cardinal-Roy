@@ -200,6 +200,45 @@
           "journee peda"
         ]
       ]
+    },
+    "etude-surveillee-depart-2026-2027": {
+      "resource_id": "etude-surveillee",
+      "url": "https://drive.google.com/file/d/12YBznVgyomW8O0Fhtdzeoh7TmSi_O-Im/view",
+      "title": "Élèves devant demeurer à l’école jusqu’à 15 h 30 (SAÉ)",
+      "action_label": "Accéder au fichier",
+      "source_file": "source-patches-6.js",
+      "expires_at": "2027-07-01T00:00:00-04:00",
+      "search_required_groups": [
+        [
+          "autorisation de quitter",
+          "autorisation départ",
+          "autorisation depart",
+          "refus de départ",
+          "refus de depart",
+          "interdiction de départ",
+          "interdiction de depart",
+          "pas autorisé à quitter",
+          "pas autorise a quitter",
+          "non autorisé à quitter",
+          "non autorise a quitter",
+          "n ont pas l autorisation de quitter",
+          "doit rester",
+          "doivent rester",
+          "doit demeurer",
+          "doivent demeurer",
+          "élèves 15h30",
+          "eleves 15h30",
+          "liste 15h30",
+          "liste départ",
+          "liste depart",
+          "liste élèves départ",
+          "liste eleves depart",
+          "départ étude surveillée",
+          "depart etude surveillee",
+          "quitter étude surveillée",
+          "quitter etude surveillee"
+        ]
+      ]
     }
   },
   "annual_resource_ids": [

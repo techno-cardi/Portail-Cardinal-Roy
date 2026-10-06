@@ -5,6 +5,7 @@ const MFA_FILE = 'https://drive.google.com/file/d/1G4QFoa_jyItVPd1OTZkCGGabk9h2g
 const SERVICES_APPUI_FILE = 'https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link';
 const PARENTS_MEETING_FOLDER = 'https://drive.google.com/drive/folders/12H3rEFMgOWAfFQaaiJcAXK2egsyHvQZD';
 const OCTOBER_PED_DAY_FILE = 'https://drive.google.com/file/d/1zyMK5pY5kGBVr1qbrBGyNWrJRpuTGHDs/view?usp=drivesdk';
+const ETUDE_DEPART_FILE = 'https://drive.google.com/file/d/12YBznVgyomW8O0Fhtdzeoh7TmSi_O-Im/view';
 
 async function openPortal(page) {
   await page.goto('/');
@@ -53,6 +54,39 @@ test('la fiche de services d’appui contient le lien direct vers le formulaire'
   await expect(link).toHaveAttribute('href', SERVICES_APPUI_FILE);
   await expect(link).toHaveAttribute('target', '_blank');
 });
+
+test('la fiche Étude surveillée contient la liste des élèves non autorisés à quitter', async ({ page }) => {
+  await openPortal(page);
+  const section = page.locator('#section-organisation');
+  const card = section.locator('#etude-surveillee');
+  await expect(card).toHaveCount(1);
+  const link = card.locator('a').filter({ hasText: "Consulter la liste des élèves qui n'ont pas l'autorisation de quitter" });
+  await expect(link).toHaveCount(1);
+  await expect(link).toHaveAttribute('href', ETUDE_DEPART_FILE);
+  await expect(link).toHaveAttribute('target', '_blank');
+  await expect(link).toHaveClass(/\bbtn\b/);
+});
+
+for (const query of ['autorisation de quitter', 'refus de départ', 'liste 15h30', 'départ étude surveillée']) {
+  test(`la recherche précise « ${query} » ouvre directement la liste SAÉ`, async ({ page }) => {
+    await openPortal(page);
+    const first = await search(page, query);
+    await expect(first).toBeVisible();
+    await expect(first).toHaveAttribute('data-direct-file-suggestion', 'etude-surveillee-depart-2026-2027');
+    await expect(first).toHaveAttribute('href', ETUDE_DEPART_FILE);
+    await expect(first).toContainText('Élèves devant demeurer à l’école jusqu’à 15 h 30 (SAÉ)');
+    await expect(first).toContainText('Accéder au fichier');
+  });
+}
+
+for (const query of ['étude surveillée', 'récupération', 'SAÉ']) {
+  test(`la recherche générale « ${query} » ne force pas la liste des départs SAÉ`, async ({ page }) => {
+    await openPortal(page);
+    const first = await search(page, query);
+    await expect(first).toBeVisible();
+    await expect(first).not.toHaveAttribute('data-direct-file-suggestion', 'etude-surveillee-depart-2026-2027');
+  });
+}
 
 test('la fiche de services d’appui est classée dans Suivre un élève', async ({ page }) => {
   await openPortal(page);

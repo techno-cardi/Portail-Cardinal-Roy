@@ -1,6 +1,16 @@
 {
   "items": [
     {
+      "id": "etude-surveillee-depart-2026-10-06",
+      "title": "Élèves devant demeurer à l’école jusqu’à 15 h 30 (SAÉ)",
+      "description": "Consulter la liste des élèves qui n’ont pas l’autorisation de quitter après une récupération, une mise à jour ou une reprise d’évaluation.",
+      "published_at": "2026-10-06",
+      "expires_at": "2027-06-30",
+      "target": "#etude-surveillee",
+      "target_type": "file",
+      "kind": "nouveau"
+    },
+    {
       "id": "horaire-pedagogique-2026-10-05",
       "title": "Horaire de la journée pédagogique du 5 octobre",
       "description": "Consulter l’horaire complet de la journée pédagogique du lundi 5 octobre 2026.",
