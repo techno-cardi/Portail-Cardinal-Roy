@@ -260,12 +260,13 @@
   }
 
   function parseBody(body) {
-    const raw = String(body || '').replace(/\r/g, '').replace(/^(?:[ \\t]*\\n)+/, '');
+    const raw = String(body || '').replace(/\r/g, '');
     if (!raw) return [{ kind: 'plain', text: '' }];
     const blocks = raw.split('\n').map(line => {
       const m = line.match(/^\s*\d+\.\s*(.*)$/);
       return m ? { kind: 'numbered', text: m[1] } : { kind: 'plain', text: line };
     });
+    while (blocks.length > 1 && blocks[0].kind === 'plain' && !blocks[0].text.trim()) blocks.shift();
     while (blocks.length > 1 && blocks.at(-1).kind === 'plain' && blocks.at(-1).text === '') blocks.pop();
     return blocks.length ? blocks : [{ kind: 'plain', text: '' }];
   }
