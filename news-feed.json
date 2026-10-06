@@ -1,15 +1,7 @@
 {
-  "generated_at": "2026-09-29T21:59:31.027812-04:00",
+  "generated_at": "2026-10-06T05:00:54.300324-04:00",
   "source": "Google Calendar - Cardinal-Roy",
   "items": [
-    {
-      "title": "Pédagogique",
-      "start": "2026-10-05T00:00:00-04:00",
-      "end": "2026-10-06T00:00:00-04:00",
-      "all_day": true,
-      "kind": "pedagogique",
-      "icon": "📚"
-    },
     {
       "title": "Campagne de vaccination de 3e secondaire",
       "start": "2026-10-06T00:00:00-04:00",
@@ -97,6 +89,14 @@
       "all_day": true,
       "kind": "pedagogique",
       "icon": "📚"
+    },
+    {
+      "title": "Rencontre des parents-enseignants",
+      "start": "2026-11-19T00:00:00-05:00",
+      "end": "2026-11-20T00:00:00-05:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "📅"
     }
   ]
 }
