@@ -1,15 +1,7 @@
 {
-  "generated_at": "2026-10-06T20:29:39.687514-04:00",
+  "generated_at": "2026-10-07T02:22:16.923539-04:00",
   "source": "Google Calendar - Cardinal-Roy",
   "items": [
-    {
-      "title": "Campagne de vaccination de 3e secondaire",
-      "start": "2026-10-06T00:00:00-04:00",
-      "end": "2026-10-07T00:00:00-04:00",
-      "all_day": true,
-      "kind": "evenement",
-      "icon": "💉"
-    },
     {
       "title": "Campagne de vaccination de 3e secondaire",
       "start": "2026-10-07T00:00:00-04:00",
@@ -97,6 +89,14 @@
       "all_day": true,
       "kind": "evenement",
       "icon": "📸"
+    },
+    {
+      "title": "Pédagogique (télétravail)",
+      "start": "2026-11-20T00:00:00-05:00",
+      "end": "2026-11-21T00:00:00-05:00",
+      "all_day": true,
+      "kind": "pedagogique",
+      "icon": "📚"
     }
   ]
 }
