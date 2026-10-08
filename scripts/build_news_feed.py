@@ -153,6 +153,16 @@ def parse_feed(data, now, horizon):
     return items
 
 
+def is_masked_calendar(items):
+    """Les événements « Busy » signalent un calendrier Google public sans détails.
+
+    Ne jamais publier ces placeholders à la place des dates importantes.
+    Une seule occurrence masquée suffit à rendre cette source incomplète.
+    """
+    masked = {'busy', 'occupé', 'occupe', 'private', 'privé', 'prive', 'confidential'}
+    return any(str(item.get('title', '')).strip().casefold() in masked for item in items)
+
+
 def current_items():
     if not OUTPUT.exists():
         return None
@@ -176,7 +186,10 @@ def main():
         if not url or (label == 'privé de secours' and url == public_url):
             continue
         try:
-            primary_items = parse_feed(fetch_ics(url), now, horizon)
+            candidate_items = parse_feed(fetch_ics(url), now, horizon)
+            if is_masked_calendar(candidate_items):
+                raise ValueError('Google ne publie que des plages Busy/Privé; utiliser la source iCal privée autorisée du bon calendrier')
+            primary_items = candidate_items
             print(f'Calendrier des dates importantes chargé : {label}.')
             if label == 'privé de secours':
                 print('AVERTISSEMENT: source publique inaccessible, secours privé utilisé; vérifier son identité.', file=sys.stderr)
@@ -192,7 +205,10 @@ def main():
     # Source scolaire secondaire facultative, uniquement si configurée.
     if school_url and school_url not in {public_url, private_fallback}:
         try:
-            all_items.extend(parse_feed(fetch_ics(school_url), now, horizon))
+            school_items = parse_feed(fetch_ics(school_url), now, horizon)
+            if is_masked_calendar(school_items):
+                raise ValueError('le calendrier complémentaire ne révèle pas les titres')
+            all_items.extend(school_items)
             print('Calendrier scolaire complémentaire chargé.')
         except Exception as exc:
             print(f'ERREUR: calendrier scolaire complémentaire indisponible: {exc}; ancien fil conservé.', file=sys.stderr)

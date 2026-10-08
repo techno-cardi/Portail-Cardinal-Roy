@@ -64,6 +64,33 @@ class CalendarSyncTests(unittest.TestCase):
                 self.assertEqual(feed.main(), 1)
             self.assertEqual(target.read_text(encoding='utf-8'), '{"items":[]}')
 
+    def test_google_public_busy_never_overwrites_actual_event_titles(self):
+        hidden = event('Busy', '2026-10-15T19:00:00-04:00')
+        actual = event('Assemblée', '2026-10-15T19:00:00-04:00')
+        with patch.dict(os.environ, {
+            'CARDINAL_CALENDAR_ICAL_URL': 'https://example.test/private.ics',
+            'CARDINAL_SCHOOL_CALENDAR_ICAL_URL': '',
+        }), patch.object(feed, 'fetch_ics', side_effect=[b'public', b'private']) as fetch, \
+             patch.object(feed, 'parse_feed', side_effect=[[hidden], [actual]]), \
+             patch.object(feed, 'current_items', return_value=[actual]):
+            self.assertEqual(feed.main(), 0)
+            self.assertEqual(fetch.call_count, 2)
+        self.assertTrue(feed.is_masked_calendar([hidden]))
+        self.assertFalse(feed.is_masked_calendar([actual]))
+
+    def test_masked_public_without_private_source_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / 'news-feed.json'
+            target.write_text('{"items":[{"title":"Vraie date"}]}', encoding='utf-8')
+            with patch.dict(os.environ, {
+                'CARDINAL_CALENDAR_ICAL_URL': '',
+                'CARDINAL_SCHOOL_CALENDAR_ICAL_URL': '',
+            }), patch.object(feed, 'OUTPUT', target), \
+                 patch.object(feed, 'fetch_ics', return_value=b'public'), \
+                 patch.object(feed, 'parse_feed', return_value=[event('Busy', '2026-10-15T19:00:00-04:00')]):
+                self.assertEqual(feed.main(), 1)
+            self.assertEqual(json.loads(target.read_text(encoding='utf-8'))['items'][0]['title'], 'Vraie date')
+
     def test_private_fallback_only_when_official_unavailable(self):
         item = event('Assemblée', '2026-10-15T19:00:00-04:00')
         with patch.dict(os.environ, {'CARDINAL_CALENDAR_ICAL_URL': 'https://example.test/backup.ics',
