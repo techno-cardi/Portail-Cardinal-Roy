@@ -105,7 +105,7 @@
       textEl.dataset.rtReady = '1';
     }
     textEl.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'deleteContentBackward' }));
-    requestAnimationFrame(() => setCaret(textEl, 0));
+    setCaret(textEl, 0);
   }
 
   function exitNumberedAtStart(event, textEl, block) {
@@ -139,7 +139,7 @@
     // L'Agenda écoute déjà l'événement input pour renuméroter,
     // marquer la cellule modifiée et lancer la sauvegarde automatique.
     textEl.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertParagraph' }));
-    requestAnimationFrame(() => setCaret(newBlock.querySelector('.block-text'), 0));
+    setCaret(newBlock.querySelector('.block-text'), 0);
   }
 
   // Certains claviers mobiles n'émettent pas keydown pour Retour arrière.
