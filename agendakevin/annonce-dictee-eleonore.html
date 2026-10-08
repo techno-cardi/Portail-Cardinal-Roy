@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#07577f">
+<title>Annonce Classroom - dictée Éléonore</title>
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#163247;background:#f1f7fa}
+*{box-sizing:border-box}body{margin:0;padding:22px}
+main{max-width:860px;margin:16px auto}
+a{color:#076484}h1{font-size:1.7rem;margin:9px 0}
+.lead{line-height:1.55;color:#485c6d;margin:0 0 16px}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+button{border:1px solid #b8cdd8;background:#fff;border-radius:10px;padding:12px 16px;font-weight:700;color:#143a50;cursor:pointer;font-size:1rem}
+button.primary{color:#fff;background:#07577f;border-color:#07577f}
+button:hover{filter:brightness(.96)}button:disabled{opacity:.5;cursor:wait}
+#status{font-size:.94rem;min-height:24px;color:#234456;margin:10px 0}
+#preview{background:white;border:1px solid #dae4ea;padding:22px 26px;line-height:1.6;border-radius:14px;box-shadow:0 2px 10px #07253d0a}
+#preview p{margin:0 0 13px}
+#preview p:first-child{margin-bottom:20px}
+.info{font-size:.9rem;line-height:1.5;color:#536778}
+small{display:block;color:#516477}
+</style>
+</head>
+<body>
+<main>
+<a href="./">← Agenda</a>
+<h1>Annonce de la dictée d'Éléonore</h1>
+<p class="lead">Voici une publication prête pour Classroom. Le bouton de copie utilise le même HTML simple que la publication de ton agenda : un paragraphe <code>&lt;p&gt;</code> par élément, sans listes automatiques ni styles importés de ChatGPT.</p>
+<div class="toolbar">
+<button class="primary" type="button" id="copyRich">Copier pour Classroom</button>
+<button type="button" id="publish31">Publier dans Classroom 31</button>
+<button type="button" id="publish32">Publier dans Classroom 32</button>
+</div>
+<p id="status" role="status" aria-live="polite"></p>
+<div id="preview" aria-label="Texte prêt à publier"></div>
+<p class="info">Pour coller toi-même : clique sur « Copier pour Classroom », puis utilise <strong>Ctrl + V</strong> dans une annonce Classroom (pas Ctrl + Maj + V). Pour reprendre le système exact de ton agenda, utilise plutôt « Publier dans Classroom 31 » ou « Publier dans Classroom 32 ». Ces deux boutons demandent une confirmation avant toute publication et utilisent ton pont Chrome/Tampermonkey déjà installé.</p>
+<small id="bridgeState">Vérification du pont Classroom…</small>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = sel => document.querySelector(sel);
+  const title = 'Dictée du 8 octobre - correction personnalisée';
+  const content = [
+    'Bonjour!',
+    "J’ai terminé la correction et la révision de vos dictées. Je vous ai préparé un parcours interactif pour consulter votre copie corrigée, mais surtout pour comprendre vos erreurs et apprendre à les éviter.",
+    'Pour accéder à votre travail :',
+    'https://techno-cardi.github.io/Exercices-francais/',
+    "Connectez-vous avec votre courriel scolaire et votre numéro de fiche à 7 chiffres. Sélectionnez ensuite la dictée « Le livre magique et les vœux d’Éléonore ».",
+    "1. Commencez par ouvrir votre PDF personnel. Il contient trois pages : mon commentaire et votre résultat, votre dictée avec mes corrections manuscrites, puis votre feuille de vérification. Prenez le temps de regarder vos erreurs et les traces de votre méthode de correction.",
+    "2. Revenez à la plateforme pour travailler chacune de vos erreurs. Vous verrez ce que vous avez écrit, la correction attendue et une explication. Pour chaque erreur, choisissez parmi trois possibilités la stratégie qui vous aidera à ne pas refaire cette faute. Réfléchissez avant de répondre : il faut comprendre, pas deviner.",
+    "3. Quand vous avez trouvé la bonne stratégie et compris votre erreur, confirmez votre compréhension, puis passez à la suivante. Pour revoir la méthode complète de correction, consultez La boîte à outils, page 1.",
+    "4. Une fois toutes vos erreurs travaillées et votre bilan consulté, entrez le mot secret indiqué sur la première page de votre PDF. Il permet de confirmer que vous avez terminé. Votre progression est enregistrée automatiquement.",
+    "Une précision : les erreurs présentées en ligne ont été relevées à partir de mes corrections manuscrites. Il peut donc y avoir un oubli ou une petite imprécision. Si les deux versions diffèrent, votre copie corrigée fait référence.",
+    "L’objectif n’est pas seulement de regarder votre note. Je veux surtout que vous compreniez vos difficultés et que vous amélioriez vos habitudes de correction pour la prochaine dictée.",
+    'Bon travail!'
+  ];
+  const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const richHtml = '<p><b><u>'+escapeHtml(title)+'</u></b></p>' + content.map(t=>'<p>'+escapeHtml(t)+'</p>').join('');
+  const plainText = title+'\n\n'+content.join('\n\n');
+  $('#preview').innerHTML = richHtml;
+  const setStatus = msg => { $('#status').textContent = msg; };
+  async function copyRich() {
+    try {
+      if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') throw new Error('Écriture enrichie non disponible.');
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([richHtml],{type:'text/html'}),
+        'text/plain': new Blob([plainText],{type:'text/plain'})
+      })]);
+      setStatus('Texte Classroom copié avec sa mise en forme HTML. Colle-le avec Ctrl + V.');
+    } catch(e) {
+      const selection = window.getSelection(), range = document.createRange();
+      range.selectNodeContents($('#preview'));
+      selection.removeAllRanges();selection.addRange(range);
+      const ok = document.execCommand('copy');
+      selection.removeAllRanges();
+      setStatus(ok ? 'Texte de la prévisualisation copié. Colle avec Ctrl + V.' : 'Copie impossible : sélectionne directement le texte de la prévisualisation.');
+    }
+  }
+  let activeRequest = '';
+  function publish(group){
+    if(activeRequest){setStatus('Attends la fin de la publication précédente.');return;}
+    if(!document.documentElement.dataset.pdcNativePublisherVersion || !document.documentElement.dataset.pdcClassroomBridgeVersion){
+      setStatus('Le pont Classroom ou Tampermonkey n’est pas détecté. Utilise le bouton de copie ou ouvre cette page dans le Chrome où ton agenda publie.');
+      return;
+    }
+    if(!window.confirm('Publier maintenant cette annonce dans Classroom, groupe '+group+' ?'))return;
+    const requestId=(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random());
+    activeRequest=requestId;
+    $('#publish31').disabled=true;$('#publish32').disabled=true;
+    setStatus('Publication en cours vers le groupe '+group+'…');
+    document.dispatchEvent(new CustomEvent('pdc:publish-course',{detail:{
+      requestId,group,
+      courseName:'Français SAÉ — Groupe '+group,
+      courseSection:'3e secondaire',
+      richHtml,title
+    }}));
+  }
+  document.addEventListener('pdc:publish-result',event=>{
+    const x=event.detail||{};
+    if(!activeRequest || x.requestId!==activeRequest)return;
+    activeRequest='';
+    $('#publish31').disabled=false;$('#publish32').disabled=false;
+    if(x.outcome==='published')setStatus('Publication confirmée dans Classroom, groupe '+x.group+'.');
+    else if(x.outcome==='duplicate')setStatus('Cette annonce existe déjà dans Classroom pour ce groupe.');
+    else setStatus('Publication non confirmée : '+String(x.error||'vérifie Classroom.'));
+  });
+  $('#copyRich').addEventListener('click',copyRich);
+  $('#publish31').addEventListener('click',()=>publish('31'));
+  $('#publish32').addEventListener('click',()=>publish('32'));
+  const updateBridge=()=>{
+    const installed=!!document.documentElement.dataset.pdcNativePublisherVersion&&!!document.documentElement.dataset.pdcClassroomBridgeVersion;
+    $('#bridgeState').textContent=installed
+      ? 'Pont Classroom détecté. Publication automatique disponible après confirmation.'
+      : 'Pont Classroom non détecté sur cette page. La copie HTML demeure disponible.';
+  };
+  updateBridge();
+  setTimeout(updateBridge,900);
+  setTimeout(updateBridge,3000);
+})();
+</script>
+</body>
+</html>
