@@ -271,6 +271,7 @@
   function editorFromTarget(target) {
     return target?.closest?.('.block-editor')
       || document.activeElement?.closest?.('.block-editor')
+      || crossSelection?.editor
       || document.querySelector('.block-editor[data-full-selection="1"]');
   }
 
@@ -538,6 +539,32 @@
   // points doit être représentée par une plage logique, pas seulement par la
   // sélection interne du dernier point (qui ferait perdre les autres lignes).
   let crossSelection = null;
+  let crossReadOnly = null;
+
+  function restoreEditableRoots() {
+    if (!crossReadOnly) return;
+    for (const root of crossReadOnly.roots) {
+      if (!root.node.isConnected) continue;
+      if (root.value == null) root.node.removeAttribute('contenteditable');
+      else root.node.setAttribute('contenteditable', root.value);
+    }
+    delete crossReadOnly.editor.dataset.crossSelecting;
+    crossReadOnly = null;
+  }
+
+  function enableCrossSelection(editor) {
+    if (crossReadOnly?.editor === editor) return;
+    restoreEditableRoots();
+    const roots = blockTexts(editor).map(node => ({
+      node, value: node.getAttribute('contenteditable'),
+    }));
+    crossReadOnly = { editor, roots };
+    // Chromium limite la sélection native à une seule racine contenteditable.
+    // Pendant la sélection, rendre temporairement les racines non éditables
+    // permet au Range DOM de traverser réellement tous les points.
+    for (const root of roots) root.node.setAttribute('contenteditable', 'false');
+    editor.dataset.crossSelecting = '1';
+  }
 
   function blockTexts(editor) {
     return [...editor.querySelectorAll(':scope > .editor-block:not(.drag-source):not(.drag-placeholder) .block-text')];
@@ -621,6 +648,7 @@
   }
 
   function replaceAcross(editor, selected, text) {
+    restoreEditableRoots();
     const blocks = blockTexts(editor);
     const firstIndex = blocks.indexOf(selected.start.textEl);
     const lastIndex = blocks.indexOf(selected.end.textEl);
@@ -667,6 +695,7 @@
   }
 
   function beginNativeDragSelection(event) {
+    restoreEditableRoots();
     crossSelection = null;
     if (event.button !== 0 || event.pointerType !== 'mouse') return;
     if (event.target?.closest?.('.agenda-inline-link, .number-badge')) return;
@@ -688,9 +717,13 @@
     const selected = orderedSelection(drag.editor, drag.anchor, focus);
     if (!selected) return;
     crossSelection = selected;
+    enableCrossSelection(drag.editor);
     // Empêcher Chromium de rabattre la sélection sur une seule racine éditable.
     event.preventDefault();
     showCrossSelection(selected);
+    requestAnimationFrame(() => {
+      if (crossSelection === selected) showCrossSelection(selected);
+    });
   }
 
   function finishNativeDragSelection(event) {
@@ -706,6 +739,10 @@
     if (!nativeDragSelection || !crossSelection) return;
     event.preventDefault();
     showCrossSelection(crossSelection);
+    const selected = crossSelection;
+    requestAnimationFrame(() => {
+      if (crossSelection === selected) showCrossSelection(selected);
+    });
   }
 
   function setup() {
@@ -744,9 +781,8 @@
 
     document.addEventListener('keydown', event => {
       const textEl = event.target?.closest?.('.block-text');
-      if (!textEl || event.isComposing) return;
-      const editor = textEl.closest('.block-editor');
-      if (!editor) return;
+      const editor = textEl?.closest('.block-editor') || crossSelection?.editor;
+      if (!editor || event.isComposing) return;
 
       const command = event.ctrlKey || event.metaKey;
       const key = event.key.toLowerCase();
@@ -760,8 +796,12 @@
         }
       }
       if (crossSelection?.editor === editor && (
-        command || ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','Escape','Tab'].includes(event.key)
-      )) crossSelection = null;
+        (command && !['c', 'x', 'v'].includes(key))
+        || ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','Escape','Tab'].includes(event.key)
+      )) {
+        restoreEditableRoots();
+        crossSelection = null;
+      }
 
       if (command && !event.altKey && !event.shiftKey && key === 'a') {
         event.preventDefault();
@@ -804,7 +844,7 @@
 
     document.addEventListener('beforeinput', event => {
       const textEl = event.target?.closest?.('.block-text');
-      const editor = textEl?.closest('.block-editor');
+      const editor = textEl?.closest('.block-editor') || crossSelection?.editor;
       if (!editor) return;
       const across = selectedAcross(editor);
       if (across && !composing && (
@@ -892,6 +932,7 @@
     document.addEventListener('pointerup', finishNativeDragSelection, true);
     document.addEventListener('pointercancel', event => {
       nativeDragSelection = null;
+      restoreEditableRoots();
       crossSelection = null;
     }, true);
 
