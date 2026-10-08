@@ -134,7 +134,7 @@ if config:
         if google_id != subscription_id:
             error("L'abonnement Google ne correspond pas au calendrier des enseignants.")
     generator_text = (ROOT / "scripts/build_news_feed.py").read_text(encoding="utf-8", errors="replace")
-    for token in ("banner_public_fallback_calendar_id", "CARDINAL_CALENDAR_ICAL_URL", "CARDINAL_SCHOOL_CALENDAR_ICAL_URL", "is_masked_calendar"):
+    for token in ("banner_public_fallback_calendar_id", "CARDINAL_CALENDAR_ICAL_URL", "CARDINAL_SCHOOL_CALENDAR_ICAL_URL", "is_masked_calendar", "is_administrative_title", "ADMINISTRATIVE_TITLES", "PERSONAL_TITLES"):
         if token not in generator_text:
             error(f"Le générateur des dates ne respecte plus la séparation des calendriers ({token} absent).")
 
