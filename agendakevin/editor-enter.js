@@ -90,15 +90,32 @@
     return block;
   }
 
-  function convertEmptyNumberedToPlain(block, textEl) {
+  // Revenir à une ligne ordinaire sans effacer le contenu, les liens ou l'italique.
+  // Retour arrière au début d'un point numéroté ne doit jamais supprimer le rappel.
+  function convertNumberedToPlain(block, textEl) {
+    const rt = rich();
+    const tokens = rt?.tokensFromElement?.(textEl) ?? (textEl.textContent || '');
+    const visible = rt?.stripMarkers?.(tokens) ?? tokens;
     block.querySelector('.number-badge')?.remove();
     block.dataset.kind = 'plain';
     block.classList.remove('numbered-block');
     block.classList.add('plain-block');
-    textEl.textContent = '';
-    textEl.dataset.rtReady = '1';
-    textEl.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertParagraph' }));
+    if (!visible.trim()) {
+      textEl.textContent = '';
+      textEl.dataset.rtReady = '1';
+    }
+    textEl.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'deleteContentBackward' }));
     requestAnimationFrame(() => setCaret(textEl, 0));
+  }
+
+  function exitNumberedAtStart(event, textEl, block) {
+    if (block?.dataset.kind !== 'numbered') return false;
+    const { start, end } = selectionOffsets(textEl);
+    if (start !== 0 || end !== 0) return false;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    convertNumberedToPlain(block, textEl);
+    return true;
   }
 
   function splitBlock(block, textEl, kind, start, end) {
@@ -125,13 +142,27 @@
     requestAnimationFrame(() => setCaret(newBlock.querySelector('.block-text'), 0));
   }
 
+  // Certains claviers mobiles n'émettent pas keydown pour Retour arrière.
+  document.addEventListener('beforeinput', event => {
+    if (event.inputType !== 'deleteContentBackward' || event.isComposing) return;
+    const textEl = event.target.closest?.('.block-text');
+    const block = textEl?.closest('.editor-block');
+    if (textEl && block?.closest('.block-editor')) exitNumberedAtStart(event, textEl, block);
+  }, true);
+
   document.addEventListener('keydown', event => {
-    if (event.key !== 'Enter' || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return;
+    if (event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return;
+    if (event.key !== 'Enter' && event.key !== 'Backspace') return;
 
     const textEl = event.target.closest?.('.block-text');
     const block = textEl?.closest('.editor-block');
     const editor = textEl?.closest('.block-editor');
     if (!textEl || !block || !editor) return;
+
+    if (event.key === 'Backspace') {
+      exitNumberedAtStart(event, textEl, block);
+      return;
+    }
 
     // On prend le contrôle avant le gestionnaire historique d'app.js.
     event.preventDefault();
@@ -145,7 +176,7 @@
     // Deuxième Entrée sur un nouvel élément numéroté vide : on sort de la liste
     // sans changer de ligne ni créer un bloc supplémentaire.
     if (!event.shiftKey && isNumbered && currentText.trim() === '') {
-      convertEmptyNumberedToPlain(block, textEl);
+      convertNumberedToPlain(block, textEl);
       return;
     }
 
