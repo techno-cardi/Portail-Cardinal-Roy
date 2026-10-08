@@ -47,7 +47,10 @@ ADMINISTRATIVE_TITLES = tuple(map(re.compile, (
     r'^(?:epreuves?\s+(?:uniques?|ministerielles?)|examens?\s+ministeriels?)\b',
     r'^(?:rencontre (?:de|des) parents(?:[- ]enseignants)?|assemblee generale (?:des parents|du personnel)|conseil d.etablissement)(?:\s*[-:]\s*(?:secondaire|secteur|enseignants).*)?$',
     r'^(?:portes ouvertes|soiree d.information|seance d.information)\b',
-    r'^(?:photo (?:de )?(?:finissants?|classe)|reprise (?:de )?photo (?:de )?finissants?)\b',
+    # Prises de vue institutionnelles : singulier/pluriel et « de/des »,
+    # avec éventuelle mention de reprise ou de séance.
+    r'^(?:(?:reprise(?:s)?|seance|prise)\s+(?:de(?:s)?\s+)?)?(?:photos?|photographies?)\s+(?:(?:de|des|du)\s+)?(?:finissants?|classes?)\b',
+    r'^(?:(?:reprise(?:s)?\s+(?:de(?:s)?\s+)?)?)?(?:seance\s+)?(?:de\s+)?(?:photos?|photographies?)\b.*\bfinissants?\b',
     r'^(?:vaccination|campagne de vaccination)\b',
     r'^(?:gala (?:meritas|sportif)|collation des grades|bal des finissants)\b',
     r'^(?:fete d.halloween|fete de la rentree|semaine multiculturelle)\b',
