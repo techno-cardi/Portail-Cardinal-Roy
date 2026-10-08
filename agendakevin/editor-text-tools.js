@@ -698,7 +698,7 @@
     restoreEditableRoots();
     crossSelection = null;
     if (event.button !== 0 || event.pointerType !== 'mouse') return;
-    if (event.target?.closest?.('.agenda-inline-link, .number-badge')) return;
+    if (event.target?.closest?.('.number-badge')) return;
     const textEl = event.target?.closest?.('.block-text');
     const editor = textEl?.closest?.('.block-editor');
     if (!textEl || !editor) return;
