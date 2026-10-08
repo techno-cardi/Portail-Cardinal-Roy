@@ -175,16 +175,24 @@ def parse_feed(data, now, horizon):
     calendar = Calendar.from_ical(data)
     occurrences = recurring_ical_events.of(calendar).between(now, horizon)
     items = []
+    school_photo_candidates = 0
+    school_photo_kept = 0
     for event in occurrences:
         title = str(event.get('summary', '')).strip()
         if not title:
             continue
+        photo_candidate = bool(re.search(r'\bphotos?\b', normalized_title(title))
+                               and re.search(r'\bfinissants?\b', normalized_title(title)))
+        if photo_candidate:
+            school_photo_candidates += 1
         if normalized_title(title) in {'busy', 'occupe', 'private', 'prive', 'confidential'}:
             raise ValueError('calendrier Google avec des événements masqués')
         location = str(event.get('location', '') or '')
         if is_noise(title, location) or not is_administrative_title(title):
             continue
         title = public_event_title(title)
+        if photo_candidate:
+            school_photo_kept += 1
 
         raw_start = event.decoded('dtstart')
         raw_end = event.decoded('dtend') if event.get('dtend') else None
@@ -208,6 +216,10 @@ def parse_feed(data, now, horizon):
             'kind': kind,
             'icon': icon,
         })
+    # Diagnostic agrégé : aucune information personnelle ni adresse iCal
+    # n'apparaît dans les journaux de synchronisation.
+    print(f'Photos scolaires dans la source iCal : {school_photo_candidates}; '
+          f'acceptées par le filtre : {school_photo_kept}.')
     return items
 
 
