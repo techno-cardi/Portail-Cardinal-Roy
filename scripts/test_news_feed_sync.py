@@ -17,6 +17,11 @@ def event(title, start):
 
 
 class CalendarSyncTests(unittest.TestCase):
+    def test_private_source_calendar_identity_is_checked(self):
+        self.assertTrue(feed.is_same_calendar(feed.PUBLIC_ICAL))
+        self.assertTrue(feed.is_same_calendar(feed.PUBLIC_ICAL.replace('/public/basic.ics', '/private-test/basic.ics')))
+        self.assertFalse(feed.is_same_calendar('https://example.test/other.ics'))
+
     def test_canonical_calendar_always_first_even_with_private_secret(self):
         with patch.dict(os.environ, {
             'CARDINAL_CALENDAR_ICAL_URL': 'https://example.test/legacy.ics',
@@ -30,7 +35,7 @@ class CalendarSyncTests(unittest.TestCase):
     def test_official_calendar_wins_over_private_old_data(self):
         current = event('Rencontre de parents', '2026-10-15T19:00:00-04:00')
         with patch.dict(os.environ, {
-            'CARDINAL_CALENDAR_ICAL_URL': 'https://example.test/ancien.ics',
+            'CARDINAL_CALENDAR_ICAL_URL': feed.PUBLIC_ICAL.replace('/public/basic.ics', '/private-test/basic.ics'),
             'CARDINAL_SCHOOL_CALENDAR_ICAL_URL': '',
         }), patch.object(feed, 'fetch_ics', return_value=b'official') as fetch, \
              patch.object(feed, 'parse_feed', return_value=[current]), \
@@ -68,7 +73,7 @@ class CalendarSyncTests(unittest.TestCase):
         hidden = event('Busy', '2026-10-15T19:00:00-04:00')
         actual = event('Assemblée', '2026-10-15T19:00:00-04:00')
         with patch.dict(os.environ, {
-            'CARDINAL_CALENDAR_ICAL_URL': 'https://example.test/private.ics',
+            'CARDINAL_CALENDAR_ICAL_URL': feed.PUBLIC_ICAL.replace('/public/basic.ics', '/private-test/basic.ics'),
             'CARDINAL_SCHOOL_CALENDAR_ICAL_URL': '',
         }), patch.object(feed, 'fetch_ics', side_effect=[b'public', b'private']) as fetch, \
              patch.object(feed, 'parse_feed', side_effect=[[hidden], [actual]]), \
@@ -93,7 +98,7 @@ class CalendarSyncTests(unittest.TestCase):
 
     def test_private_fallback_only_when_official_unavailable(self):
         item = event('Assemblée', '2026-10-15T19:00:00-04:00')
-        with patch.dict(os.environ, {'CARDINAL_CALENDAR_ICAL_URL': 'https://example.test/backup.ics',
+        with patch.dict(os.environ, {'CARDINAL_CALENDAR_ICAL_URL': feed.PUBLIC_ICAL.replace('/public/basic.ics', '/private-test/basic.ics'),
                                      'CARDINAL_SCHOOL_CALENDAR_ICAL_URL': ''}), \
              patch.object(feed, 'fetch_ics', side_effect=[OSError('public outage'), b'backup']) as fetch, \
              patch.object(feed, 'parse_feed', return_value=[item]), \
