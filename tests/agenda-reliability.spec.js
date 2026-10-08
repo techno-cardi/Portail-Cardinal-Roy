@@ -446,10 +446,22 @@ test('surligner trois points et taper remplace la selection complete', async ({ 
   await first.scrollIntoViewIfNeeded();
   const top = await first.boundingBox();
   const bottom = await last.boundingBox();
+  await page.evaluate(() => {
+    window.__dragCheck = [];
+    for (const type of ['pointerdown','pointermove','mousemove','pointerup']) {
+      document.addEventListener(type, event => {
+        const target = event.target?.closest?.('.block-text');
+        window.__dragCheck.push({ type, pointerId: event.pointerId, pointerType: event.pointerType,
+          target: target?.textContent?.slice(0,20) || '', selected: window.getSelection()?.toString() || '',
+          active: document.activeElement?.className || '', canceled: event.defaultPrevented });
+      });
+    }
+  });
   await page.mouse.move(bottom.x + bottom.width - 5, bottom.y + bottom.height/2);
   await page.mouse.down();
   await page.mouse.move(top.x + 3, top.y + top.height/2, { steps: 15 });
   const highlighted = await page.evaluate(() => window.getSelection()?.toString() || '');
+  console.log('MULTI_DRAG_DEBUG', JSON.stringify(await page.evaluate(() => window.__dragCheck)));
   expect(highlighted).toContain('BETA');
   expect(highlighted).toContain('ALPHA');
   await page.mouse.up();
@@ -476,11 +488,12 @@ for (const key of ['Backspace', 'Delete']) {
 test('collage sur trois points conserve le texte hors selection', async ({ page }) => {
   const { editor } = await setupMultiSelectionTest(page);
   await putMultiSelectionBlocks(editor, ['Garder avant retirer', 'MILIEU', 'retirer apres']);
-  await selectMultiBlocks(editor, 0, 12, 2, 7);
+  await selectMultiBlocks(editor, 0, 13, 2, 7);
   const canceled = await editor.evaluate(el => {
     const data = new DataTransfer();
     data.setData('text/plain', 'NOUVEAU');
     const event = new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: data });
+    Object.defineProperty(event, 'clipboardData', { value: { getData: () => 'NOUVEAU' } });
     el.querySelector('.block-text').dispatchEvent(event);
     return event.defaultPrevented;
   });
