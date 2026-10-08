@@ -140,5 +140,101 @@ class BannerCalendarSyncTests(unittest.TestCase):
             self.assertEqual(output.read_text(encoding='utf-8'), '{"items":[]}')
 
 
+    def test_selection_of_schoolwide_administrative_dates(self):
+        approved = [
+            'CONGÉ - Action de grâce',
+            'Portes ouvertes - secteur Découvertes',
+            "Fête d'Halloween",
+            'Fin de la 1re étape',
+            'Date limite - résultats SSO et Autre compétence',
+            'Date limite - résultats du 1er bulletin',
+            'Pédagogique',
+            'Photo de finissants',
+            'Rencontre des parents-enseignants',
+            'Reprise de photo finissant',
+            'Pédagogique (télétravail)',
+            "Session d'examens - sans activités SAÉ",
+            'Journée pédagogique',
+            'Assemblée générale des parents',
+            'Conseil d’établissement',
+            'Vaccination',
+            'Épreuves ministérielles',
+            'Collation des grades',
+            'Semaine de relâche',
+        ]
+        for title in approved:
+            with self.subTest(title=title):
+                self.assertTrue(feed.is_administrative_title(title))
+
+    def test_cycle_personal_group_and_ordinary_class_events_are_rejected(self):
+        rejected = [
+            'Jour 1', 'Jour 10', 'Jour de cycle 8', 'Cycle 5',
+            'J7', 'Français 31', 'Groupe 31 : travail',
+            'Rendez-vous dentiste', 'RDV médecin', 'Réunion avec Alex',
+            'Mon entraînement', 'Anniversaire personnel', 'Souper de famille',
+            'Atelier d’écriture', 'Récupération du groupe 32',
+            'Planification du cours', 'Date limite - mon devoir',
+            'Photo de famille', 'Réunion personnelle',
+            'Pédagogique - mon cours', 'Conseil de classe 31',
+        ]
+        for title in rejected:
+            with self.subTest(title=title):
+                self.assertFalse(feed.is_administrative_title(title))
+
+    def test_explicit_portal_marker_and_personal_blockers(self):
+        self.assertTrue(feed.is_administrative_title('[PORTAIL] Journée spéciale pour tout le personnel'))
+        self.assertEqual(
+            feed.public_event_title('[PORTAIL] Journée spéciale pour tout le personnel'),
+            'Journée spéciale pour tout le personnel'
+        )
+        self.assertFalse(feed.is_administrative_title('[PORTAIL] Jour 4'))
+        self.assertFalse(feed.is_administrative_title('[PORTAIL] Rendez-vous dentiste'))
+        self.assertFalse(feed.is_administrative_title('[PORTAIL]'))
+
+    def test_real_ical_content_is_filtered_before_publication(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Cardinal tests//']
+        titles = [
+            'Jour 6', 'Rendez-vous dentiste', 'Pédagogique',
+            'Date limite - résultats du 1er bulletin', 'Réunion personnelle',
+            'Portes ouvertes', 'Cours de français',
+        ]
+        for i, title in enumerate(titles):
+            lines.extend([
+                'BEGIN:VEVENT', f'UID:testing-{i}@example.org',
+                'DTSTAMP:20261008T100000Z', 'DTSTART;VALUE=DATE:20261015',
+                'DTEND;VALUE=DATE:20261016', f'SUMMARY:{title}', 'END:VEVENT',
+            ])
+        lines.append('END:VCALENDAR')
+        parsed = feed.parse_feed(
+            ('\r\n'.join(lines) + '\r\n').encode('utf-8'),
+            datetime(2026, 10, 8, tzinfo=ZoneInfo('America/Toronto')),
+            datetime(2026, 12, 31, tzinfo=ZoneInfo('America/Toronto')),
+        )
+        self.assertEqual(
+            sorted(e['title'] for e in parsed),
+            sorted(['Pédagogique', 'Date limite - résultats du 1er bulletin', 'Portes ouvertes']),
+        )
+
+    def test_hidden_calendar_event_causes_failure_before_filtering(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        raw = (
+            'BEGIN:VCALENDAR\r\nVERSION:2.0\r\n'
+            'BEGIN:VEVENT\r\nUID:hidden@example.org\r\n'
+            'DTSTAMP:20261008T100000Z\r\n'
+            'DTSTART;VALUE=DATE:20261015\r\n'
+            'DTEND;VALUE=DATE:20261016\r\n'
+            'SUMMARY:Busy\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n'
+        ).encode('utf-8')
+        with self.assertRaisesRegex(ValueError, 'masqués'):
+            feed.parse_feed(
+                raw, datetime(2026, 10, 8, tzinfo=ZoneInfo('America/Toronto')),
+                datetime(2026, 12, 31, tzinfo=ZoneInfo('America/Toronto')),
+            )
+
+
+
 if __name__ == '__main__':
     unittest.main()
