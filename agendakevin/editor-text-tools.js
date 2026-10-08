@@ -48,6 +48,7 @@
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.contentEditable = 'false';
+    link.draggable = false;
     link.textContent = visible.slice(start, end);
     link.title = 'Ouvrir le document';
     fragment.append(link);
@@ -926,6 +927,9 @@
     document.addEventListener('pointerdown', event => {
       document.querySelectorAll('.block-editor[data-full-selection="1"]').forEach(clearFullSelection);
       beginNativeDragSelection(event);
+    }, true);
+    document.addEventListener('dragstart', event => {
+      if (nativeDragSelection && event.target?.closest?.('.agenda-inline-link')) event.preventDefault();
     }, true);
     document.addEventListener('pointermove', moveNativeDragSelection, true);
     document.addEventListener('mousemove', onMouseMoveWhileDragging, true);
