@@ -308,3 +308,95 @@ test('Mode Tableau et publication Classroom masquent les URL de la planification
   await expect(page.locator('#crpPreview')).toContainText('Atelier atmosphère - sections 1 à 4');
   await expect(page.locator('#crpPreview')).not.toContainText('https://example.com/document');
 });
+
+ 
+test('un rappel peut sortir de la liste sans perdre son contenu et les points vides se corrigent', async ({ page }) => {
+  const saves = [];
+  await page.addInitScript(() => localStorage.setItem('cr-planner-access-v1', 'cle-test-locale'));
+  await page.route('**/functions/v1/planner-api**', async route => {
+    const request = route.request();
+    if (request.method() === 'POST') {
+      const data = request.postDataJSON();
+      if (data?.action === 'save_note') saves.push(data.body);
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ calendar: [], notes: [] }) });
+  });
+  await page.goto('/agendakevin/');
+  await expect(page.locator('#appShell')).toBeVisible();
+  const editor = page.locator('.block-editor').first();
+  await editor.evaluate(el => {
+    el.innerHTML = [
+      '<div class="editor-block numbered-block" data-kind="numbered"><span class="number-badge"></span><div class="block-text" contenteditable="true">Activité du cours</div></div>',
+      '<div class="editor-block numbered-block" data-kind="numbered"><span class="number-badge"></span><div class="block-text" contenteditable="true">Rappel : évaluation mardi</div></div>',
+      '<div class="editor-block numbered-block" data-kind="numbered"><span class="number-badge"></span><div class="block-text" contenteditable="true"></div></div>',
+    ].join('');
+  });
+
+  const reminder = editor.locator('.editor-block').nth(1);
+  const reminderText = reminder.locator('.block-text');
+  await reminderText.focus();
+  await reminderText.evaluate(el => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(true);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+  });
+  await page.keyboard.press('Backspace');
+  await expect(reminder).toHaveAttribute('data-kind', 'plain');
+  await expect(reminderText).toHaveText('Rappel : évaluation mardi');
+  await expect(editor.locator('.editor-block').nth(0)).toHaveAttribute('data-kind', 'numbered');
+
+  const empty = editor.locator('.editor-block').nth(2);
+  await empty.locator('.block-text').focus();
+  await page.keyboard.press('Backspace');
+  await expect(empty).toHaveAttribute('data-kind', 'plain');
+  await expect(empty.locator('.number-badge')).toHaveCount(0);
+
+  // Une touche Entrée à la fin d'un point poursuit la liste; la deuxième en sort.
+  const firstText = editor.locator('.editor-block').nth(0).locator('.block-text');
+  await firstText.focus();
+  await firstText.evaluate(el => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+  });
+  await page.keyboard.press('Enter');
+  await expect(editor.locator('.editor-block').nth(1)).toHaveAttribute('data-kind', 'numbered');
+  await page.keyboard.press('Enter');
+  await expect(editor.locator('.editor-block').nth(1)).toHaveAttribute('data-kind', 'plain');
+  await expect.poll(() => saves.at(-1) || '').toContain('Rappel : évaluation mardi');
+  expect(saves.at(-1)).not.toContain('2. Rappel :');
+  expect(saves.at(-1)).not.toContain('3. ');
+});
+
+test('le retour arrière mobile dénumérote un rappel sans keydown', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('cr-planner-access-v1', 'cle-test-locale'));
+  await page.route('**/functions/v1/planner-api**', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ calendar: [], notes: [] }),
+  }));
+  await page.goto('/agendakevin/');
+  const editor = page.locator('.block-editor').first();
+  const wasPrevented = await editor.evaluate(el => {
+    el.innerHTML = '<div class="editor-block numbered-block" data-kind="numbered"><span class="number-badge"></span><div class="block-text" contenteditable="true">Rappel : notes de lecture</div></div>';
+    const textEl = el.querySelector('.block-text');
+    textEl.focus();
+    const range = document.createRange();
+    range.selectNodeContents(textEl);
+    range.collapse(true);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    const event = new InputEvent('beforeinput', {
+      bubbles: true, cancelable: true, inputType: 'deleteContentBackward'
+    });
+    textEl.dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+  expect(wasPrevented).toBe(true);
+  await expect(editor.locator('.editor-block')).toHaveAttribute('data-kind', 'plain');
+  await expect(editor.locator('.block-text')).toHaveText('Rappel : notes de lecture');
+});
