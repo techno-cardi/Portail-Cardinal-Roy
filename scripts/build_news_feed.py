@@ -44,6 +44,11 @@ def urls_from_env():
     )
 
 
+def is_same_calendar(url):
+    """Valide l'identité sans journaliser le lien privé ou ses paramètres."""
+    return CALENDAR_ID in urllib.parse.unquote(urllib.parse.urlsplit(url).path)
+
+
 def cache_busted_url(url):
     """Ajoute un paramètre unique pour éviter une ancienne réponse iCal mise en cache."""
     parts = urllib.parse.urlsplit(url)
@@ -177,6 +182,10 @@ def main():
     now = datetime.now(TZ)
     horizon = now + timedelta(days=int(FEED_CONFIG['horizon_days']))
     public_url, private_fallback, school_url = urls_from_env()
+    if private_fallback and not is_same_calendar(private_fallback):
+        print('ERREUR: la source iCal privée configurée dans GitHub ne correspond pas '
+              'au calendrier partagé dans le portail; ancien fil conservé.', file=sys.stderr)
+        return 1
 
     # Ne pas mélanger un ancien calendrier privé avec le calendrier public
     # officiellement proposé au personnel : une date déplacée apparaîtrait
