@@ -1,49 +1,41 @@
 {
-  "generated_at": "2026-10-08T11:06:19.505067-04:00",
+  "generated_at": "2026-10-08T01:19:49.117890-04:00",
   "source": "Google Calendar - Cardinal-Roy",
   "items": [
     {
-      "title": "Busy",
+      "title": "CONGÉ - Action de grâce",
       "start": "2026-10-12T00:00:00-04:00",
       "end": "2026-10-13T00:00:00-04:00",
       "all_day": true,
-      "kind": "evenement",
-      "icon": "📅"
+      "kind": "conge",
+      "icon": "🏖️"
     },
     {
-      "title": "Busy",
-      "start": "2026-10-13T00:00:00-04:00",
-      "end": "2026-10-14T00:00:00-04:00",
-      "all_day": true,
-      "kind": "evenement",
-      "icon": "📅"
-    },
-    {
-      "title": "Busy",
+      "title": "Portes ouvertes - secteur Découvertes",
       "start": "2026-10-14T18:30:00-04:00",
       "end": "2026-10-14T20:30:00-04:00",
       "all_day": false,
       "kind": "evenement",
-      "icon": "📅"
+      "icon": "🚪"
     },
     {
-      "title": "Busy",
-      "start": "2026-10-26T00:00:00-04:00",
-      "end": "2026-10-27T00:00:00-04:00",
+      "title": "Photo de finissant",
+      "start": "2026-10-15T00:00:00-04:00",
+      "end": "2026-10-16T00:00:00-04:00",
       "all_day": true,
       "kind": "evenement",
-      "icon": "📅"
+      "icon": "📸"
     },
     {
-      "title": "Busy",
+      "title": "Fête d'Halloween",
       "start": "2026-10-30T12:00:00-04:00",
       "end": "2026-10-30T13:00:00-04:00",
       "all_day": false,
       "kind": "evenement",
-      "icon": "📅"
+      "icon": "🎉"
     },
     {
-      "title": "Busy",
+      "title": "Fin de la 1re étape",
       "start": "2026-11-06T00:00:00-05:00",
       "end": "2026-11-07T00:00:00-05:00",
       "all_day": true,
@@ -51,23 +43,31 @@
       "icon": "📅"
     },
     {
-      "title": "Busy",
+      "title": "Date limite - résultats SSO et Autre compétence",
       "start": "2026-11-06T16:00:00-05:00",
       "end": "2026-11-06T17:00:00-05:00",
       "all_day": false,
-      "kind": "evenement",
-      "icon": "📅"
+      "kind": "echeance",
+      "icon": "⏰"
     },
     {
-      "title": "Busy",
+      "title": "Date limite - résultats du 1er bulletin",
       "start": "2026-11-16T08:00:00-05:00",
       "end": "2026-11-16T09:00:00-05:00",
       "all_day": false,
-      "kind": "evenement",
-      "icon": "📅"
+      "kind": "echeance",
+      "icon": "⏰"
     },
     {
-      "title": "Busy",
+      "title": "Pédagogique",
+      "start": "2026-11-19T00:00:00-05:00",
+      "end": "2026-11-20T00:00:00-05:00",
+      "all_day": true,
+      "kind": "pedagogique",
+      "icon": "📚"
+    },
+    {
+      "title": "Rencontre des parents-enseignants",
       "start": "2026-11-19T00:00:00-05:00",
       "end": "2026-11-20T00:00:00-05:00",
       "all_day": true,
@@ -75,23 +75,23 @@
       "icon": "📅"
     },
     {
-      "title": "Busy",
-      "start": "2026-11-23T00:00:00-05:00",
-      "end": "2026-11-24T00:00:00-05:00",
+      "title": "Reprise de photo finissant",
+      "start": "2026-11-19T00:00:00-05:00",
+      "end": "2026-11-20T00:00:00-05:00",
       "all_day": true,
       "kind": "evenement",
-      "icon": "📅"
+      "icon": "📸"
     },
     {
-      "title": "Busy",
-      "start": "2026-12-04T00:00:00-05:00",
-      "end": "2026-12-05T00:00:00-05:00",
+      "title": "Pédagogique (télétravail)",
+      "start": "2026-11-20T00:00:00-05:00",
+      "end": "2026-11-21T00:00:00-05:00",
       "all_day": true,
-      "kind": "evenement",
-      "icon": "📅"
+      "kind": "pedagogique",
+      "icon": "📚"
     },
     {
-      "title": "Busy",
+      "title": "Session d'examens - sans activités SAÉ",
       "start": "2026-12-14T00:00:00-05:00",
       "end": "2026-12-19T00:00:00-05:00",
       "all_day": true,
