@@ -22,7 +22,8 @@
     "refresh_minutes": 15,
     "horizon_days": 90,
     "max_items": 12,
-    "timezone": "America/Toronto"
+    "timezone": "America/Toronto",
+    "calendar_id": "c_8527e24b6f9dc9f028439fcf5c2a3657475698c9e4151ac93cd2d9205b322baa@group.calendar.google.com"
   },
   "updates_policy": {
     "source": "portal-updates-curated.json",

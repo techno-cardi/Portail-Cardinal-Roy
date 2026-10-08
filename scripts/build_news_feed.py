@@ -14,8 +14,11 @@ from icalendar import Calendar
 import recurring_ical_events
 
 TZ = ZoneInfo('America/Toronto')
-OUTPUT = Path('news-feed.json')
-CALENDAR_ID = 'chspj1p3h2gccmlujur3e2keqk@group.calendar.google.com'
+ROOT = Path(__file__).resolve().parents[1]
+FEED_CONFIG = json.loads((ROOT / 'portal-maintenance.json').read_text(encoding='utf-8'))['calendar_feed']
+OUTPUT = ROOT / 'news-feed.json'
+# Source de vérité commune au portail, à son lien d'abonnement et au générateur.
+CALENDAR_ID = FEED_CONFIG['calendar_id']
 PUBLIC_ICAL = (
     'https://calendar.google.com/calendar/ical/'
     + urllib.parse.quote(CALENDAR_ID, safe='')
@@ -29,16 +32,16 @@ NOISE_PATTERNS = [
 
 
 def urls_from_env():
-    urls = []
-    primary = os.environ.get('CARDINAL_CALENDAR_ICAL_URL', '').strip()
-    school = os.environ.get('CARDINAL_SCHOOL_CALENDAR_ICAL_URL', '').strip()
-    if primary:
-        urls.append(primary)
-    else:
-        urls.append(PUBLIC_ICAL)
-    if school and school not in urls:
-        urls.append(school)
-    return urls
+    """Le calendrier affiché dans le portail est toujours prioritaire.
+
+    L'URL privée historique ne sert que si la source officielle est inaccessible;
+    elle ne peut plus masquer les modifications du calendrier partagé.
+    """
+    return (
+        PUBLIC_ICAL,
+        os.environ.get('CARDINAL_CALENDAR_ICAL_URL', '').strip(),
+        os.environ.get('CARDINAL_SCHOOL_CALENDAR_ICAL_URL', '').strip(),
+    )
 
 
 def cache_busted_url(url):
@@ -162,28 +165,44 @@ def current_items():
 
 def main():
     now = datetime.now(TZ)
-    horizon = now + timedelta(days=90)
-    all_items = []
-    successes = 0
+    horizon = now + timedelta(days=int(FEED_CONFIG['horizon_days']))
+    public_url, private_fallback, school_url = urls_from_env()
 
-    for url in urls_from_env():
+    # Ne pas mélanger un ancien calendrier privé avec le calendrier public
+    # officiellement proposé au personnel : une date déplacée apparaîtrait
+    # autrement en double, à l'ancienne date et à la nouvelle.
+    primary_items = None
+    for label, url in (('partagé officiel', public_url), ('privé de secours', private_fallback)):
+        if not url or (label == 'privé de secours' and url == public_url):
+            continue
         try:
-            data = fetch_ics(url)
-            all_items.extend(parse_feed(data, now, horizon))
-            successes += 1
-            print(f'Calendrier chargé sans cache: {url.split("?")[0]}')
+            primary_items = parse_feed(fetch_ics(url), now, horizon)
+            print(f'Calendrier des dates importantes chargé : {label}.')
+            if label == 'privé de secours':
+                print('AVERTISSEMENT: source publique inaccessible, secours privé utilisé; vérifier son identité.', file=sys.stderr)
+            break
         except Exception as exc:
-            print(f'AVERTISSEMENT: impossible de charger un calendrier: {exc}', file=sys.stderr)
+            print(f'AVERTISSEMENT: échec du calendrier {label}: {exc}', file=sys.stderr)
 
-    if not successes:
-        print('Aucun calendrier accessible. Le fichier news-feed.json existant est conservé.', file=sys.stderr)
-        return 0
+    if primary_items is None:
+        print('ERREUR: aucune source des dates importantes accessible; publication interrompue, ancien fil conservé.', file=sys.stderr)
+        return 1
+
+    all_items = list(primary_items)
+    # Source scolaire secondaire facultative, uniquement si configurée.
+    if school_url and school_url not in {public_url, private_fallback}:
+        try:
+            all_items.extend(parse_feed(fetch_ics(school_url), now, horizon))
+            print('Calendrier scolaire complémentaire chargé.')
+        except Exception as exc:
+            print(f'ERREUR: calendrier scolaire complémentaire indisponible: {exc}; ancien fil conservé.', file=sys.stderr)
+            return 1
 
     deduped = {}
     for item in all_items:
         key = (item['title'].casefold(), item['start'])
         deduped[key] = item
-    items = sorted(deduped.values(), key=lambda item: item['start'])[:12]
+    items = sorted(deduped.values(), key=lambda item: item['start'])[:int(FEED_CONFIG['max_items'])]
 
     # Le workflow vérifie fréquemment pendant les tests. On ne touche au fichier que si
     # les événements visibles ont réellement changé, afin d'éviter des commits inutiles.
