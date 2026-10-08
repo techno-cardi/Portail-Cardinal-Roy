@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-08T11:31:24.249214-04:00",
+  "generated_at": "2026-10-08T11:40:26.105120-04:00",
   "source": "Google Calendar - Cardinal-Roy",
   "items": [
     {
@@ -59,28 +59,12 @@
       "icon": "📚"
     },
     {
-      "title": "Photo de finissants",
-      "start": "2026-11-19T00:00:00-05:00",
-      "end": "2026-11-20T00:00:00-05:00",
-      "all_day": true,
-      "kind": "evenement",
-      "icon": "📸"
-    },
-    {
       "title": "Rencontre des parents-enseignants",
       "start": "2026-11-19T00:00:00-05:00",
       "end": "2026-11-20T00:00:00-05:00",
       "all_day": true,
       "kind": "evenement",
       "icon": "📅"
-    },
-    {
-      "title": "Reprise de photo finissant",
-      "start": "2026-11-19T00:00:00-05:00",
-      "end": "2026-11-20T00:00:00-05:00",
-      "all_day": true,
-      "kind": "evenement",
-      "icon": "📸"
     },
     {
       "title": "Pédagogique (télétravail)",
@@ -97,6 +81,14 @@
       "all_day": true,
       "kind": "evenement",
       "icon": "📅"
+    },
+    {
+      "title": "Pédagogique",
+      "start": "2027-01-05T00:00:00-05:00",
+      "end": "2027-01-06T00:00:00-05:00",
+      "all_day": true,
+      "kind": "pedagogique",
+      "icon": "📚"
     }
   ]
 }
