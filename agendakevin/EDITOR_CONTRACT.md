@@ -38,6 +38,15 @@ et avec une sauvegarde préalable dans `planner_history`.
    sélection et l'enregistrement automatique restent fonctionnels.
 8. Les claviers mobiles doivent aussi gérer la suppression via
    `beforeinput/deleteContentBackward`.
+9. La sélection à la souris ou au clavier peut traverser plusieurs activités.
+   Saisir du texte remplace **toute** cette sélection, et `Retour arrière`,
+   `Supprimer`, `Couper` ou `Coller` portent sur tous les points concernés.
+10. Une sélection partielle laisse intactes les parties de la première et
+    de la dernière ligne qui sont hors sélection. Les cellules voisines et
+    les liens hors sélection ne doivent jamais être modifiés.
+11. `Ctrl + A` conserve la sélection de toute la case, pas seulement du
+    point actif. La sélection multiligne doit rester visible pendant
+    le glissement et après le relâchement de la souris.
 
 ## Garde-fous
 

@@ -48,6 +48,7 @@
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
     link.contentEditable = 'false';
+    link.draggable = false;
     link.textContent = visible.slice(start, end);
     link.title = 'Ouvrir le document';
     fragment.append(link);
@@ -271,6 +272,7 @@
   function editorFromTarget(target) {
     return target?.closest?.('.block-editor')
       || document.activeElement?.closest?.('.block-editor')
+      || crossSelection?.editor
       || document.querySelector('.block-editor[data-full-selection="1"]');
   }
 
@@ -534,63 +536,214 @@
     } catch {}
   }
 
+  // Une case a plusieurs racines contenteditable. Une sélection qui traverse deux
+  // points doit être représentée par une plage logique, pas seulement par la
+  // sélection interne du dernier point (qui ferait perdre les autres lignes).
+  let crossSelection = null;
+  let crossReadOnly = null;
+
+  function restoreEditableRoots() {
+    if (!crossReadOnly) return;
+    for (const root of crossReadOnly.roots) {
+      if (!root.node.isConnected) continue;
+      if (root.value == null) root.node.removeAttribute('contenteditable');
+      else root.node.setAttribute('contenteditable', root.value);
+    }
+    delete crossReadOnly.editor.dataset.crossSelecting;
+    crossReadOnly = null;
+  }
+
+  function enableCrossSelection(editor) {
+    if (crossReadOnly?.editor === editor) return;
+    restoreEditableRoots();
+    const roots = blockTexts(editor).map(node => ({
+      node, value: node.getAttribute('contenteditable'),
+    }));
+    crossReadOnly = { editor, roots };
+    // Chromium limite la sélection native à une seule racine contenteditable.
+    // Pendant la sélection, rendre temporairement les racines non éditables
+    // permet au Range DOM de traverser réellement tous les points.
+    for (const root of roots) root.node.setAttribute('contenteditable', 'false');
+    editor.dataset.crossSelecting = '1';
+  }
+
+  function blockTexts(editor) {
+    return [...editor.querySelectorAll(':scope > .editor-block:not(.drag-source):not(.drag-placeholder) .block-text')];
+  }
+
+  function offsetInText(textEl, node, offset) {
+    const probe = document.createRange();
+    probe.selectNodeContents(textEl);
+    try {
+      probe.setEnd(node, offset);
+      return stripMarkers(probe.toString()).length;
+    } catch {
+      return 0;
+    }
+  }
+
+  function mousePoint(textEl, x, y) {
+    const point = caretPointAt(x, y);
+    if (point && textEl.contains(point.node)) {
+      return Math.min(stripMarkers(textEl.textContent || '').length,
+        offsetInText(textEl, point.node, point.offset));
+    }
+    const box = textEl.getBoundingClientRect();
+    return x <= box.left + 8 ? 0 : stripMarkers(textEl.textContent || '').length;
+  }
+
+  function textAtMouse(editor, x, y) {
+    const hit = document.elementFromPoint(x, y)?.closest?.('.block-text');
+    if (hit && editor.contains(hit)) return hit;
+    const texts = blockTexts(editor);
+    if (!texts.length) return null;
+    return texts.reduce((best, candidate) => {
+      const a = candidate.getBoundingClientRect();
+      const b = best.getBoundingClientRect();
+      const distance = rect => Math.max(rect.top - y, 0, y - rect.bottom);
+      return distance(a) < distance(b) ? candidate : best;
+    });
+  }
+
+  function orderedSelection(editor, anchor, focus) {
+    const texts = blockTexts(editor);
+    const a = texts.indexOf(anchor.textEl);
+    const b = texts.indexOf(focus.textEl);
+    if (a < 0 || b < 0 || a === b) return null;
+    return a < b
+      ? { editor, start: anchor, end: focus }
+      : { editor, start: focus, end: anchor };
+  }
+
+  function showCrossSelection(selected) {
+    const selection = window.getSelection();
+    if (!selection || !selected?.editor.isConnected) return;
+    const start = visiblePoint(selected.start.textEl, selected.start.offset);
+    const end = visiblePoint(selected.end.textEl, selected.end.offset);
+    const range = document.createRange();
+    range.setStart(...start);
+    range.setEnd(...end);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  function selectionFromDOM(editor) {
+    const selection = window.getSelection();
+    if (!selection?.rangeCount || selection.isCollapsed) return null;
+    const range = selection.getRangeAt(0);
+    const textFromNode = node => (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement)?.closest?.('.block-text');
+    const first = textFromNode(range.startContainer);
+    const last = textFromNode(range.endContainer);
+    if (!first || !last || first === last || !editor.contains(first) || !editor.contains(last)) return null;
+    return orderedSelection(editor,
+      { textEl: first, offset: offsetInText(first, range.startContainer, range.startOffset) },
+      { textEl: last, offset: offsetInText(last, range.endContainer, range.endOffset) });
+  }
+
+  function selectedAcross(editor) {
+    if (editor.dataset.fullSelection === '1') return null;
+    if (crossSelection?.editor === editor && crossSelection.start.textEl.isConnected && crossSelection.end.textEl.isConnected) {
+      return crossSelection;
+    }
+    return selectionFromDOM(editor);
+  }
+
+  function replaceAcross(editor, selected, text) {
+    restoreEditableRoots();
+    const blocks = blockTexts(editor);
+    const firstIndex = blocks.indexOf(selected.start.textEl);
+    const lastIndex = blocks.indexOf(selected.end.textEl);
+    if (firstIndex < 0 || lastIndex <= firstIndex) return false;
+
+    const first = blocks[firstIndex];
+    const last = blocks[lastIndex];
+    const firstTokens = tokensFromElement(first);
+    const lastTokens = tokensFromElement(last);
+    const left = splitTokensAtVisibleRange(firstTokens, selected.start.offset, selected.start.offset).left;
+    const right = splitTokensAtVisibleRange(lastTokens, selected.end.offset, selected.end.offset).right;
+    const inserted = String(text ?? '').replace(/[\r\n]+/g, ' ');
+    const merged = left + inserted + right;
+    // Conserver le premier point et les parties non sélectionnées; enlever
+    // seulement les points réellement englobés par la sélection.
+    for (let index = lastIndex; index > firstIndex; index--) {
+      blocks[index].closest('.editor-block')?.remove();
+    }
+    renderTokens(first, merged, false);
+    crossSelection = null;
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    restoreVisibleSelection(first, {
+      start: stripMarkers(left + inserted).length,
+      end: stripMarkers(left + inserted).length,
+    }, true);
+    first.dispatchEvent(new InputEvent('input', {
+      bubbles: true, inputType: inserted ? 'insertText' : 'deleteContentBackward', data: inserted,
+    }));
+    return true;
+  }
+
+  function selectedAcrossText(selected) {
+    const blocks = blockTexts(selected.editor);
+    const firstIndex = blocks.indexOf(selected.start.textEl);
+    const lastIndex = blocks.indexOf(selected.end.textEl);
+    if (firstIndex < 0 || lastIndex <= firstIndex) return '';
+    return blocks.slice(firstIndex, lastIndex + 1).map((textEl, index) => {
+      let visible = stripMarkers(tokensFromElement(textEl));
+      if (index === 0) visible = visible.slice(selected.start.offset);
+      if (index === lastIndex - firstIndex) visible = visible.slice(0, selected.end.offset);
+      return visible;
+    }).join('\n');
+  }
+
   function beginNativeDragSelection(event) {
+    restoreEditableRoots();
+    crossSelection = null;
     if (event.button !== 0 || event.pointerType !== 'mouse') return;
-    if (event.target?.closest?.('.agenda-inline-link')) return;
+    if (event.target?.closest?.('.number-badge')) return;
     const textEl = event.target?.closest?.('.block-text');
     const editor = textEl?.closest?.('.block-editor');
     if (!textEl || !editor) return;
-
-    const roots = [...editor.querySelectorAll(':scope > .editor-block .block-text')];
     nativeDragSelection = {
-      pointerId: event.pointerId,
-      editor,
-      textEl,
-      x: event.clientX,
-      y: event.clientY,
-      roots: roots.map(node => ({
-        node,
-        value: node.getAttribute('contenteditable'),
-      })),
+      pointerId: event.pointerId, editor,
+      anchor: { textEl, offset: mousePoint(textEl, event.clientX, event.clientY) },
     };
+  }
 
-    // Pendant le glisser, les lignes deviennent du texte ordinaire dans une
-    // même zone de sélection. Chromium affiche alors la surbrillance native
-    // en continu au lieu d'attendre qu'on change de racine contenteditable.
-    for (const item of nativeDragSelection.roots) {
-      item.node.setAttribute('contenteditable', 'false');
-    }
-    editor.dataset.nativeSelecting = '1';
+  function moveNativeDragSelection(event) {
+    if (!nativeDragSelection || event.pointerId !== nativeDragSelection.pointerId) return;
+    const drag = nativeDragSelection;
+    const textEl = textAtMouse(drag.editor, event.clientX, event.clientY);
+    if (!textEl) return;
+    const focus = { textEl, offset: mousePoint(textEl, event.clientX, event.clientY) };
+    const selected = orderedSelection(drag.editor, drag.anchor, focus);
+    if (!selected) return;
+    crossSelection = selected;
+    enableCrossSelection(drag.editor);
+    // Empêcher Chromium de rabattre la sélection sur une seule racine éditable.
+    event.preventDefault();
+    showCrossSelection(selected);
+    requestAnimationFrame(() => {
+      if (crossSelection === selected) showCrossSelection(selected);
+    });
   }
 
   function finishNativeDragSelection(event) {
     if (!nativeDragSelection || event.pointerId !== nativeDragSelection.pointerId) return;
-    const state = nativeDragSelection;
+    moveNativeDragSelection(event);
     nativeDragSelection = null;
-    state.x = event.clientX;
-    state.y = event.clientY;
+    if (crossSelection) requestAnimationFrame(() => {
+      if (crossSelection) showCrossSelection(crossSelection);
+    });
+  }
 
-    setTimeout(() => {
-      const selection = window.getSelection();
-      const ranges = [];
-      if (selection?.rangeCount) {
-        for (let i = 0; i < selection.rangeCount; i += 1) ranges.push(selection.getRangeAt(i).cloneRange());
-      }
-      const hadVisibleSelection = Boolean(selection && !selection.isCollapsed && selection.toString());
-
-      for (const item of state.roots) {
-        if (item.value == null) item.node.removeAttribute('contenteditable');
-        else item.node.setAttribute('contenteditable', item.value);
-      }
-      delete state.editor.dataset.nativeSelecting;
-
-      if (hadVisibleSelection && selection && ranges.length) {
-        selection.removeAllRanges();
-        for (const range of ranges) selection.addRange(range);
-      } else {
-        restoreCaretAt(state.textEl, state.x, state.y);
-      }
-    }, 0);
+  function onMouseMoveWhileDragging(event) {
+    if (!nativeDragSelection || !crossSelection) return;
+    event.preventDefault();
+    showCrossSelection(crossSelection);
+    const selected = crossSelection;
+    requestAnimationFrame(() => {
+      if (crossSelection === selected) showCrossSelection(selected);
+    });
   }
 
   function setup() {
@@ -629,12 +782,27 @@
 
     document.addEventListener('keydown', event => {
       const textEl = event.target?.closest?.('.block-text');
-      if (!textEl || event.isComposing) return;
-      const editor = textEl.closest('.block-editor');
-      if (!editor) return;
+      const editor = textEl?.closest('.block-editor') || crossSelection?.editor;
+      if (!editor || event.isComposing) return;
 
       const command = event.ctrlKey || event.metaKey;
       const key = event.key.toLowerCase();
+      if (!command && !event.altKey) {
+        const selected = selectedAcross(editor);
+        if (selected && (event.key.length === 1 || ['Backspace', 'Delete', 'Enter'].includes(event.key))) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          replaceAcross(editor, selected, event.key.length === 1 ? event.key : '');
+          return;
+        }
+      }
+      if (crossSelection?.editor === editor && (
+        (command && !['c', 'x', 'v'].includes(key))
+        || ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','Escape','Tab'].includes(event.key)
+      )) {
+        restoreEditableRoots();
+        crossSelection = null;
+      }
 
       if (command && !event.altKey && !event.shiftKey && key === 'a') {
         event.preventDefault();
@@ -677,8 +845,23 @@
 
     document.addEventListener('beforeinput', event => {
       const textEl = event.target?.closest?.('.block-text');
-      const editor = textEl?.closest('.block-editor');
-      if (!editor || editor.dataset.fullSelection !== '1') return;
+      const editor = textEl?.closest('.block-editor') || crossSelection?.editor;
+      if (!editor) return;
+      const across = selectedAcross(editor);
+      if (across && !composing && (
+        (event.inputType === 'insertText' && typeof event.data === 'string')
+        || event.inputType === 'insertReplacementText'
+        || event.inputType === 'insertFromPaste'
+        || event.inputType === 'deleteContentBackward'
+        || event.inputType === 'deleteContentForward'
+        || event.inputType === 'deleteByCut'
+      )) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        replaceAcross(editor, across, event.inputType.startsWith('insert') ? (event.data || '') : '');
+        return;
+      }
+      if (editor.dataset.fullSelection !== '1') return;
 
       if (event.inputType === 'insertText' && typeof event.data === 'string') {
         event.preventDefault();
@@ -696,14 +879,29 @@
 
     document.addEventListener('copy', event => {
       const editor = editorFromTarget(event.target);
-      if (!editor || editor.dataset.fullSelection !== '1') return;
+      if (!editor) return;
+      const selected = selectedAcross(editor);
+      if (selected) {
+        event.preventDefault();
+        event.clipboardData?.setData('text/plain', selectedAcrossText(selected));
+        return;
+      }
+      if (editor.dataset.fullSelection !== '1') return;
       event.preventDefault();
       event.clipboardData?.setData('text/plain', serializeVisibleEditor(editor));
     }, true);
 
     document.addEventListener('cut', event => {
       const editor = editorFromTarget(event.target);
-      if (!editor || editor.dataset.fullSelection !== '1') return;
+      if (!editor) return;
+      const selected = selectedAcross(editor);
+      if (selected) {
+        event.preventDefault();
+        event.clipboardData?.setData('text/plain', selectedAcrossText(selected));
+        replaceAcross(editor, selected, '');
+        return;
+      }
+      if (editor.dataset.fullSelection !== '1') return;
       event.preventDefault();
       event.clipboardData?.setData('text/plain', serializeVisibleEditor(editor));
       replaceEditor(editor, '');
@@ -711,7 +909,15 @@
 
     document.addEventListener('paste', event => {
       const editor = editorFromTarget(event.target);
-      if (!editor || editor.dataset.fullSelection !== '1') return;
+      if (!editor) return;
+      const selected = selectedAcross(editor);
+      if (selected) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        replaceAcross(editor, selected, (event.clipboardData || window.clipboardData)?.getData('text/plain') || '');
+        return;
+      }
+      if (editor.dataset.fullSelection !== '1') return;
       event.preventDefault();
       event.stopImmediatePropagation();
       const text = (event.clipboardData || window.clipboardData)?.getData('text/plain') || '';
@@ -722,8 +928,17 @@
       document.querySelectorAll('.block-editor[data-full-selection="1"]').forEach(clearFullSelection);
       beginNativeDragSelection(event);
     }, true);
+    document.addEventListener('dragstart', event => {
+      if (nativeDragSelection && event.target?.closest?.('.agenda-inline-link')) event.preventDefault();
+    }, true);
+    document.addEventListener('pointermove', moveNativeDragSelection, true);
+    document.addEventListener('mousemove', onMouseMoveWhileDragging, true);
     document.addEventListener('pointerup', finishNativeDragSelection, true);
-    document.addEventListener('pointercancel', event => finishNativeDragSelection(event), true);
+    document.addEventListener('pointercancel', event => {
+      nativeDragSelection = null;
+      restoreEditableRoots();
+      crossSelection = null;
+    }, true);
 
     new MutationObserver(mutations => {
       for (const mutation of mutations) {

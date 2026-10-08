@@ -400,3 +400,107 @@ test('le retour arrière mobile dénumérote un rappel sans keydown', async ({ p
   await expect(editor.locator('.editor-block')).toHaveAttribute('data-kind', 'plain');
   await expect(editor.locator('.block-text')).toHaveText('Rappel : notes de lecture');
 });
+
+
+async function setupMultiSelectionTest(page) {
+  const saved = [];
+  await page.addInitScript(() => localStorage.setItem('cr-planner-access-v1', 'cle-test-locale'));
+  await page.route('**/functions/v1/planner-api**', route => {
+    const data = route.request().method() === 'POST' ? route.request().postDataJSON() : null;
+    if (data?.action === 'save_note') saved.push(data.body);
+    return route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ calendar: [], notes: [] }) });
+  });
+  await page.goto('/agendakevin/');
+  return { editor: page.locator('.block-editor').first(), saved };
+}
+
+async function putMultiSelectionBlocks(editor, values) {
+  await editor.evaluate((el, rows) => {
+    el.innerHTML = rows.map((value, i) =>
+      '<div class="editor-block numbered-block" data-kind="numbered">' +
+      '<span class="number-badge">' + (i+1) + '.</span>' +
+      '<div class="block-text" contenteditable="true">' + value + '</div></div>'
+    ).join('');
+  }, values);
+}
+
+async function selectMultiBlocks(editor, fromBlock, fromOffset, toBlock, toOffset) {
+  await editor.evaluate((el, args) => {
+    const blocks = el.querySelectorAll('.block-text');
+    blocks[args.fromBlock].focus({ preventScroll: true });
+    const range = document.createRange();
+    range.setStart(blocks[args.fromBlock].firstChild, args.fromOffset);
+    range.setEnd(blocks[args.toBlock].firstChild, args.toOffset);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }, { fromBlock, fromOffset, toBlock, toOffset });
+}
+
+test('surligner trois points et taper remplace la selection complete', async ({ page }) => {
+  const { editor, saved } = await setupMultiSelectionTest(page);
+  await putMultiSelectionBlocks(editor, ['ALPHA premier', 'BETA milieu', 'OMEGA dernier']);
+  const first = editor.locator('.block-text').first();
+  const last = editor.locator('.block-text').last();
+  await first.scrollIntoViewIfNeeded();
+  const top = await first.boundingBox();
+  const bottom = await last.boundingBox();
+  await page.mouse.move(bottom.x + bottom.width - 5, bottom.y + bottom.height/2);
+  await page.mouse.down();
+  await page.mouse.move(top.x + 3, top.y + top.height/2, { steps: 15 });
+  const highlighted = await page.evaluate(() => window.getSelection()?.toString() || '');
+  expect(highlighted).toContain('BETA');
+  expect(highlighted).toContain('ALPHA');
+  await page.mouse.up();
+  await page.keyboard.type('Remplacement');
+  await expect(editor.locator('.editor-block')).toHaveCount(1);
+  await expect(editor).toContainText('Remplacement');
+  await expect(editor).not.toContainText('BETA');
+  await expect.poll(() => saved.at(-1) || '').toContain('Remplacement');
+});
+
+for (const key of ['Backspace', 'Delete']) {
+  test('selection sur trois points supprimee par ' + key, async ({ page }) => {
+    const { editor, saved } = await setupMultiSelectionTest(page);
+    await putMultiSelectionBlocks(editor, ['Debut SUPPRIMER', 'MILIEU', 'SUPPRIMER fin']);
+    await selectMultiBlocks(editor, 0, 6, 2, 9);
+    await page.keyboard.press(key);
+    await expect(editor.locator('.editor-block')).toHaveCount(1);
+    await expect(editor.locator('.block-text')).toHaveText('Debut  fin');
+    await expect(editor.locator('.editor-block')).toHaveAttribute('data-kind', 'numbered');
+    await expect.poll(() => saved.at(-1) || '').toContain('Debut  fin');
+  });
+}
+
+test('collage sur trois points conserve le texte hors selection', async ({ page }) => {
+  const { editor } = await setupMultiSelectionTest(page);
+  await putMultiSelectionBlocks(editor, ['Garder avant retirer', 'MILIEU', 'retirer apres']);
+  await selectMultiBlocks(editor, 0, 13, 2, 7);
+  const canceled = await editor.evaluate(el => {
+    const data = new DataTransfer();
+    data.setData('text/plain', 'NOUVEAU');
+    const event = new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: data });
+    Object.defineProperty(event, 'clipboardData', { value: { getData: () => 'NOUVEAU' } });
+    el.querySelector('.block-text').dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+  expect(canceled).toBe(true);
+  await expect(editor.locator('.editor-block')).toHaveCount(1);
+  await expect(editor.locator('.block-text')).toHaveText('Garder avant NOUVEAU apres');
+});
+
+test('suppression mobile beforeinput traverse plusieurs points', async ({ page }) => {
+  const { editor } = await setupMultiSelectionTest(page);
+  await putMultiSelectionBlocks(editor, ['Premier', 'Second']);
+  await selectMultiBlocks(editor, 0, 0, 1, 6);
+  const prevented = await editor.evaluate(el => {
+    const event = new InputEvent('beforeinput', { bubbles: true, cancelable: true,
+      inputType: 'deleteContentBackward' });
+    el.querySelector('.block-text').dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+  expect(prevented).toBe(true);
+  await expect(editor.locator('.editor-block')).toHaveCount(1);
+  await expect(editor.locator('.block-text')).toHaveText('');
+});
