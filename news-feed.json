@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-08T01:19:49.117890-04:00",
+  "generated_at": "2026-10-08T11:09:09.822758-04:00",
   "source": "Google Calendar - Cardinal-Roy",
   "items": [
     {
@@ -17,14 +17,6 @@
       "all_day": false,
       "kind": "evenement",
       "icon": "🚪"
-    },
-    {
-      "title": "Photo de finissant",
-      "start": "2026-10-15T00:00:00-04:00",
-      "end": "2026-10-16T00:00:00-04:00",
-      "all_day": true,
-      "kind": "evenement",
-      "icon": "📸"
     },
     {
       "title": "Fête d'Halloween",
@@ -76,6 +68,14 @@
     },
     {
       "title": "Reprise de photo finissant",
+      "start": "2026-11-19T00:00:00-05:00",
+      "end": "2026-11-20T00:00:00-05:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "📸"
+    },
+    {
+      "title": "Photo de finissants",
       "start": "2026-11-19T00:00:00-05:00",
       "end": "2026-11-20T00:00:00-05:00",
       "all_day": true,
