@@ -107,11 +107,11 @@ if config:
     # Empêcher toute divergence silencieuse entre le calendrier partagé avec
     # les enseignants et la source réellement interrogée par GitHub Actions.
     calendar_id = str(calendar_feed.get("calendar_id") or "")
-    if not re.fullmatch(r"[a-zA-Z0-9_.-]+@group\\.calendar\\.google\\.com", calendar_id):
+    if not re.fullmatch(r"[a-zA-Z0-9_.-]+@group\.calendar\.google\.com", calendar_id):
         error("calendar_feed.calendar_id doit désigner le calendrier Google partagé officiel.")
     calendar_resource = (ROOT / "source-patches-7.js").read_text(encoding="utf-8", errors="replace")
-    outlook_match = re.search(r"const OUTLOOK_ICAL_URL\\s*=\\s*'([^']+)'", calendar_resource)
-    google_match = re.search(r"const GOOGLE_CALENDAR_URL\\s*=\\s*'([^']+)'", calendar_resource)
+    outlook_match = re.search(r"const OUTLOOK_ICAL_URL\s*=\s*'([^']+)'", calendar_resource)
+    google_match = re.search(r"const GOOGLE_CALENDAR_URL\s*=\s*'([^']+)'", calendar_resource)
     if not outlook_match or not google_match:
         error("Liens d'abonnement Google/Outlook absents de la fiche Dates importantes.")
     else:
