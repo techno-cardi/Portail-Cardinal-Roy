@@ -181,6 +181,28 @@ class BannerCalendarSyncTests(unittest.TestCase):
             with self.subTest(title=title):
                 self.assertFalse(feed.is_administrative_title(title))
 
+    def test_photo_variations_are_institutional_not_personal(self):
+        accepted = [
+            'Photo de finissants', 'Photo des finissants',
+            'Photos de finissants', 'Photos des finissants',
+            'Reprise de photo finissant',
+            'Reprise des photos des finissants',
+            'Séance photo des finissants', 'Prise de photo des finissants',
+            'Photographie des finissants',
+        ]
+        rejected = [
+            'Photo de famille', 'Photos de mon cours',
+            'Photo des finissants groupe 51',
+            'RDV pour photos des finissants',
+            'Jour 4 - photo de finissants',
+        ]
+        for title in accepted:
+            with self.subTest(accepted=title):
+                self.assertTrue(feed.is_administrative_title(title))
+        for title in rejected:
+            with self.subTest(rejected=title):
+                self.assertFalse(feed.is_administrative_title(title))
+
     def test_explicit_portal_marker_and_personal_blockers(self):
         self.assertTrue(feed.is_administrative_title('[PORTAIL] Journée spéciale pour tout le personnel'))
         self.assertEqual(
