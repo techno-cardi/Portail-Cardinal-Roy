@@ -249,7 +249,7 @@ test('un lien de planification reste ouvrable dans Agenda et le glisser-surligne
   expect(firstBox).toBeTruthy();
   expect(secondBox).toBeTruthy();
 
-  await page.mouse.move(secondBox.x + Math.max(8, secondBox.width - 45), secondBox.y + secondBox.height / 2);
+  await page.mouse.move(secondBox.x + 18, secondBox.y + secondBox.height / 2);
   await page.mouse.down();
   await page.mouse.move(firstBox.x + 5, firstBox.y + firstBox.height / 2, { steps: 12 });
 
