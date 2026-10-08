@@ -17,11 +17,12 @@ TZ = ZoneInfo('America/Toronto')
 ROOT = Path(__file__).resolve().parents[1]
 FEED_CONFIG = json.loads((ROOT / 'portal-maintenance.json').read_text(encoding='utf-8'))['calendar_feed']
 OUTPUT = ROOT / 'news-feed.json'
-# Source de vérité commune au portail, à son lien d'abonnement et au générateur.
-CALENDAR_ID = FEED_CONFIG['calendar_id']
+# Le calendrier du bandeau est distinct de celui proposé en abonnement aux enseignants.
+# Cette URL publique historique sert seulement en absence de source privée configurée.
+BANNER_FALLBACK_CALENDAR_ID = FEED_CONFIG['banner_public_fallback_calendar_id']
 PUBLIC_ICAL = (
     'https://calendar.google.com/calendar/ical/'
-    + urllib.parse.quote(CALENDAR_ID, safe='')
+    + urllib.parse.quote(BANNER_FALLBACK_CALENDAR_ID, safe='')
     + '/public/basic.ics'
 )
 
@@ -32,21 +33,17 @@ NOISE_PATTERNS = [
 
 
 def urls_from_env():
-    """Le calendrier affiché dans le portail est toujours prioritaire.
+    """Distingue source du bandeau et calendrier d'abonnement du personnel.
 
-    L'URL privée historique ne sert que si la source officielle est inaccessible;
-    elle ne peut plus masquer les modifications du calendrier partagé.
+    Une source privée déjà configurée fait autorité. La source publique historique
+    n'est utilisée que si aucune source privée n'a été configurée, pas comme un
+    substitut silencieux qui modifierait le contenu du bandeau lors d'une panne.
     """
     return (
-        PUBLIC_ICAL,
         os.environ.get('CARDINAL_CALENDAR_ICAL_URL', '').strip(),
         os.environ.get('CARDINAL_SCHOOL_CALENDAR_ICAL_URL', '').strip(),
+        PUBLIC_ICAL,
     )
-
-
-def is_same_calendar(url):
-    """Valide l'identité sans journaliser le lien privé ou ses paramètres."""
-    return CALENDAR_ID in urllib.parse.unquote(urllib.parse.urlsplit(url).path)
 
 
 def cache_busted_url(url):
@@ -181,56 +178,45 @@ def current_items():
 def main():
     now = datetime.now(TZ)
     horizon = now + timedelta(days=int(FEED_CONFIG['horizon_days']))
-    public_url, private_fallback, school_url = urls_from_env()
-    if private_fallback and not is_same_calendar(private_fallback):
-        print('ERREUR: la source iCal privée configurée dans GitHub ne correspond pas '
-              'au calendrier partagé dans le portail; ancien fil conservé.', file=sys.stderr)
-        return 1
+    primary_private_url, school_url, public_fallback_url = urls_from_env()
+    primary_url = primary_private_url or public_fallback_url
+    primary_label = 'bandeau iCal privé' if primary_private_url else 'bandeau iCal public historique'
 
-    # Ne pas mélanger un ancien calendrier privé avec le calendrier public
-    # officiellement proposé au personnel : une date déplacée apparaîtrait
-    # autrement en double, à l'ancienne date et à la nouvelle.
-    primary_items = None
-    for label, url in (('partagé officiel', public_url), ('privé de secours', private_fallback)):
-        if not url or (label == 'privé de secours' and url == public_url):
-            continue
-        try:
-            candidate_items = parse_feed(fetch_ics(url), now, horizon)
-            if is_masked_calendar(candidate_items):
-                raise ValueError('Google ne publie que des plages Busy/Privé; utiliser la source iCal privée autorisée du bon calendrier')
-            primary_items = candidate_items
-            print(f'Calendrier des dates importantes chargé : {label}.')
-            if label == 'privé de secours':
-                print('AVERTISSEMENT: source publique inaccessible, secours privé utilisé; vérifier son identité.', file=sys.stderr)
-            break
-        except Exception as exc:
-            print(f'AVERTISSEMENT: échec du calendrier {label}: {exc}', file=sys.stderr)
-
-    if primary_items is None:
-        print('ERREUR: aucune source des dates importantes accessible; publication interrompue, ancien fil conservé.', file=sys.stderr)
+    # Ne jamais imposer que la source du bandeau corresponde au calendrier
+    # sélectif auquel les enseignants peuvent s'abonner dans la fiche du portail.
+    try:
+        primary_items = parse_feed(fetch_ics(primary_url), now, horizon)
+        if is_masked_calendar(primary_items):
+            raise ValueError('source contenant des événements masqués Busy/Privé')
+        print(f'Source des dates du bandeau chargée : {primary_label}.')
+    except Exception as exc:
+        print(f'ERREUR: source du bandeau indisponible ({primary_label}): {exc}; '
+              'ancien fil conservé.', file=sys.stderr)
         return 1
 
     all_items = list(primary_items)
-    # Source scolaire secondaire facultative, uniquement si configurée.
-    if school_url and school_url not in {public_url, private_fallback}:
+    # L'agenda scolaire additionnel est volontaire et peut contenir des événements
+    # différents. Conserver sa configuration historique indépendante.
+    if school_url and school_url != primary_url:
         try:
             school_items = parse_feed(fetch_ics(school_url), now, horizon)
             if is_masked_calendar(school_items):
-                raise ValueError('le calendrier complémentaire ne révèle pas les titres')
+                raise ValueError('calendrier complémentaire contenant des événements masqués')
             all_items.extend(school_items)
             print('Calendrier scolaire complémentaire chargé.')
         except Exception as exc:
-            print(f'ERREUR: calendrier scolaire complémentaire indisponible: {exc}; ancien fil conservé.', file=sys.stderr)
+            print(f'ERREUR: calendrier scolaire complémentaire indisponible: {exc}; '
+                  'ancien fil conservé.', file=sys.stderr)
             return 1
 
+    # Déduplication uniquement des occurrences strictement identiques :
+    # deux journées pédagogiques distinctes peuvent porter le même titre.
     deduped = {}
     for item in all_items:
         key = (item['title'].casefold(), item['start'])
         deduped[key] = item
     items = sorted(deduped.values(), key=lambda item: item['start'])[:int(FEED_CONFIG['max_items'])]
 
-    # Le workflow vérifie fréquemment pendant les tests. On ne touche au fichier que si
-    # les événements visibles ont réellement changé, afin d'éviter des commits inutiles.
     if current_items() == items:
         print('Aucun changement dans les dates importantes.')
         return 0

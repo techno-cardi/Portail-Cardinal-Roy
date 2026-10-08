@@ -104,11 +104,17 @@ if config:
     if calendar_feed.get("timezone") != "America/Toronto":
         error("Le fil calendrier doit utiliser America/Toronto.")
 
-    # Empêcher toute divergence silencieuse entre le calendrier partagé avec
-    # les enseignants et la source réellement interrogée par GitHub Actions.
-    calendar_id = str(calendar_feed.get("calendar_id") or "")
-    if not re.fullmatch(r"[a-zA-Z0-9_.-]+@group\.calendar\.google\.com", calendar_id):
-        error("calendar_feed.calendar_id doit désigner le calendrier Google partagé officiel.")
+    # Les abonnements Google/Outlook doivent être cohérents entre eux, mais
+    # le bandeau utilise volontairement un autre calendrier, éventuellement
+    # une source iCal privée distincte pour inclure plus de dates scolaires.
+    subscription_id = str(calendar_feed.get("subscription_calendar_id") or "")
+    banner_fallback_id = str(calendar_feed.get("banner_public_fallback_calendar_id") or "")
+    google_id_pattern = r"[a-zA-Z0-9_.-]+@group\.calendar\.google\.com"
+    if not re.fullmatch(google_id_pattern, subscription_id):
+        error("Identifiant du calendrier d'abonnement aux enseignants invalide.")
+    if not re.fullmatch(google_id_pattern, banner_fallback_id):
+        error("Identifiant du calendrier public de secours du bandeau invalide.")
+
     calendar_resource = (ROOT / "source-patches-7.js").read_text(encoding="utf-8", errors="replace")
     outlook_match = re.search(r"const OUTLOOK_ICAL_URL\s*=\s*'([^']+)'", calendar_resource)
     google_match = re.search(r"const GOOGLE_CALENDAR_URL\s*=\s*'([^']+)'", calendar_resource)
@@ -117,19 +123,20 @@ if config:
     else:
         outlook_path = urllib.parse.urlsplit(outlook_match.group(1)).path
         outlook_id = urllib.parse.unquote(outlook_path.split("/calendar/ical/", 1)[-1].split("/", 1)[0])
-        if outlook_id != calendar_id:
-            error("Le calendrier Outlook de la fiche diffère de calendar_feed.calendar_id.")
+        if outlook_id != subscription_id:
+            error("L'abonnement Outlook ne correspond pas au calendrier des enseignants.")
         try:
             cid = urllib.parse.parse_qs(urllib.parse.urlsplit(google_match.group(1)).query)["cid"][0]
             google_id = base64.b64decode(cid + "=" * (-len(cid) % 4), validate=True).decode("utf-8")
         except (KeyError, ValueError, UnicodeError) as exc:
             google_id = ""
-            error(f"Lien Google Agenda invalide : {exc}")
-        if google_id != calendar_id:
-            error("Le calendrier Google Agenda de la fiche diffère de calendar_feed.calendar_id.")
+            error(f"Lien d'abonnement Google invalide : {exc}")
+        if google_id != subscription_id:
+            error("L'abonnement Google ne correspond pas au calendrier des enseignants.")
     generator_text = (ROOT / "scripts/build_news_feed.py").read_text(encoding="utf-8", errors="replace")
-    if "FEED_CONFIG['calendar_id']" not in generator_text or "PUBLIC_ICAL" not in generator_text:
-        error("Le générateur doit utiliser l'identifiant canonique du manifeste, jamais un ancien calendrier.")
+    for token in ("banner_public_fallback_calendar_id", "CARDINAL_CALENDAR_ICAL_URL", "CARDINAL_SCHOOL_CALENDAR_ICAL_URL", "is_masked_calendar"):
+        if token not in generator_text:
+            error(f"Le générateur des dates ne respecte plus la séparation des calendriers ({token} absent).")
 
     generated = config.get("generated_files") or {}
     for output, source in generated.items():
