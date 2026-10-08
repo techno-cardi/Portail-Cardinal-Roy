@@ -69,11 +69,15 @@ def normalized_title(value):
 
 def is_administrative_title(title):
     clean = normalized_title(title)
+    # Retirer le marqueur avant de contrôler les exclusions, sinon
+    # « [PORTAIL] Jour 4 » échappe au filtre des jours de cycle.
+    marked = clean.startswith('[portail] ')
+    if marked:
+        clean = clean.removeprefix('[portail] ').strip()
     if not clean or any(pattern.search(clean) for pattern in PERSONAL_TITLES):
         return False
-    # Permet une date administrative exceptionnelle sans assouplir les filtres.
-    if clean.startswith('[portail] '):
-        return bool(clean.removeprefix('[portail] ').strip())
+    if marked:
+        return True
     return any(pattern.search(clean) for pattern in ADMINISTRATIVE_TITLES)
 
 
