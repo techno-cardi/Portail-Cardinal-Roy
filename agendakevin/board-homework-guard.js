@@ -37,7 +37,7 @@
   }
 
   function isNextSection(text) {
-    return /^(?:rappels?|dates?\\s+importantes?|échéances?|matériel|notes?|informations?)\\s*:/i.test(String(text || '').trim());
+    return /^(?:rappels?|dates?\s+importantes?|échéances?|matériel|notes?|informations?)\s*:/i.test(String(text || '').trim());
   }
 
   // Les devoirs peuvent occuper plusieurs lignes ordinaires après « Devoirs : ».
