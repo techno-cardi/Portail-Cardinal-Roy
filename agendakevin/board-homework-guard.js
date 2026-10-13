@@ -36,6 +36,37 @@
     return /^devoirs?\s*:/i.test(value) || /^(?:à|a)\s+faire\s*:/i.test(value);
   }
 
+  function isNextSection(text) {
+    return /^(?:rappels?|dates?\\s+importantes?|échéances?|matériel|notes?|informations?)\\s*:/i.test(String(text || '').trim());
+  }
+
+  // Les devoirs peuvent occuper plusieurs lignes ordinaires après « Devoirs : ».
+  // Masquer seulement l'intitulé laisse les consignes visibles sur le tableau.
+  function getHomeworkLines(board) {
+    const plan = board.querySelector('.cr-board-plan');
+    if (!plan) return [];
+    const lines = [];
+    let inHomework = false;
+
+    for (const element of plan.children) {
+      if (!element.classList.contains('cr-board-plain')) {
+        inHomework = false;
+        continue;
+      }
+
+      const text = element.textContent || '';
+      if (isHomeworkText(text)) {
+        inHomework = true;
+        lines.push(element);
+      } else if (isNextSection(text)) {
+        inHomework = false;
+      } else if (inHomework) {
+        lines.push(element);
+      }
+    }
+    return lines;
+  }
+
   function shouldAutoReveal(now = new Date()) {
     if (!activeContext || activeContext.dateISO !== localIso(now)) return false;
     const threshold = AUTO_REVEAL[activeContext.periodKey];
@@ -85,12 +116,19 @@
     const board = document.getElementById('classroomBoard');
     if (!board) return;
 
-    const lines = [...board.querySelectorAll('.cr-board-plain')].filter(line => isHomeworkText(line.textContent));
-    if (!lines.length) return;
+    const lines = getHomeworkLines(board);
+    // Éviter les classes périmées si le tableau est reconstruit.
+    board.querySelectorAll('.cr-board-homework-line').forEach(line => {
+      if (!lines.includes(line)) line.classList.remove('cr-board-homework-line', 'is-hidden');
+    });
+    let button = board.querySelector('.cr-board-homework-toggle');
+    if (!lines.length) {
+      button?.remove();
+      return;
+    }
 
     const reveal = manuallyRevealed || shouldAutoReveal();
 
-    let button = board.querySelector('.cr-board-homework-toggle');
     lines.forEach(line => {
       line.classList.add('cr-board-homework-line');
       line.classList.toggle('is-hidden', !reveal);
