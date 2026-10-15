@@ -49,6 +49,7 @@
     prev: document.getElementById('prevBtn'),
     next: document.getElementById('nextBtn'),
     today: document.getElementById('todayBtn'),
+    refresh: document.getElementById('refreshBtn'),
     undo: document.getElementById('undoBtn'),
     redo: document.getElementById('redoBtn'),
     segmented: [...document.querySelectorAll('[data-view]')],
@@ -76,6 +77,7 @@
     saveTimers: new Map(),
     saveQueues: new Map(),
     loading: false,
+    refreshing: false,
     installPrompt: null,
     undoStack: [],
     redoStack: [],
@@ -692,6 +694,59 @@
     }
     if (drafts.length && !state.drag && !state.activeEdit) loadCurrent();
   }
+
+  // PWA: force un vrai rechargement après avoir vidé les sauvegardes en attente.
+  // Les brouillons restent dans localStorage tant que le serveur ne les a pas confirmés.
+  async function refreshAgenda() {
+    if (state.refreshing || state.loading || !state.key) return;
+    if (state.drag) { toast('Termine le déplacement avant d’actualiser.'); return; }
+    if (!navigator.onLine) { toast('Hors ligne : impossible d’actualiser.'); return; }
+    commitActiveEdit();
+    state.refreshing = true;
+    el.refresh.disabled = true;
+    el.refresh.classList.add('is-refreshing');
+    el.refresh.setAttribute('aria-busy', 'true');
+    setSaveStatus('Sauvegarde avant actualisation…', 'saving');
+    try {
+      for (const [id, timer] of [...state.saveTimers]) {
+        clearTimeout(timer);
+        state.saveTimers.delete(id);
+        await enqueueNoteSave(id, state.notes.get(id) || '');
+      }
+      await Promise.all([...state.saveQueues.values()]);
+
+      // Y compris les brouillons sauvegardés lors d’une précédente panne réseau.
+      const drafts = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith(DRAFT_PREFIX)) drafts.push(key);
+      }
+      for (const key of drafts) {
+        const body = localStorage.getItem(key);
+        if (body !== null) await enqueueNoteSave(key.slice(DRAFT_PREFIX.length), body);
+      }
+      await Promise.all([...state.saveQueues.values()]);
+      if (drafts.some(key => localStorage.getItem(key) !== null)) {
+        throw new Error('Des modifications ne sont pas encore synchronisées.');
+      }
+
+      setSaveStatus('Actualisation…', 'saving');
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration) await registration.update().catch(() => {});
+      }
+      window.location.reload();
+    } catch (err) {
+      setSaveStatus('À resynchroniser', 'error');
+      toast(err.message || 'Actualisation reportée : sauvegarde non confirmée.', 4500);
+    } finally {
+      state.refreshing = false;
+      el.refresh.disabled = false;
+      el.refresh.classList.remove('is-refreshing');
+      el.refresh.removeAttribute('aria-busy');
+    }
+  }
+
   function shift(direction) { if (state.drag) return; commitActiveEdit(); state.focusDate = state.view === 'week' ? addDays(state.focusDate, 7 * direction) : nextWeekday(state.focusDate, direction); state.focusDate = clampSchool(state.focusDate); loadCurrent(); }
   function goToday() { if (state.drag) return; commitActiveEdit(); state.focusDate = usefulDate(new Date()); loadCurrent(); }
   function showAccess(message = '') { el.shell.hidden = true; el.accessError.textContent = message; el.accessKey.value = ''; if (!el.accessDialog.open) el.accessDialog.showModal(); setTimeout(() => el.accessKey.focus(), 60); }
@@ -746,6 +801,7 @@
 
   function wireUi() {
     el.prev.addEventListener('click', () => shift(-1)); el.next.addEventListener('click', () => shift(1)); el.today.addEventListener('click', goToday);
+    el.refresh.addEventListener('click', refreshAgenda);
     el.undo.addEventListener('click', undo); el.redo.addEventListener('click', redo);
     el.segmented.forEach(btn => btn.addEventListener('click', () => { if (state.drag || state.view === btn.dataset.view) return; commitActiveEdit(); state.view = btn.dataset.view; localStorage.setItem(VIEW_STORAGE, state.view); loadCurrent(); }));
     el.accessForm.addEventListener('submit', unlockFromForm);

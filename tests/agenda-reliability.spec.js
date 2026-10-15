@@ -504,3 +504,52 @@ test('suppression mobile beforeinput traverse plusieurs points', async ({ page }
   await expect(editor.locator('.editor-block')).toHaveCount(1);
   await expect(editor.locator('.block-text')).toHaveText('');
 });
+
+
+test('bouton Actualiser : recharge la PWA et recharge les données', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('cr-planner-access-v1', 'cle-test-locale');
+    sessionStorage.setItem('agenda-refresh-test-loads', String(Number(sessionStorage.getItem('agenda-refresh-test-loads') || '0') + 1));
+  });
+  let readCount = 0;
+  await page.route('**/functions/v1/planner-api**', async route => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get('action') !== 'ping') readCount++;
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      calendar: [{ plan_date: '2026-10-15', day_kind: 'school', cycle_day: 13 }],
+      notes: [{ plan_date: '2026-10-15', period_key: 'p2', body: 'Texte du serveur' }]
+    }) });
+  });
+  await page.goto('/agendakevin/');
+  const button = page.locator('#refreshBtn');
+  await expect(button).toBeVisible();
+  await expect(button).toContainText('Actualiser');
+  await button.click();
+  await expect.poll(() => page.evaluate(() => Number(sessionStorage.getItem('agenda-refresh-test-loads')))).toBe(2);
+  expect(readCount).toBeGreaterThanOrEqual(2);
+  await expect(button).toBeEnabled();
+});
+
+test('bouton Actualiser : ne recharge pas si une sauvegarde échoue', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('cr-planner-access-v1', 'cle-test-locale');
+    sessionStorage.setItem('agenda-refresh-protection-loads', String(Number(sessionStorage.getItem('agenda-refresh-protection-loads') || '0') + 1));
+  });
+  await page.route('**/functions/v1/planner-api**', async route => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"Échec de sauvegarde"}' });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{"calendar":[],"notes":[]}' });
+  });
+  await page.goto('/agendakevin/');
+  await page.evaluate(() => {
+    window.CardinalAgendaPersistence.saveNote('2026-10-15', 'p2', 'Brouillon important').catch(() => {});
+  });
+  await page.locator('#refreshBtn').click();
+  await expect(page.locator('#saveStatus')).toContainText('À resynchroniser');
+  expect(await page.evaluate(() => sessionStorage.getItem('agenda-refresh-protection-loads'))).toBe('1');
+  expect(await page.evaluate(() => localStorage.getItem('cr-planner-draft:2026-10-15:p2'))).toBe('Brouillon important');
+  await expect(page.locator('#refreshBtn')).toBeEnabled();
+});
+
