@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "synced_at": "2026-10-15T11:24:23.564488-04:00",
+  "synced_at": "2026-10-15T11:34:18.120851-04:00",
   "items": [
     {
       "title": "Assemblée générale du personnel",
@@ -65,6 +65,14 @@
       "all_day": true,
       "kind": "evenement",
       "icon": "📅"
+    },
+    {
+      "title": "Congé des Fêtes",
+      "start": "2026-12-21T00:00:00-05:00",
+      "end": "2027-01-05T00:00:00-05:00",
+      "all_day": true,
+      "kind": "conge",
+      "icon": "🏖️"
     }
   ]
 }
