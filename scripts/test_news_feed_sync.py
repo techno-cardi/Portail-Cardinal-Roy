@@ -407,8 +407,12 @@ class SharedCalendarBannerTests(unittest.TestCase):
             feed.parse_feed(raw, now, horizon)
         items = feed.parse_feed(raw, now, horizon, skip_masked=True)
         self.assertEqual([item['title'] for item in items], ['Photos des finissants'])
+        all_items = feed.parse_feed(raw, now, horizon, skip_masked=True,
+                                    allow_all_titles=True)
+        self.assertEqual([item['title'] for item in all_items],
+                         ['Photos des finissants', 'Jour 9'])
 
-    def test_shared_calendar_personal_dates_stay_excluded(self):
+    def test_historical_sources_still_reject_private_and_cycle_events(self):
         self.assertFalse(feed.is_administrative_title('Jour 4'))
         self.assertFalse(feed.is_administrative_title('[PORTAIL] Groupe 31 évaluation'))
         self.assertTrue(feed.is_administrative_title('Photos des finissants'))
@@ -434,7 +438,7 @@ class AppsScriptSnapshotTests(unittest.TestCase):
             with patch.object(feed, 'SHARED_SNAPSHOT', snapshot_path):
                 items = feed.authenticated_shared_items(
                     now, datetime(2026, 12, 31, tzinfo=ZoneInfo('America/Toronto')))
-            self.assertEqual([x['title'] for x in items], ['Photos des finissants'])
+            self.assertEqual([x['title'] for x in items], ['Photos des finissants', 'Jour 4'])
 
     def test_stale_snapshot_falls_back_to_ical(self):
         from datetime import datetime, timedelta
@@ -450,7 +454,7 @@ class AppsScriptSnapshotTests(unittest.TestCase):
                 self.assertIsNone(feed.authenticated_shared_items(
                     now, now + timedelta(days=90)))
 
-    def test_repo_dispatch_accepts_only_administrative_events_and_known_calendar(self):
+    def test_repo_dispatch_accepts_all_valid_titles_from_known_calendar(self):
         from datetime import datetime, timedelta
         from zoneinfo import ZoneInfo
         from scripts import import_subscription_calendar as receiver
@@ -475,7 +479,8 @@ class AppsScriptSnapshotTests(unittest.TestCase):
             ],
         }
         accepted = receiver.normalize_payload(payload, now=now)
-        self.assertEqual([x['title'] for x in accepted], ['Photos des finissants'])
+        self.assertEqual([x['title'] for x in accepted],
+                         ['Photos des finissants', 'Rendez-vous dentiste', 'Jour 4'])
         payload['calendar_id'] = 'another-calendar@example.org'
         with self.assertRaisesRegex(ValueError, 'Calendrier source'):
             receiver.normalize_payload(payload, now=now)
@@ -493,6 +498,57 @@ class AppsScriptSnapshotTests(unittest.TestCase):
                 events, now=now + timedelta(minutes=15), output=path))
             self.assertTrue(receiver.save_snapshot(
                 events, now=now + timedelta(hours=9), output=path))
+
+    def test_shared_snapshot_keeps_short_unlisted_institutional_titles(self):
+        from datetime import datetime, timedelta
+        from zoneinfo import ZoneInfo
+        from scripts import import_subscription_calendar as receiver
+        now = datetime(2026, 10, 15, 11, tzinfo=ZoneInfo('America/Toronto'))
+        titles = ['CA', 'Réunion du comité de la vie étudiante',
+                  'Journée couleurs', 'Jour 7']
+        payload = {
+            'schema': 1, 'calendar_id': feed.SUBSCRIPTION_CALENDAR_ID,
+            'generated_at': now.isoformat(),
+            'events': [{
+                'title': title,
+                'start': (now + timedelta(days=10+i)).isoformat(),
+                'end': (now + timedelta(days=10+i, hours=1)).isoformat(),
+                'all_day': False,
+            } for i, title in enumerate(titles)]
+        }
+        actual = receiver.normalize_payload(payload, now=now)
+        self.assertEqual([x['title'] for x in actual], titles)
+
+    def test_invalid_event_data_rejected_without_filtering_title(self):
+        from datetime import datetime, timedelta
+        from zoneinfo import ZoneInfo
+        from scripts import import_subscription_calendar as receiver
+        now = datetime(2026, 10, 15, 11, tzinfo=ZoneInfo('America/Toronto'))
+        start = now + timedelta(days=10)
+        payload = {
+            'schema': 1, 'calendar_id': feed.SUBSCRIPTION_CALENDAR_ID,
+            'generated_at': now.isoformat(),
+            'events': [
+                {'title': 'Jour 2', 'start': start.isoformat(),
+                 'end': (start + timedelta(hours=1)).isoformat(),
+                 'all_day': False, 'attendees': ['no-export@example.test']},
+                {'title': '', 'start': start.isoformat(),
+                 'end': (start + timedelta(hours=1)).isoformat(), 'all_day': False},
+                {'title': 'Date cassée', 'start': 'invalid',
+                 'end': (start + timedelta(hours=1)).isoformat(), 'all_day': False}
+            ]
+        }
+        items = receiver.normalize_payload(payload, now=now)
+        self.assertEqual([x['title'] for x in items], ['Jour 2'])
+        self.assertNotIn('attendees', items[0])
+
+    def test_apps_script_sends_all_events_without_title_filter(self):
+        script = (
+            Path(__file__).resolve().parents[1] /
+            'integrations/cardinal-dates-apps-script/Code.gs'
+        ).read_text(encoding='utf-8')
+        self.assertIn('const eligible = calendar.getEvents(start, end);', script)
+        self.assertNotIn('isInstitutionalCardinalTitle_', script)
 
     def test_empty_authenticated_calendar_removes_previous_only_shared_events(self):
         from datetime import datetime, timedelta

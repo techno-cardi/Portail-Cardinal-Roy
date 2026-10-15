@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Importe exclusivement les dates administratives issues de Google Apps Script.
+"""Importe toutes les dates du calendrier Google *dédié* aux dates importantes.
 
-Le payload GitHub est non fiable : aucune description, aucun participant, aucun
-lieu et aucune donnée personnelle ne doivent entrer dans le dépôt.
+L'utilisateur a confirmé que tous les événements de cette source sont destinés
+à être affichés publiquement. La sélection par titre n'a lieu QUE dans l'autre
+calendrier scolaire. Les données techniques et l'identité du calendrier source
+restent validées, et seules les dates/titres sont publiés.
 """
 import json
 import os
@@ -50,13 +52,10 @@ def normalize_payload(payload, now=None):
             rejected += 1
             continue
         title = item.get("title")
-        if not isinstance(title, str) or not 3 <= len(title.strip()) <= 180:
+        if not isinstance(title, str) or not 1 <= len(title.strip()) <= 180:
             rejected += 1
             continue
         title = title.strip()
-        if feed.is_noise(title) or not feed.is_administrative_title(title):
-            rejected += 1
-            continue
         try:
             start = parse_time(item.get("start"))
             end = parse_time(item.get("end"))
@@ -64,7 +63,7 @@ def normalize_payload(payload, now=None):
             rejected += 1
             continue
         if (type(item.get("all_day")) is not bool or
-                end <= start or end - start > timedelta(days=16)):
+                end <= start or end - start > timedelta(days=100)):
             rejected += 1
             continue
         if end < start_limit or start > end_limit:
@@ -79,7 +78,7 @@ def normalize_payload(payload, now=None):
             "kind": kind,
             "icon": icon,
         })
-    print(f"Événements administratifs reçus: {len(result)}, rejetés: {rejected}.")
+    print(f"Dates du calendrier dédié reçues: {len(result)}, invalides: {rejected}.")
     return sorted(feed.deduplicate_events(result), key=lambda item: item["start"])
 
 

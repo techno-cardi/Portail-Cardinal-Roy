@@ -1,6 +1,6 @@
 # Synchronisation authentifiée du calendrier Dates importantes
 
-Ce raccordement synchronise les événements institutionnels du calendrier scolaire **Cardinal-Roy - Dates importantes 2026-2027**. Il n'est pas nécessaire de rendre ses détails publics dans Google Agenda ni de déployer une application Web ouverte.
+Ce raccordement synchronise tous les événements du calendrier dédié **Cardinal-Roy - Dates importantes 2026-2027**. Il n'est pas nécessaire de rendre ses détails publics dans Google Agenda ni de déployer une application Web ouverte.
 
 ## Mise en service (une seule fois)
 
@@ -15,9 +15,9 @@ Si le CSS bloque Apps Script ou UrlFetchApp, il faudra son autorisation. Ne pas 
 
 ## Fonctionnement
 
-Apps Script lit uniquement ce calendrier et sélectionne les événements institutionnels. Il n'envoie à GitHub que les titres, dates, heures et indicateurs de journées complètes. Jamais de lieux, descriptions, invités, courriels ni autres métadonnées privées. Les événements atypiques véritablement institutionnels peuvent être nommés avec le préfixe [PORTAIL].
+Apps Script lit uniquement le calendrier « Cardinal-Roy - Dates importantes 2026-2027 » et transmet TOUS ses événements, sans filtrer les titres. Il n'envoie à GitHub que les titres, dates, heures et indicateurs de journées complètes. Jamais de lieux, descriptions, invités, courriels ni autres métadonnées privées. Chaque événement ajouté à ce calendrier est présumé destiné au bandeau public.
 
-GitHub revalide les événements selon les exclusions personnelles et le filtre institutionnel avant d'écrire un instantané public « calendar-subscription-feed.json ». Le moteur du bandeau fusionne cet instantané avec les sources scolaires historiques et élimine les doublons sans fusionner des heures distinctes.
+GitHub valide l'identifiant de la source et le format des événements, mais n'exclut aucun titre provenant de ce calendrier dédié. Le moteur du bandeau fusionne cet instantané avec les sources scolaires historiques, où le filtre des événements institutionnels et les exclusions personnelles continuent de s'appliquer. Les doublons sont éliminés sans fusionner des séances distinctes.
 
 Les changements de date et suppressions sont pris en compte lors des prochaines livraisons, qui remplacent toute la liste du calendrier partagé. Pour limiter les commits, l'instantané est mis à jour uniquement quand les événements changent ou après huit heures. Après 36 heures sans livraison, le moteur revient au flux iCal public partiel et préserve la continuité des deux autres calendriers.
 
@@ -25,4 +25,6 @@ Une réponse HTTP 204 confirme l'acceptation de la livraison par GitHub; vérifi
 
 ## Sécurité
 
-Ce dépôt est public. Les titres et dates ainsi transférés sont visibles dans le bandeau et dans l'instantané. Ne marquez [PORTAIL] que les événements destinés à être visibles publiquement. Conserver les projets Apps Script et leurs propriétés limités aux personnes habilitées.
+Ce dépôt est public. TOUS les titres et dates du calendrier dédié ainsi transférés peuvent être visibles dans le bandeau et l'instantané. Ne placer dans ce calendrier aucun événement personnel ou confidentiel. Les exclusions des événements privés sont maintenues sur les calendriers scolaires historiques, pas sur celui-ci. Conserver le projet Apps Script et ses propriétés limités aux personnes habilitées.
+
+**Mise à jour du code après l'activation initiale :** une modification du fichier Code.gs sur GitHub ne change pas automatiquement le code dans le projet Apps Script scolaire. Remplacer le Code.gs du projet par sa version à jour, enregistrer et exécuter `syncCardinalDates` une fois. Le déclencheur `installCardinalSync` déjà installé reste actif et utilise ensuite automatiquement la version enregistrée.

@@ -189,7 +189,7 @@ def is_noise(title, location=''):
     return False
 
 
-def parse_feed(data, now, horizon, *, skip_masked=False):
+def parse_feed(data, now, horizon, *, skip_masked=False, allow_all_titles=False):
     calendar = Calendar.from_ical(data)
     occurrences = recurring_ical_events.of(calendar).between(now, horizon)
     items = []
@@ -210,7 +210,9 @@ def parse_feed(data, now, horizon, *, skip_masked=False):
                 continue
             raise ValueError('calendrier Google avec des événements masqués')
         location = str(event.get('location', '') or '')
-        if is_noise(title, location) or not is_administrative_title(title):
+        # Seule la source « Dates importantes » est exhaustive.
+        # Les sources historiques restent soumises au filtre administratif.
+        if not allow_all_titles and (is_noise(title, location) or not is_administrative_title(title)):
             continue
         title = public_event_title(title)
         if photo_candidate:
@@ -295,10 +297,10 @@ def is_masked_calendar(items):
 
 
 def authenticated_shared_items(now, horizon):
-    """Récupérer seulement l'instantané récent, déjà validé à l'import.
+    """Récupérer toutes les dates du calendrier dédié depuis le dernier import.
 
-    Cette source est autoritative pour le calendrier partagé : elle remplace
-    son iCal public « Busy » et demeure indépendante des deux autres sources.
+    Aucun filtre de titres ici ; il reste obligatoire dans les deux sources
+    scolaires historiques. Une livraison récente remplace l'iCal public « Busy ».
     """
     if not SHARED_SNAPSHOT.exists():
         return None
@@ -318,7 +320,9 @@ def authenticated_shared_items(now, horizon):
             if not isinstance(item, dict):
                 continue
             title = item.get('title', '')
-            if not isinstance(title, str) or not is_administrative_title(title):
+            # Source authentifiée du calendrier dédié : aucun filtre métier
+            # sur le titre. Le dépôt reçoit uniquement titres et dates.
+            if not isinstance(title, str) or not title.strip():
                 continue
             try:
                 start = datetime.fromisoformat(item['start']).astimezone(TZ)
@@ -397,7 +401,8 @@ def main():
         if dates_url and dates_url not in {primary_url, school_url}:
             try:
                 dates_items = parse_feed(fetch_ics(dates_url), now, horizon,
-                                         skip_masked=not private_shared)
+                                         skip_masked=not private_shared,
+                                         allow_all_titles=True)
                 if is_masked_calendar(dates_items):
                     raise ValueError('calendrier Dates importantes avec événements masqués')
                 all_items.extend(dates_items)
