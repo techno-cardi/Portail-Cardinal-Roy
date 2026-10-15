@@ -270,6 +270,14 @@ class BannerCalendarSyncTests(unittest.TestCase):
 
 
 class SharedCalendarBannerTests(unittest.TestCase):
+    def setUp(self):
+        # Ces tests simulent le fonctionnement iCal avant activation Apps Script.
+        # Depuis la première vraie synchronisation, un instantané authentifié
+        # existe en production : on le neutralise uniquement dans ces tests.
+        auth = patch.object(feed, 'authenticated_shared_items', return_value=None)
+        auth.start()
+        self.addCleanup(auth.stop)
+
     def test_subscription_ical_uses_configured_shared_calendar(self):
         self.assertIn(
             'c_8527e24b6f9dc9f028439fcf5c2a3657475698c9e4151ac93cd2d9205b322baa%40',
