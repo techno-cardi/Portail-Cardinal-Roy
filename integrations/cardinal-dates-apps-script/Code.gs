@@ -95,13 +95,14 @@ function syncCardinalDates() {
 }
 
 function installCardinalSync() {
-  // Ne pas multiplier les déclencheurs si la fonction est lancée deux fois.
-  ScriptApp.getProjectTriggers().forEach(function(trigger) {
-    if (trigger.getHandlerFunction() === 'syncCardinalDates') {
-      ScriptApp.deleteTrigger(trigger);
-    }
-  });
+  // Vérifier d'abord que le compte scolaire et GitHub sont accessibles.
+  // En cas d'erreur, conserver les déclencheurs existants sans les supprimer.
   syncCardinalDates();
-  ScriptApp.newTrigger('syncCardinalDates').timeBased().everyMinutes(15).create();
-  console.log('Synchronisation Cardinal-Roy programmée toutes les 15 minutes.');
+  const existing = ScriptApp.getProjectTriggers().some(function(trigger) {
+    return trigger.getHandlerFunction() === 'syncCardinalDates';
+  });
+  if (!existing) {
+    ScriptApp.newTrigger('syncCardinalDates').timeBased().everyMinutes(15).create();
+  }
+  console.log('Synchronisation Cardinal-Roy activée, sans déclencheur en double.');
 }
