@@ -5,9 +5,13 @@ on:
     # Toutes les 15 minutes. Suffisant pour un calendrier scolaire et 66 % moins d'exécutions que l'ancien rythme de 5 minutes.
     - cron: '2-59/15 * * * *'
   workflow_dispatch:
+  repository_dispatch:
+    types: [cardinal_dates_subscription_update]
   push:
     paths:
       - 'scripts/build_news_feed.py'
+      - 'scripts/import_subscription_calendar.py'
+      - 'integrations/cardinal-dates-apps-script/Code.gs'
       - '.github/workflows/update-news-feed.yml'
       - 'portal-maintenance.json'
       - 'source-patches-7.js'
@@ -49,19 +53,26 @@ jobs:
       - name: Vérifier la source et les cas de synchronisation
         run: python -m unittest scripts/test_news_feed_sync.py
 
+      - name: Importer les dates authentifiées du calendrier scolaire
+        if: github.event_name == 'repository_dispatch'
+        run: python -m scripts.import_subscription_calendar
+
       - name: Mettre à jour les dates importantes
         run: python scripts/build_news_feed.py
 
-      - name: Publier seulement si le fil a changé
+      - name: Publier seulement si les dates ont changé
         shell: bash
         run: |
-          if git diff --quiet -- news-feed.json; then
+          git add -- news-feed.json
+          if [ -f calendar-subscription-feed.json ]; then
+            git add -- calendar-subscription-feed.json
+          fi
+          if git diff --cached --quiet; then
             echo "Aucune modification à publier."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add news-feed.json
-          git commit -m "Mettre à jour les dates importantes du calendrier [sans nouveauté]"
+          git commit -m "Synchroniser les dates institutionnelles [sans nouveauté]"
           git pull --rebase origin main
           git push origin HEAD:main

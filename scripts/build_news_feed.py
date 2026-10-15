@@ -18,6 +18,7 @@ TZ = ZoneInfo('America/Toronto')
 ROOT = Path(__file__).resolve().parents[1]
 FEED_CONFIG = json.loads((ROOT / 'portal-maintenance.json').read_text(encoding='utf-8'))['calendar_feed']
 OUTPUT = ROOT / 'news-feed.json'
+SHARED_SNAPSHOT = ROOT / 'calendar-subscription-feed.json'
 # Le calendrier du bandeau est distinct de celui proposé en abonnement aux enseignants.
 # Cette URL publique historique sert seulement en absence de source privée configurée.
 BANNER_FALLBACK_CALENDAR_ID = FEED_CONFIG['banner_public_fallback_calendar_id']
@@ -293,6 +294,55 @@ def is_masked_calendar(items):
     return any(str(item.get('title', '')).strip().casefold() in masked for item in items)
 
 
+def authenticated_shared_items(now, horizon):
+    """Récupérer seulement l'instantané récent, déjà validé à l'import.
+
+    Cette source est autoritative pour le calendrier partagé : elle remplace
+    son iCal public « Busy » et demeure indépendante des deux autres sources.
+    """
+    if not SHARED_SNAPSHOT.exists():
+        return None
+    try:
+        payload = json.loads(SHARED_SNAPSHOT.read_text(encoding='utf-8'))
+        if payload.get('schema') != 1 or not isinstance(payload.get('items'), list):
+            raise ValueError('format invalide')
+        synced = datetime.fromisoformat(payload['synced_at'])
+        if synced.tzinfo is None:
+            raise ValueError('fuseau horaire absent')
+        age = now - synced.astimezone(TZ)
+        if not timedelta(0) <= age <= timedelta(hours=36):
+            print('AVERTISSEMENT: synchronisation Apps Script périmée, lecture iCal publique.', file=sys.stderr)
+            return None
+        accepted = []
+        for item in payload['items']:
+            if not isinstance(item, dict):
+                continue
+            title = item.get('title', '')
+            if not isinstance(title, str) or not is_administrative_title(title):
+                continue
+            try:
+                start = datetime.fromisoformat(item['start']).astimezone(TZ)
+                end = datetime.fromisoformat(item['end']).astimezone(TZ)
+                if type(item.get('all_day')) is not bool or end <= start:
+                    continue
+                if end < now or start > horizon:
+                    continue
+                cleaned = public_event_title(title)
+                icon, kind = event_icon(cleaned)
+                accepted.append({
+                    'title': cleaned, 'start': start.isoformat(),
+                    'end': end.isoformat(), 'all_day': item['all_day'],
+                    'kind': kind, 'icon': icon,
+                })
+            except (KeyError, ValueError, TypeError):
+                continue
+        print(f'Calendrier partagé authentifié : {len(accepted)} dates administratives.')
+        return accepted
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        print(f'AVERTISSEMENT: instantané authentifié inutilisable ({exc}).', file=sys.stderr)
+        return None
+
+
 def current_items():
     if not OUTPUT.exists():
         return None
@@ -336,30 +386,29 @@ def main():
                   'ancien fil conservé.', file=sys.stderr)
             return 1
 
-    # Troisième source : calendrier partagé Dates importantes, en complément
-    # des sources scolaires historiques. Une panne préserve le fil valide.
-    dates_url = subscription_ical_url()
-    private_shared = bool(os.environ.get('CARDINAL_SUBSCRIPTION_ICAL_URL', '').strip())
-    if dates_url and dates_url not in {primary_url, school_url}:
-        try:
-            # Le flux public expose parfois seulement « Busy ». Ignorer ces
-            # occurrences sans titre; toutes les autres gardent le filtre
-            # administratif strict. Une source privée ne doit rien masquer.
-            dates_items = parse_feed(fetch_ics(dates_url), now, horizon,
-                                     skip_masked=not private_shared)
-            if is_masked_calendar(dates_items):
-                raise ValueError('calendrier Dates importantes avec événements masqués')
-            all_items.extend(dates_items)
-            print('Calendrier partagé Dates importantes chargé.')
-        except Exception as exc:
-            if private_shared:
-                print(f'ERREUR: calendrier privé Dates importantes indisponible: {exc}; '
-                      'ancien fil conservé.', file=sys.stderr)
-                return 1
-            # Le flux public facultatif peut être temporairement inaccessible.
-            # Ne pas interrompre les mises à jour du calendrier principal.
-            print(f'AVERTISSEMENT: calendrier public Dates importantes indisponible: '
-                  f'{exc}; dates des autres sources conservées.', file=sys.stderr)
+    # Priorité à l'instantané authentifié Google Apps Script. Le calendrier
+    # public ne révèle que des « Busy » pour les événements du domaine.
+    authenticated = authenticated_shared_items(now, horizon)
+    if authenticated is not None:
+        all_items.extend(authenticated)
+    else:
+        dates_url = subscription_ical_url()
+        private_shared = bool(os.environ.get('CARDINAL_SUBSCRIPTION_ICAL_URL', '').strip())
+        if dates_url and dates_url not in {primary_url, school_url}:
+            try:
+                dates_items = parse_feed(fetch_ics(dates_url), now, horizon,
+                                         skip_masked=not private_shared)
+                if is_masked_calendar(dates_items):
+                    raise ValueError('calendrier Dates importantes avec événements masqués')
+                all_items.extend(dates_items)
+                print('Calendrier partagé Dates importantes chargé (iCal).')
+            except Exception as exc:
+                if private_shared:
+                    print(f'ERREUR: calendrier privé Dates importantes indisponible: {exc}; '
+                          'ancien fil conservé.', file=sys.stderr)
+                    return 1
+                print(f'AVERTISSEMENT: calendrier public Dates importantes indisponible: '
+                      f'{exc}; dates des autres sources conservées.', file=sys.stderr)
 
     items = sorted(deduplicate_events(all_items), key=lambda item: item['start'])[:int(FEED_CONFIG['max_items'])]
 

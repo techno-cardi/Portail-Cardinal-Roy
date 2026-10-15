@@ -23,6 +23,9 @@ class BannerCalendarSyncTests(unittest.TestCase):
         disable = patch.object(feed, 'subscription_ical_url', return_value='')
         disable.start()
         self.addCleanup(disable.stop)
+        auth = patch.object(feed, 'authenticated_shared_items', return_value=None)
+        auth.start()
+        self.addCleanup(auth.stop)
 
     def test_subscription_and_banner_calendars_are_independent(self):
         self.assertNotEqual(
@@ -410,6 +413,107 @@ class SharedCalendarBannerTests(unittest.TestCase):
         self.assertFalse(feed.is_administrative_title('[PORTAIL] Groupe 31 évaluation'))
         self.assertTrue(feed.is_administrative_title('Photos des finissants'))
         self.assertTrue(feed.is_administrative_title('[PORTAIL] Assemblée de tout le personnel'))
+
+
+class AppsScriptSnapshotTests(unittest.TestCase):
+    def test_valid_snapshot_takes_priority_over_public_busy_calendar(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        now = datetime(2026, 10, 15, 10, tzinfo=ZoneInfo('America/Toronto'))
+        snapshot = {
+            'schema': 1, 'synced_at': now.isoformat(),
+            'items': [event('Photos des finissants', '2026-11-19T14:00:00-05:00'),
+                      event('Jour 4', '2026-11-19T00:00:00-05:00')]
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            snapshot_path = Path(tmp) / 'subscription.json'
+            snapshot_path.write_text(json.dumps(snapshot), encoding='utf-8')
+            with patch.object(feed, 'SHARED_SNAPSHOT', snapshot_path):
+                items = feed.authenticated_shared_items(
+                    now, datetime(2026, 12, 31, tzinfo=ZoneInfo('America/Toronto')))
+            self.assertEqual([x['title'] for x in items], ['Photos des finissants'])
+
+    def test_stale_snapshot_falls_back_to_ical(self):
+        from datetime import datetime, timedelta
+        from zoneinfo import ZoneInfo
+        now = datetime(2026, 10, 15, 10, tzinfo=ZoneInfo('America/Toronto'))
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'subscription.json'
+            path.write_text(json.dumps({
+                'schema': 1, 'synced_at': (now - timedelta(hours=40)).isoformat(),
+                'items': [event('Photos des finissants')],
+            }), encoding='utf-8')
+            with patch.object(feed, 'SHARED_SNAPSHOT', path):
+                self.assertIsNone(feed.authenticated_shared_items(
+                    now, now + timedelta(days=90)))
+
+    def test_repo_dispatch_accepts_only_administrative_events_and_known_calendar(self):
+        from datetime import datetime, timedelta
+        from zoneinfo import ZoneInfo
+        from scripts import import_subscription_calendar as receiver
+        now = datetime(2026, 10, 15, 10, tzinfo=ZoneInfo('America/Toronto'))
+        payload = {
+            'schema': 1,
+            'calendar_id': feed.SUBSCRIPTION_CALENDAR_ID,
+            'generated_at': now.isoformat(),
+            'events': [
+                {'title': 'Photos des finissants',
+                 'start': (now + timedelta(days=35)).isoformat(),
+                 'end': (now + timedelta(days=35, hours=1)).isoformat(),
+                 'all_day': False},
+                {'title': 'Rendez-vous dentiste',
+                 'start': (now + timedelta(days=36)).isoformat(),
+                 'end': (now + timedelta(days=36, hours=1)).isoformat(),
+                 'all_day': False},
+                {'title': 'Jour 4',
+                 'start': (now + timedelta(days=36)).isoformat(),
+                 'end': (now + timedelta(days=36, hours=1)).isoformat(),
+                 'all_day': False},
+            ],
+        }
+        accepted = receiver.normalize_payload(payload, now=now)
+        self.assertEqual([x['title'] for x in accepted], ['Photos des finissants'])
+        payload['calendar_id'] = 'another-calendar@example.org'
+        with self.assertRaisesRegex(ValueError, 'Calendrier source'):
+            receiver.normalize_payload(payload, now=now)
+
+    def test_receiver_keeps_same_events_without_committing_every_15_minutes(self):
+        from datetime import datetime, timedelta
+        from zoneinfo import ZoneInfo
+        from scripts import import_subscription_calendar as receiver
+        now = datetime(2026, 10, 15, 10, tzinfo=ZoneInfo('America/Toronto'))
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'snapshot.json'
+            events = [event('Pédagogique')]
+            self.assertTrue(receiver.save_snapshot(events, now=now, output=path))
+            self.assertFalse(receiver.save_snapshot(
+                events, now=now + timedelta(minutes=15), output=path))
+            self.assertTrue(receiver.save_snapshot(
+                events, now=now + timedelta(hours=9), output=path))
+
+    def test_empty_authenticated_calendar_removes_previous_only_shared_events(self):
+        from datetime import datetime, timedelta
+        from zoneinfo import ZoneInfo
+        now = datetime(2026, 10, 15, 10, tzinfo=ZoneInfo('America/Toronto'))
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / 'feed.json'
+            snapshot = Path(tmp) / 'shared.json'
+            snapshot.write_text(json.dumps({
+                'schema': 1, 'synced_at': now.isoformat(), 'items': [],
+            }), encoding='utf-8')
+            with patch.dict(os.environ, {
+                'CARDINAL_CALENDAR_ICAL_URL': 'https://example.test/main.ics',
+                'CARDINAL_SCHOOL_CALENDAR_ICAL_URL': '',
+            }), patch.object(feed, 'SHARED_SNAPSHOT', snapshot), \
+                 patch.object(feed, 'OUTPUT', output), \
+                 patch.object(feed, 'fetch_ics', return_value=b'ical') as fetch, \
+                 patch.object(feed, 'parse_feed', return_value=[event('Pédagogique')]):
+                self.assertEqual(feed.main(), 0)
+            fetch.assert_called_once_with('https://example.test/main.ics')
+            self.assertEqual(
+                [x['title'] for x in json.loads(output.read_text(encoding='utf-8'))['items']],
+                ['Pédagogique'],
+            )
 
 
 if __name__ == '__main__':
