@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "synced_at": "2026-10-15T11:34:18.120851-04:00",
+  "synced_at": "2026-10-15T11:36:47.838377-04:00",
   "items": [
     {
       "title": "Assemblée générale du personnel",
@@ -11,12 +11,28 @@
       "icon": "👥"
     },
     {
+      "title": "CPEE",
+      "start": "2026-10-26T00:00:00-04:00",
+      "end": "2026-10-27T00:00:00-04:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "📅"
+    },
+    {
       "title": "Fête d'Halloween",
       "start": "2026-10-30T12:00:00-04:00",
       "end": "2026-10-30T13:00:00-04:00",
       "all_day": false,
       "kind": "evenement",
       "icon": "🎉"
+    },
+    {
+      "title": "CPEE",
+      "start": "2026-11-06T00:00:00-05:00",
+      "end": "2026-11-07T00:00:00-05:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "📅"
     },
     {
       "title": "Fin de la 1re étape",
@@ -59,12 +75,44 @@
       "icon": "📅"
     },
     {
+      "title": "CPEE",
+      "start": "2026-11-23T00:00:00-05:00",
+      "end": "2026-11-24T00:00:00-05:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "📅"
+    },
+    {
+      "title": "CPEE",
+      "start": "2026-12-04T00:00:00-05:00",
+      "end": "2026-12-05T00:00:00-05:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "📅"
+    },
+    {
       "title": "Session d'examens - sans activités SAÉ",
       "start": "2026-12-14T00:00:00-05:00",
       "end": "2026-12-19T00:00:00-05:00",
       "all_day": true,
       "kind": "evenement",
       "icon": "📅"
+    },
+    {
+      "title": "CPEE",
+      "start": "2026-12-17T00:00:00-05:00",
+      "end": "2026-12-18T00:00:00-05:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "📅"
+    },
+    {
+      "title": "Fête de Noël",
+      "start": "2026-12-17T00:00:00-05:00",
+      "end": "2026-12-18T00:00:00-05:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "🎉"
     },
     {
       "title": "Congé des Fêtes",

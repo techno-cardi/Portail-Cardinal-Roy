@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-15T11:34:18.240608-04:00",
+  "generated_at": "2026-10-15T11:36:47.972622-04:00",
   "source": "Google Calendar - Cardinal-Roy",
   "items": [
     {
@@ -11,6 +11,14 @@
       "icon": "👥"
     },
     {
+      "title": "CPEE",
+      "start": "2026-10-26T00:00:00-04:00",
+      "end": "2026-10-27T00:00:00-04:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "📅"
+    },
+    {
       "title": "Fête d'Halloween",
       "start": "2026-10-30T12:00:00-04:00",
       "end": "2026-10-30T13:00:00-04:00",
@@ -20,6 +28,14 @@
     },
     {
       "title": "Fin de la 1re étape",
+      "start": "2026-11-06T00:00:00-05:00",
+      "end": "2026-11-07T00:00:00-05:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "📅"
+    },
+    {
+      "title": "CPEE",
       "start": "2026-11-06T00:00:00-05:00",
       "end": "2026-11-07T00:00:00-05:00",
       "all_day": true,
@@ -51,20 +67,20 @@
       "icon": "📚"
     },
     {
-      "title": "Rencontre des parents-enseignants",
-      "start": "2026-11-19T00:00:00-05:00",
-      "end": "2026-11-20T00:00:00-05:00",
-      "all_day": true,
-      "kind": "evenement",
-      "icon": "📅"
-    },
-    {
       "title": "Photo des finissants",
       "start": "2026-11-19T00:00:00-05:00",
       "end": "2026-11-20T00:00:00-05:00",
       "all_day": true,
       "kind": "evenement",
       "icon": "📸"
+    },
+    {
+      "title": "Rencontre des parents-enseignants",
+      "start": "2026-11-19T00:00:00-05:00",
+      "end": "2026-11-20T00:00:00-05:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "📅"
     },
     {
       "title": "Pédagogique (télétravail)",
@@ -75,28 +91,12 @@
       "icon": "📚"
     },
     {
-      "title": "Session d'examens - sans activités SAÉ",
-      "start": "2026-12-14T00:00:00-05:00",
-      "end": "2026-12-19T00:00:00-05:00",
+      "title": "CPEE",
+      "start": "2026-11-23T00:00:00-05:00",
+      "end": "2026-11-24T00:00:00-05:00",
       "all_day": true,
       "kind": "evenement",
       "icon": "📅"
-    },
-    {
-      "title": "Congé des Fêtes",
-      "start": "2026-12-21T00:00:00-05:00",
-      "end": "2027-01-05T00:00:00-05:00",
-      "all_day": true,
-      "kind": "conge",
-      "icon": "🏖️"
-    },
-    {
-      "title": "Pédagogique",
-      "start": "2027-01-05T00:00:00-05:00",
-      "end": "2027-01-06T00:00:00-05:00",
-      "all_day": true,
-      "kind": "pedagogique",
-      "icon": "📚"
     }
   ]
 }
