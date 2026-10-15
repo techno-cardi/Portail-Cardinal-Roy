@@ -27,6 +27,7 @@ jobs:
     env:
       CARDINAL_CALENDAR_ICAL_URL: ${{ secrets.CARDINAL_CALENDAR_ICAL_URL }}
       CARDINAL_SCHOOL_CALENDAR_ICAL_URL: ${{ secrets.CARDINAL_SCHOOL_CALENDAR_ICAL_URL }}
+      CARDINAL_SUBSCRIPTION_ICAL_URL: ${{ secrets.CARDINAL_SUBSCRIPTION_ICAL_URL }}
     steps:
       - name: Récupérer le portail
         uses: actions/checkout@v4

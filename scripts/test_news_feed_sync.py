@@ -17,6 +17,13 @@ def event(title, start='2026-10-15T19:00:00-04:00'):
 
 
 class BannerCalendarSyncTests(unittest.TestCase):
+    def setUp(self):
+        # Les anciens tests isolent strictement les deux sources historiques.
+        # Les tests de fusion à trois sources couvrent le nouveau fonctionnement.
+        disable = patch.object(feed, 'subscription_ical_url', return_value='')
+        disable.start()
+        self.addCleanup(disable.stop)
+
     def test_subscription_and_banner_calendars_are_independent(self):
         self.assertNotEqual(
             feed.FEED_CONFIG['subscription_calendar_id'],
@@ -256,6 +263,113 @@ class BannerCalendarSyncTests(unittest.TestCase):
                 datetime(2026, 12, 31, tzinfo=ZoneInfo('America/Toronto')),
             )
 
+
+
+
+class SharedCalendarBannerTests(unittest.TestCase):
+    def test_subscription_ical_uses_configured_shared_calendar(self):
+        self.assertIn(
+            'c_8527e24b6f9dc9f028439fcf5c2a3657475698c9e4151ac93cd2d9205b322baa%40',
+            feed.SUBSCRIPTION_ICAL,
+        )
+        with patch.dict(os.environ, {'CARDINAL_SUBSCRIPTION_ICAL_URL': ''}):
+            self.assertEqual(feed.subscription_ical_url(), feed.SUBSCRIPTION_ICAL)
+
+    def test_optional_private_subscription_url_is_not_required_publicly(self):
+        private = 'https://example.test/private/hidden-token.ics'
+        with patch.dict(os.environ, {'CARDINAL_SUBSCRIPTION_ICAL_URL': private}):
+            self.assertEqual(feed.subscription_ical_url(), private)
+
+    def test_three_sources_merged_and_shared_dates_appear(self):
+        main, school, shared = ('https://example.test/main.ics',
+                                'https://example.test/school.ics',
+                                'https://example.test/dates.ics')
+        sources = {
+            main: b'primary', school: b'school', shared: b'shared',
+        }
+        parsed = {
+            b'primary': [event('Fête d Halloween', '2026-10-29T12:00:00-04:00')],
+            b'school': [event('Pédagogique', '2026-11-19T00:00:00-05:00')],
+            b'shared': [event('Photos des finissants', '2026-11-19T14:00:00-05:00')],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'dates.json'
+            with patch.dict(os.environ, {
+                'CARDINAL_CALENDAR_ICAL_URL': main,
+                'CARDINAL_SCHOOL_CALENDAR_ICAL_URL': school,
+            }), patch.object(feed, 'OUTPUT', output), \
+                 patch.object(feed, 'subscription_ical_url', return_value=shared), \
+                 patch.object(feed, 'fetch_ics', side_effect=lambda url: sources[url]) as fetch, \
+                 patch.object(feed, 'parse_feed', side_effect=lambda data, *_: parsed[data]):
+                self.assertEqual(feed.main(), 0)
+            result = json.loads(output.read_text(encoding='utf-8'))['items']
+            self.assertEqual(len(result), 3)
+            self.assertIn('Photos des finissants', [item['title'] for item in result])
+            self.assertEqual(fetch.call_count, 3)
+
+    def test_same_day_title_variants_are_deduplicated(self):
+        old = event('Photo des finissants', '2026-11-19T00:00:00-05:00')
+        old['all_day'] = True
+        shared = event('Photos de finissants', '2026-11-19T00:00:00-05:00')
+        shared['all_day'] = True
+        pedagogical = event('Pédagogique', '2026-11-20T00:00:00-05:00')
+        pedagogical['all_day'] = True
+        shared_pedagogical = event('Journée pédagogique', '2026-11-20T00:00:00-05:00')
+        shared_pedagogical['all_day'] = True
+        result = feed.deduplicate_events([old, pedagogical, shared, shared_pedagogical])
+        self.assertEqual(len(result), 2)
+        self.assertEqual([item['title'] for item in result],
+                         ['Photos de finissants', 'Journée pédagogique'])
+
+    def test_all_day_and_precise_time_choose_timed_event(self):
+        all_day = event('Photo des finissants', '2026-11-19T00:00:00-05:00')
+        all_day['all_day'] = True
+        precise = event('Photos des finissants', '2026-11-19T14:00:00-05:00')
+        merged = feed.deduplicate_events([all_day, precise])
+        self.assertEqual(merged, [precise])
+        self.assertEqual(feed.deduplicate_events([precise, all_day]), [precise])
+
+    def test_separate_times_and_dates_are_preserved(self):
+        morning = event('Rencontre de parents', '2026-11-19T09:00:00-05:00')
+        evening = event('Rencontre de parents', '2026-11-19T19:00:00-05:00')
+        another_day = event('Rencontre de parents', '2026-11-20T19:00:00-05:00')
+        self.assertEqual(len(feed.deduplicate_events([morning, evening, another_day])), 3)
+
+    def test_shared_calendar_is_not_fetched_twice_when_urls_match(self):
+        shared = 'https://example.test/shared.ics'
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'dates.json'
+            with patch.dict(os.environ, {
+                'CARDINAL_CALENDAR_ICAL_URL': shared,
+                'CARDINAL_SCHOOL_CALENDAR_ICAL_URL': '',
+            }), patch.object(feed, 'OUTPUT', output), \
+                 patch.object(feed, 'subscription_ical_url', return_value=shared), \
+                 patch.object(feed, 'fetch_ics', return_value=b'shared') as fetch, \
+                 patch.object(feed, 'parse_feed', return_value=[event('Pédagogique')]):
+                self.assertEqual(feed.main(), 0)
+            fetch.assert_called_once_with(shared)
+
+    def test_shared_source_failure_preserves_old_feed(self):
+        main, shared = 'https://example.test/main.ics', 'https://example.test/dates.ics'
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'dates.json'
+            original = '{"items":[{"title":"Dernier bandeau valide"}]}'
+            output.write_text(original, encoding='utf-8')
+            with patch.dict(os.environ, {
+                'CARDINAL_CALENDAR_ICAL_URL': main,
+                'CARDINAL_SCHOOL_CALENDAR_ICAL_URL': '',
+            }), patch.object(feed, 'OUTPUT', output), \
+                 patch.object(feed, 'subscription_ical_url', return_value=shared), \
+                 patch.object(feed, 'fetch_ics', side_effect=[b'primary', OSError('calendar unavailable')]), \
+                 patch.object(feed, 'parse_feed', return_value=[event('Pédagogique')]):
+                self.assertEqual(feed.main(), 1)
+            self.assertEqual(output.read_text(encoding='utf-8'), original)
+
+    def test_shared_calendar_personal_dates_stay_excluded(self):
+        self.assertFalse(feed.is_administrative_title('Jour 4'))
+        self.assertFalse(feed.is_administrative_title('[PORTAIL] Groupe 31 évaluation'))
+        self.assertTrue(feed.is_administrative_title('Photos des finissants'))
+        self.assertTrue(feed.is_administrative_title('[PORTAIL] Assemblée de tout le personnel'))
 
 
 if __name__ == '__main__':

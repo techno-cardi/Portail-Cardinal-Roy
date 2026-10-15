@@ -21,9 +21,18 @@ OUTPUT = ROOT / 'news-feed.json'
 # Le calendrier du bandeau est distinct de celui proposé en abonnement aux enseignants.
 # Cette URL publique historique sert seulement en absence de source privée configurée.
 BANNER_FALLBACK_CALENDAR_ID = FEED_CONFIG['banner_public_fallback_calendar_id']
+SUBSCRIPTION_CALENDAR_ID = FEED_CONFIG['subscription_calendar_id']
 PUBLIC_ICAL = (
     'https://calendar.google.com/calendar/ical/'
     + urllib.parse.quote(BANNER_FALLBACK_CALENDAR_ID, safe='')
+    + '/public/basic.ics'
+)
+
+# Le calendrier partagé des dates importantes est une source additionnelle.
+# Le flux d'abonnement public est déjà exposé dans la fiche du portail.
+SUBSCRIPTION_ICAL = (
+    'https://calendar.google.com/calendar/ical/'
+    + urllib.parse.quote(SUBSCRIPTION_CALENDAR_ID, safe='')
     + '/public/basic.ics'
 )
 
@@ -100,6 +109,11 @@ def urls_from_env():
         os.environ.get('CARDINAL_SCHOOL_CALENDAR_ICAL_URL', '').strip(),
         PUBLIC_ICAL,
     )
+
+
+def subscription_ical_url():
+    """URL iCal du calendrier partagé, éventuellement privée via un secret GitHub."""
+    return os.environ.get('CARDINAL_SUBSCRIPTION_ICAL_URL', '').strip() or SUBSCRIPTION_ICAL
 
 
 def cache_busted_url(url):
@@ -226,6 +240,41 @@ def parse_feed(data, now, horizon):
     return items
 
 
+def canonical_event_title(title):
+    """Retire les écarts typographiques et harmonise les variantes évidentes."""
+    clean = normalized_title(public_event_title(title))
+    clean = re.sub(r'[^a-z0-9]+', ' ', clean)
+    clean = re.sub(r'^(?:journee|jour) pedagogique$', 'pedagogique', clean)
+    clean = re.sub(r'\bphotographies?\b|\bphotos\b', 'photo', clean)
+    clean = re.sub(r'\b(?:des|du) finissants?\b|\bde finissants?\b', 'de finissant', clean)
+    return re.sub(r'\s+', ' ', clean).strip()
+
+
+def same_occurrence(a, b):
+    """Ne fusionne pas deux séances différentes le même jour."""
+    if canonical_event_title(a['title']) != canonical_event_title(b['title']):
+        return False
+    start_a = datetime.fromisoformat(a['start']).astimezone(TZ)
+    start_b = datetime.fromisoformat(b['start']).astimezone(TZ)
+    return (start_a.date() == start_b.date() and
+            (a['all_day'] or b['all_day'] or start_a == start_b))
+
+
+def deduplicate_events(entries):
+    """À doublon égal, privilégie l'heure exacte puis la source partagée."""
+    kept = []
+    for item in entries:
+        index = next((i for i, previous in enumerate(kept)
+                      if same_occurrence(previous, item)), None)
+        if index is None:
+            kept.append(item)
+        elif kept[index]['all_day'] and not item['all_day']:
+            kept[index] = item
+        elif kept[index]['all_day'] == item['all_day']:
+            kept[index] = item
+    return kept
+
+
 def is_masked_calendar(items):
     """Les événements « Busy » signalent un calendrier Google public sans détails.
 
@@ -253,8 +302,7 @@ def main():
     primary_url = primary_private_url or public_fallback_url
     primary_label = 'bandeau iCal privé' if primary_private_url else 'bandeau iCal public historique'
 
-    # Ne jamais imposer que la source du bandeau corresponde au calendrier
-    # sélectif auquel les enseignants peuvent s'abonner dans la fiche du portail.
+    # Les calendriers restent distincts et sont fusionnés après filtrage.
     try:
         primary_items = parse_feed(fetch_ics(primary_url), now, horizon)
         if is_masked_calendar(primary_items):
@@ -280,13 +328,22 @@ def main():
                   'ancien fil conservé.', file=sys.stderr)
             return 1
 
-    # Déduplication uniquement des occurrences strictement identiques :
-    # deux journées pédagogiques distinctes peuvent porter le même titre.
-    deduped = {}
-    for item in all_items:
-        key = (item['title'].casefold(), item['start'])
-        deduped[key] = item
-    items = sorted(deduped.values(), key=lambda item: item['start'])[:int(FEED_CONFIG['max_items'])]
+    # Troisième source : calendrier partagé Dates importantes, en complément
+    # des sources scolaires historiques. Une panne préserve le fil valide.
+    dates_url = subscription_ical_url()
+    if dates_url and dates_url not in {primary_url, school_url}:
+        try:
+            dates_items = parse_feed(fetch_ics(dates_url), now, horizon)
+            if is_masked_calendar(dates_items):
+                raise ValueError('calendrier Dates importantes avec événements masqués')
+            all_items.extend(dates_items)
+            print('Calendrier partagé Dates importantes chargé.')
+        except Exception as exc:
+            print(f'ERREUR: calendrier partagé Dates importantes indisponible: {exc}; '
+                  'ancien fil conservé.', file=sys.stderr)
+            return 1
+
+    items = sorted(deduplicate_events(all_items), key=lambda item: item['start'])[:int(FEED_CONFIG['max_items'])]
 
     if current_items() == items:
         print('Aucun changement dans les dates importantes.')
