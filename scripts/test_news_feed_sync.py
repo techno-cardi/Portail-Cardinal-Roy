@@ -420,10 +420,13 @@ class AppsScriptSnapshotTests(unittest.TestCase):
         from datetime import datetime
         from zoneinfo import ZoneInfo
         now = datetime(2026, 10, 15, 10, tzinfo=ZoneInfo('America/Toronto'))
+        photo = event('Photos des finissants', '2026-11-19T14:00:00-05:00')
+        photo['end'] = '2026-11-19T15:00:00-05:00'
+        excluded = event('Jour 4', '2026-11-19T00:00:00-05:00')
+        excluded['end'] = '2026-11-20T00:00:00-05:00'
         snapshot = {
             'schema': 1, 'synced_at': now.isoformat(),
-            'items': [event('Photos des finissants', '2026-11-19T14:00:00-05:00'),
-                      event('Jour 4', '2026-11-19T00:00:00-05:00')]
+            'items': [photo, excluded]
         }
         with tempfile.TemporaryDirectory() as tmp:
             snapshot_path = Path(tmp) / 'subscription.json'
