@@ -5,7 +5,7 @@ const MFA_FILE = 'https://drive.google.com/file/d/1G4QFoa_jyItVPd1OTZkCGGabk9h2g
 const SERVICES_APPUI_FILE = 'https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link';
 const PARENTS_MEETING_FOLDER = 'https://drive.google.com/drive/folders/12H3rEFMgOWAfFQaaiJcAXK2egsyHvQZD';
 const OCTOBER_PED_DAY_FILE = 'https://drive.google.com/file/d/1zyMK5pY5kGBVr1qbrBGyNWrJRpuTGHDs/view?usp=drivesdk';
-const ETUDE_DEPART_FILE = 'https://drive.google.com/file/d/12YBznVgyomW8O0Fhtdzeoh7TmSi_O-Im/view';
+const ETUDE_DEPART_FILE = 'https://docs.google.com/spreadsheets/d/1WkRtBb3EIMnHIO8_XYen7lrQzPeEK20Q/edit?usp=drivesdk&ouid=109187652422234365096&rtpof=true&sd=true';
 
 async function openPortal(page) {
   await page.goto('/');
@@ -87,6 +87,15 @@ for (const query of ['récupération', 'SAÉ']) {
     await expect(first).not.toHaveAttribute('data-direct-file-suggestion', 'etude-surveillee-depart-2026-2027');
   });
 }
+
+test('la Nouveauté Étude surveillée ouvre directement le tableur mis à jour', async ({ page }) => {
+  await openPortal(page);
+  const update = page.locator('#portal-updates [data-update-id="etude-surveillee-depart-2026-10-06"]');
+  await expect(update).toHaveCount(1);
+  await expect(update).toHaveAttribute('href', ETUDE_DEPART_FILE);
+  await expect(update).toHaveAttribute('target', '_blank');
+  await expect(update.locator('.portal-update-action')).toHaveText('Accéder au fichier');
+});
 
 test('la fiche de services d’appui est classée dans Suivre un élève', async ({ page }) => {
   await openPortal(page);

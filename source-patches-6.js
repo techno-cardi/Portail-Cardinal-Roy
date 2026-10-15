@@ -6,7 +6,7 @@
     absencesProlongees: 'https://drive.google.com/file/d/13132IYLhGN-9RtfOtpMGiF9Ygn552CmQ/view?usp=drivesdk',
     misesAJour: 'https://drive.google.com/file/d/1U0w6HqhsmsXLX4DGh5olu3_2SHlONSSB/view?usp=drivesdk',
     etudeSurveillee: 'https://drive.google.com/file/d/1oErx2Xyu3gIDGTmWTc2y1nJaFPl-K7zM/view?usp=drivesdk',
-    etudeSurveilleeDepart: 'https://drive.google.com/file/d/12YBznVgyomW8O0Fhtdzeoh7TmSi_O-Im/view',
+    etudeSurveilleeDepart: 'https://docs.google.com/spreadsheets/d/1WkRtBb3EIMnHIO8_XYen7lrQzPeEK20Q/edit?usp=drivesdk&ouid=109187652422234365096&rtpof=true&sd=true',
     sosGroupe: 'https://drive.google.com/file/d/1NZd8m5X1MC3ZBhjDE-X01UbLHyXyd5zJ/view?usp=drivesdk',
     commotion: 'https://drive.google.com/file/d/12XT_0ra4HdMArr3rfLVknSP316nHboT2/view?usp=drivesdk',
     sortieAutorisation: 'https://drive.google.com/file/d/1WensOESymMJx7jDgCt45hqB1qK79TlkT/view?usp=drivesdk',
