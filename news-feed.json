@@ -1,7 +1,15 @@
 {
-  "generated_at": "2026-10-15T11:12:50.194272-04:00",
+  "generated_at": "2026-10-15T11:24:23.723060-04:00",
   "source": "Google Calendar - Cardinal-Roy",
   "items": [
+    {
+      "title": "Assemblée générale du personnel",
+      "start": "2026-10-19T15:40:00-04:00",
+      "end": "2026-10-19T17:00:00-04:00",
+      "all_day": false,
+      "kind": "evenement",
+      "icon": "👥"
+    },
     {
       "title": "Fête d'Halloween",
       "start": "2026-10-30T12:00:00-04:00",

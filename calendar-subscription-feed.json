@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "synced_at": "2026-10-15T11:24:23.564488-04:00",
+  "items": [
+    {
+      "title": "Assemblée générale du personnel",
+      "start": "2026-10-19T15:40:00-04:00",
+      "end": "2026-10-19T17:00:00-04:00",
+      "all_day": false,
+      "kind": "evenement",
+      "icon": "👥"
+    },
+    {
+      "title": "Fête d'Halloween",
+      "start": "2026-10-30T12:00:00-04:00",
+      "end": "2026-10-30T13:00:00-04:00",
+      "all_day": false,
+      "kind": "evenement",
+      "icon": "🎉"
+    },
+    {
+      "title": "Fin de la 1re étape",
+      "start": "2026-11-06T00:00:00-05:00",
+      "end": "2026-11-07T00:00:00-05:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "📅"
+    },
+    {
+      "title": "Date limite - résultats SSO et Autre compétence",
+      "start": "2026-11-06T16:00:00-05:00",
+      "end": "2026-11-06T17:00:00-05:00",
+      "all_day": false,
+      "kind": "echeance",
+      "icon": "⏰"
+    },
+    {
+      "title": "Date limite - résultats du 1er bulletin",
+      "start": "2026-11-16T08:00:00-05:00",
+      "end": "2026-11-16T09:00:00-05:00",
+      "all_day": false,
+      "kind": "echeance",
+      "icon": "⏰"
+    },
+    {
+      "title": "Photo des finissants",
+      "start": "2026-11-19T00:00:00-05:00",
+      "end": "2026-11-20T00:00:00-05:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "📸"
+    },
+    {
+      "title": "Rencontre des parents-enseignants",
+      "start": "2026-11-19T00:00:00-05:00",
+      "end": "2026-11-20T00:00:00-05:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "📅"
+    },
+    {
+      "title": "Session d'examens - sans activités SAÉ",
+      "start": "2026-12-14T00:00:00-05:00",
+      "end": "2026-12-19T00:00:00-05:00",
+      "all_day": true,
+      "kind": "evenement",
+      "icon": "📅"
+    }
+  ]
+}
