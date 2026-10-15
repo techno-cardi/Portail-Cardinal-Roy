@@ -300,7 +300,7 @@ class SharedCalendarBannerTests(unittest.TestCase):
             }), patch.object(feed, 'OUTPUT', output), \
                  patch.object(feed, 'subscription_ical_url', return_value=shared), \
                  patch.object(feed, 'fetch_ics', side_effect=lambda url: sources[url]) as fetch, \
-                 patch.object(feed, 'parse_feed', side_effect=lambda data, *_: parsed[data]):
+                 patch.object(feed, 'parse_feed', side_effect=lambda data, *_, **__: parsed[data]):
                 self.assertEqual(feed.main(), 0)
             result = json.loads(output.read_text(encoding='utf-8'))['items']
             self.assertEqual(len(result), 3)
@@ -358,12 +358,52 @@ class SharedCalendarBannerTests(unittest.TestCase):
             with patch.dict(os.environ, {
                 'CARDINAL_CALENDAR_ICAL_URL': main,
                 'CARDINAL_SCHOOL_CALENDAR_ICAL_URL': '',
+                'CARDINAL_SUBSCRIPTION_ICAL_URL': shared,
             }), patch.object(feed, 'OUTPUT', output), \
                  patch.object(feed, 'subscription_ical_url', return_value=shared), \
                  patch.object(feed, 'fetch_ics', side_effect=[b'primary', OSError('calendar unavailable')]), \
                  patch.object(feed, 'parse_feed', return_value=[event('Pédagogique')]):
                 self.assertEqual(feed.main(), 1)
             self.assertEqual(output.read_text(encoding='utf-8'), original)
+
+    def test_public_shared_calendar_unavailable_does_not_block_main_source(self):
+        main, shared = 'https://example.test/main.ics', 'https://example.test/public.ics'
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'dates.json'
+            with patch.dict(os.environ, {
+                'CARDINAL_CALENDAR_ICAL_URL': main,
+                'CARDINAL_SCHOOL_CALENDAR_ICAL_URL': '',
+                'CARDINAL_SUBSCRIPTION_ICAL_URL': '',
+            }), patch.object(feed, 'OUTPUT', output), \
+                 patch.object(feed, 'subscription_ical_url', return_value=shared), \
+                 patch.object(feed, 'fetch_ics', side_effect=[b'primary', OSError('public blocked')]), \
+                 patch.object(feed, 'parse_feed', return_value=[event('Pédagogique')]):
+                self.assertEqual(feed.main(), 0)
+            result = json.loads(output.read_text(encoding='utf-8'))['items']
+            self.assertEqual(result[0]['title'], 'Pédagogique')
+
+    def test_public_shared_busy_is_ignored_but_admin_title_is_used(self):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        raw = (
+            'BEGIN:VCALENDAR\r\nVERSION:2.0\r\n'
+            'BEGIN:VEVENT\r\nUID:masked@example.org\r\n'
+            'DTSTAMP:20261008T100000Z\r\nDTSTART;VALUE=DATE:20261020\r\n'
+            'DTEND;VALUE=DATE:20261021\r\nSUMMARY:Busy\r\nEND:VEVENT\r\n'
+            'BEGIN:VEVENT\r\nUID:school@example.org\r\n'
+            'DTSTAMP:20261008T100000Z\r\nDTSTART;VALUE=DATE:20261020\r\n'
+            'DTEND;VALUE=DATE:20261021\r\nSUMMARY:Photos des finissants\r\nEND:VEVENT\r\n'
+            'BEGIN:VEVENT\r\nUID:personal@example.org\r\n'
+            'DTSTAMP:20261008T100000Z\r\nDTSTART;VALUE=DATE:20261020\r\n'
+            'DTEND;VALUE=DATE:20261021\r\nSUMMARY:Jour 9\r\nEND:VEVENT\r\n'
+            'END:VCALENDAR\r\n'
+        ).encode('utf-8')
+        now = datetime(2026, 10, 15, tzinfo=ZoneInfo('America/Toronto'))
+        horizon = datetime(2026, 11, 1, tzinfo=ZoneInfo('America/Toronto'))
+        with self.assertRaisesRegex(ValueError, 'masqués'):
+            feed.parse_feed(raw, now, horizon)
+        items = feed.parse_feed(raw, now, horizon, skip_masked=True)
+        self.assertEqual([item['title'] for item in items], ['Photos des finissants'])
 
     def test_shared_calendar_personal_dates_stay_excluded(self):
         self.assertFalse(feed.is_administrative_title('Jour 4'))

@@ -188,12 +188,13 @@ def is_noise(title, location=''):
     return False
 
 
-def parse_feed(data, now, horizon):
+def parse_feed(data, now, horizon, *, skip_masked=False):
     calendar = Calendar.from_ical(data)
     occurrences = recurring_ical_events.of(calendar).between(now, horizon)
     items = []
     school_photo_candidates = 0
     school_photo_kept = 0
+    hidden_events = 0
     for event in occurrences:
         title = str(event.get('summary', '')).strip()
         if not title:
@@ -203,6 +204,9 @@ def parse_feed(data, now, horizon):
         if photo_candidate:
             school_photo_candidates += 1
         if normalized_title(title) in {'busy', 'occupe', 'private', 'prive', 'confidential'}:
+            if skip_masked:
+                hidden_events += 1
+                continue
             raise ValueError('calendrier Google avec des événements masqués')
         location = str(event.get('location', '') or '')
         if is_noise(title, location) or not is_administrative_title(title):
@@ -237,6 +241,10 @@ def parse_feed(data, now, horizon):
     # n'apparaît dans les journaux de synchronisation.
     print(f'Photos scolaires dans la source iCal : {school_photo_candidates}; '
           f'acceptées par le filtre : {school_photo_kept}.')
+    if hidden_events:
+        print(f'AVERTISSEMENT: {hidden_events} événements masqués ignorés dans '
+              'le calendrier partagé public. Les événements non publics exigent '
+              'son adresse iCal privée dans les secrets GitHub.')
     return items
 
 
@@ -331,17 +339,27 @@ def main():
     # Troisième source : calendrier partagé Dates importantes, en complément
     # des sources scolaires historiques. Une panne préserve le fil valide.
     dates_url = subscription_ical_url()
+    private_shared = bool(os.environ.get('CARDINAL_SUBSCRIPTION_ICAL_URL', '').strip())
     if dates_url and dates_url not in {primary_url, school_url}:
         try:
-            dates_items = parse_feed(fetch_ics(dates_url), now, horizon)
+            # Le flux public expose parfois seulement « Busy ». Ignorer ces
+            # occurrences sans titre; toutes les autres gardent le filtre
+            # administratif strict. Une source privée ne doit rien masquer.
+            dates_items = parse_feed(fetch_ics(dates_url), now, horizon,
+                                     skip_masked=not private_shared)
             if is_masked_calendar(dates_items):
                 raise ValueError('calendrier Dates importantes avec événements masqués')
             all_items.extend(dates_items)
             print('Calendrier partagé Dates importantes chargé.')
         except Exception as exc:
-            print(f'ERREUR: calendrier partagé Dates importantes indisponible: {exc}; '
-                  'ancien fil conservé.', file=sys.stderr)
-            return 1
+            if private_shared:
+                print(f'ERREUR: calendrier privé Dates importantes indisponible: {exc}; '
+                      'ancien fil conservé.', file=sys.stderr)
+                return 1
+            # Le flux public facultatif peut être temporairement inaccessible.
+            # Ne pas interrompre les mises à jour du calendrier principal.
+            print(f'AVERTISSEMENT: calendrier public Dates importantes indisponible: '
+                  f'{exc}; dates des autres sources conservées.', file=sys.stderr)
 
     items = sorted(deduplicate_events(all_items), key=lambda item: item['start'])[:int(FEED_CONFIG['max_items'])]
 
