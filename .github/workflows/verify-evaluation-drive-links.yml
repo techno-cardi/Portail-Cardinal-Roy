@@ -14,7 +14,7 @@ on:
 jobs:
   verify:
     name: Liens Drive visibles
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
