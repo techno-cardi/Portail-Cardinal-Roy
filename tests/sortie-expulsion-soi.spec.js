@@ -17,7 +17,8 @@ test('la sortie de classe comporte une septième étape SOI bleue et essentielle
   const soi = steps.nth(6).locator('.callout.soi-important');
   await expect(soi).toBeVisible();
   await expect(soi.locator('.soi-important-title')).toContainText('IMPORTANT');
-  await expect(soi).toContainText('A un comportement dérangeant');
+  await expect(soi).toContainText('Ne respecte pas les règles de conduite (école ou classe)');
+  await expect(soi).not.toContainText('A un comportement dérangeant');
   await expect(soi).toContainText('Cette étape est essentielle');
   await expect(soi).not.toContainText('obligatoire');
   await expect(soi).toContainText('comptabiliser la sortie');
@@ -47,7 +48,8 @@ test('la mise à jour SOI annonce une vraie section dans Nouveautés', async ({ 
   const link = page.locator('#portal-updates a.portal-update-item[href="#sortie"]');
   await expect(link).toBeVisible();
   await expect(link).toContainText('l’étape SOI essentielle');
+  await expect(link).toContainText('Ne respecte pas les règles de conduite (école ou classe)');
   await link.click();
   await expect(page.locator('#sortie')).toHaveAttribute('open', '');
-  await expect(page.locator('#sortie .callout.soi-important')).toContainText('A un comportement dérangeant');
+  await expect(page.locator('#sortie .callout.soi-important')).toContainText('Ne respecte pas les règles de conduite (école ou classe)');
 });

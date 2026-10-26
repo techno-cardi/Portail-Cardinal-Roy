@@ -126,7 +126,7 @@
   if (!card) return;
 
   card.dataset.title = 'Sortie de classe / expulsion - Mes suivis et Mozaïk-Portail';
-  card.dataset.keywords = `${card.dataset.keywords || ''} avis SOI Mozaïk Portail comportement dérangeant avis de sortie comptabilisation des avis suivi des intervenants`.trim();
+  card.dataset.keywords = `${card.dataset.keywords || ''} avis SOI Mozaïk Portail ne respecte pas les règles de conduite école classe comportement avis de sortie comptabilisation des avis suivi des intervenants`.trim();
 
   const title = card.querySelector('.card-head h3');
   if (title) title.textContent = 'Sortie de classe / expulsion - Mes suivis et Mozaïk-Portail';
@@ -140,7 +140,7 @@
     step.innerHTML = `
       <div class="callout soi-important" role="note">
         <span class="soi-important-title">IMPORTANT - Inscrire l’avis SOI dans Mozaïk-Portail</span>
-        <p><strong>Après avoir rempli et envoyé le rapport d’expulsion dans Mes suivis</strong>, ouvrez <strong>Mozaïk-Portail</strong> et saisissez un <strong>avis SOI</strong> pour l’élève avec le descripteur exact <strong>« A un comportement dérangeant »</strong>.</p>
+        <p><strong>Après avoir rempli et envoyé le rapport d’expulsion dans Mes suivis</strong>, ouvrez <strong>Mozaïk-Portail</strong> et saisissez un <strong>avis SOI</strong> pour l’élève avec le descripteur exact <strong>« Ne respecte pas les règles de conduite (école ou classe) »</strong>.</p>
         <p><strong>Cette étape est essentielle :</strong> c’est l’avis SOI de Mozaïk-Portail qui permet de comptabiliser la sortie parmi les avis et de la prendre en compte dans les suivis ultérieurs des intervenants.</p>
         <a class="btn soi-portail-link" href="https://mozaikportail.ca/" target="_blank" rel="noopener noreferrer">Ouvrir Mozaïk-Portail</a>
       </div>`;
