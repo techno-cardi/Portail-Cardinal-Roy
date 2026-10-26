@@ -131,7 +131,7 @@
   const title = card.querySelector('.card-head h3');
   if (title) title.textContent = 'Sortie de classe / expulsion - Mes suivis et Mozaïk-Portail';
   const subtitle = card.querySelector('.card-sub');
-  if (subtitle) subtitle.textContent = 'Rapport au Transit, puis avis SOI obligatoire dans Mozaïk-Portail';
+  if (subtitle) subtitle.textContent = 'Rapport au Transit, puis avis SOI essentiel dans Mozaïk-Portail';
 
   const steps = card.querySelector('.card-body ol.steps');
   if (steps && !steps.querySelector('[data-expulsion-soi-step]')) {
@@ -141,7 +141,7 @@
       <div class="callout soi-important" role="note">
         <span class="soi-important-title">IMPORTANT - Inscrire l’avis SOI dans Mozaïk-Portail</span>
         <p><strong>Après avoir rempli et envoyé le rapport d’expulsion dans Mes suivis</strong>, ouvrez <strong>Mozaïk-Portail</strong> et saisissez un <strong>avis SOI</strong> pour l’élève avec le descripteur exact <strong>« A un comportement dérangeant »</strong>.</p>
-        <p><strong>Cette étape est obligatoire :</strong> c’est l’avis SOI de Mozaïk-Portail qui permet de comptabiliser la sortie parmi les avis et de la prendre en compte dans les suivis ultérieurs des intervenants.</p>
+        <p><strong>Cette étape est essentielle :</strong> c’est l’avis SOI de Mozaïk-Portail qui permet de comptabiliser la sortie parmi les avis et de la prendre en compte dans les suivis ultérieurs des intervenants.</p>
         <a class="btn soi-portail-link" href="https://mozaikportail.ca/" target="_blank" rel="noopener noreferrer">Ouvrir Mozaïk-Portail</a>
       </div>`;
     steps.appendChild(step);

@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const curated = require('../portal-updates-curated.json');
 
-test('la sortie de classe comporte une septième étape SOI bleue et obligatoire', async ({ page }) => {
+test('la sortie de classe comporte une septième étape SOI bleue et essentielle', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto('/');
@@ -18,6 +18,8 @@ test('la sortie de classe comporte une septième étape SOI bleue et obligatoire
   await expect(soi).toBeVisible();
   await expect(soi.locator('.soi-important-title')).toContainText('IMPORTANT');
   await expect(soi).toContainText('A un comportement dérangeant');
+  await expect(soi).toContainText('Cette étape est essentielle');
+  await expect(soi).not.toContainText('obligatoire');
   await expect(soi).toContainText('comptabiliser la sortie');
   await expect(soi).toContainText('suivis ultérieurs des intervenants');
   await expect(soi.locator('a.soi-portail-link')).toHaveAttribute('href', 'https://mozaikportail.ca/');
@@ -44,7 +46,7 @@ test('la mise à jour SOI annonce une vraie section dans Nouveautés', async ({ 
   await page.goto('/');
   const link = page.locator('#portal-updates a.portal-update-item[href="#sortie"]');
   await expect(link).toBeVisible();
-  await expect(link).toContainText('avis SOI obligatoire');
+  await expect(link).toContainText('l’étape SOI essentielle');
   await link.click();
   await expect(page.locator('#sortie')).toHaveAttribute('open', '');
   await expect(page.locator('#sortie .callout.soi-important')).toContainText('A un comportement dérangeant');

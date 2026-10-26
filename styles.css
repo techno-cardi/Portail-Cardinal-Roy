@@ -625,7 +625,7 @@ kbd{
   .procedure-content{display:block!important;padding:0 0 16px 48px}
 }
 
-/* Étape SOI obligatoire de la procédure de sortie de classe. */
+/* Étape SOI essentielle de la procédure de sortie de classe. */
 .procedure-content .steps .callout.soi-important{
   margin:0;
   padding:14px 16px;
