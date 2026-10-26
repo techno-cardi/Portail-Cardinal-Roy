@@ -1,8 +1,18 @@
 {
-  "generated_at": "2026-10-06T18:13:34.138704-04:00",
+  "generated_at": "2026-10-26T08:47:43.480-04:00",
   "default_lifetime_days": 28,
   "max_visible": 3,
   "items": [
+    {
+      "id": "expulsion-avis-soi-2026-10-26",
+      "title": "Expulsion d’un élève : avis SOI obligatoire",
+      "description": "Après le rapport dans Mes suivis et l’envoi au Transit, inscrire dans Mozaïk-Portail l’avis « A un comportement dérangeant » pour comptabiliser la sortie et assurer les suivis.",
+      "published_at": "2026-10-26",
+      "expires_at": "2026-11-23",
+      "target": "#sortie",
+      "target_type": "section",
+      "kind": "maj"
+    },
     {
       "id": "etude-surveillee-depart-2026-10-06",
       "title": "Élèves devant demeurer à l’école jusqu’à 15 h 30 (SAÉ)",

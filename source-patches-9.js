@@ -117,3 +117,38 @@
       </div>`);
   }
 })();
+
+/* Expulsion : le rapport au Transit et l'avis SOI sont deux saisies distinctes. */
+(() => {
+  'use strict';
+
+  const card = document.querySelector('#legacy-source #sortie');
+  if (!card) return;
+
+  card.dataset.title = 'Sortie de classe / expulsion - Mes suivis et Mozaïk-Portail';
+  card.dataset.keywords = `${card.dataset.keywords || ''} avis SOI Mozaïk Portail comportement dérangeant avis de sortie comptabilisation des avis suivi des intervenants`.trim();
+
+  const title = card.querySelector('.card-head h3');
+  if (title) title.textContent = 'Sortie de classe / expulsion - Mes suivis et Mozaïk-Portail';
+  const subtitle = card.querySelector('.card-sub');
+  if (subtitle) subtitle.textContent = 'Rapport au Transit, puis avis SOI obligatoire dans Mozaïk-Portail';
+
+  const steps = card.querySelector('.card-body ol.steps');
+  if (steps && !steps.querySelector('[data-expulsion-soi-step]')) {
+    const step = document.createElement('li');
+    step.dataset.expulsionSoiStep = 'true';
+    step.innerHTML = `
+      <div class="callout soi-important" role="note">
+        <span class="soi-important-title">IMPORTANT - Inscrire l’avis SOI dans Mozaïk-Portail</span>
+        <p><strong>Après avoir rempli et envoyé le rapport d’expulsion dans Mes suivis</strong>, ouvrez <strong>Mozaïk-Portail</strong> et saisissez un <strong>avis SOI</strong> pour l’élève avec le descripteur exact <strong>« A un comportement dérangeant »</strong>.</p>
+        <p><strong>Cette étape est obligatoire :</strong> c’est l’avis SOI de Mozaïk-Portail qui permet de comptabiliser la sortie parmi les avis et de la prendre en compte dans les suivis ultérieurs des intervenants.</p>
+        <a class="btn soi-portail-link" href="https://mozaikportail.ca/" target="_blank" rel="noopener noreferrer">Ouvrir Mozaïk-Portail</a>
+      </div>`;
+    steps.appendChild(step);
+  }
+
+  const transitNote = card.querySelector('.card-body .callout.good');
+  if (transitNote) {
+    transitNote.innerHTML = '<strong>Deux plateformes, deux rôles :</strong> <strong>Mes suivis</strong> transmet le rapport d’expulsion au personnel du Transit et conserve l’heure de sortie. <strong>Mozaïk-Portail</strong> est la base des avis SOI, utilisée pour leur comptabilisation et les suivis des intervenants. Le rapport dans Mes suivis ne remplace pas l’avis SOI.';
+  }
+})();

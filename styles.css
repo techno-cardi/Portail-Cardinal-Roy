@@ -624,3 +624,36 @@ kbd{
   .procedure summary::after{display:none}
   .procedure-content{display:block!important;padding:0 0 16px 48px}
 }
+
+/* Étape SOI obligatoire de la procédure de sortie de classe. */
+.procedure-content .steps .callout.soi-important{
+  margin:0;
+  padding:14px 16px;
+  border:1px solid #9bc7ed;
+  border-left:4px solid #2873b9;
+  border-radius:8px;
+  background:#eaf4ff;
+  color:#163b5c;
+}
+.procedure-content .soi-important-title{
+  display:block;
+  margin-bottom:8px;
+  color:#124e83;
+  font-weight:700;
+}
+.procedure-content .soi-important p{
+  max-width:none;
+  margin:8px 0;
+}
+.procedure-content .soi-important .soi-portail-link{
+  margin-top:6px;
+  background:#fff;
+  border-color:#86bce7;
+  color:#124e83;
+}
+.procedure-content .soi-important .soi-portail-link:hover,
+.procedure-content .soi-important .soi-portail-link:focus-visible{
+  background:#dceeff;
+  border-color:#2873b9;
+  color:#103b63;
+}
