@@ -48,7 +48,14 @@
           "procédure",
           "procedure",
           "guide",
-          "tutoriel"
+          "tutoriel",
+          "convocation saé",
+          "convocation sae",
+          "convocation matin",
+          "récupération matin",
+          "recuperation matin",
+          "saé am",
+          "sae am"
         ],
         [
           "réservation",
@@ -60,7 +67,10 @@
           "convocation",
           "convoquer",
           "récupération",
-          "recuperation"
+          "recuperation",
+          "saé",
+          "sae",
+          "matin"
         ]
       ]
     },
