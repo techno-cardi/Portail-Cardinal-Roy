@@ -98,12 +98,32 @@
     guide.textContent = 'Procédure - réservation de locaux et convocations';
     guideLinks.forEach(link => link.remove());
 
+    // La distinction AM/PM concerne les convocations SAÉ, pas la réservation des locaux.
+    if (!content.querySelector('[data-sae-convocations-am-pm]')) {
+      const notice = document.createElement('div');
+      notice.className = 'callout';
+      notice.dataset.saeConvocationsAmPm = 'true';
+      notice.setAttribute('role', 'note');
+      notice.innerHTML = `
+        <strong>Convocations d’élèves SAÉ : choisir AM ou PM</strong>
+        <p>Pour les <strong>récupérations et mises à jour SAÉ</strong>, choisissez la catégorie correspondant au moment de la convocation :</p>
+        <ul>
+          <li><strong>Récupérations et mises à jour SAÉ (AM)</strong> : le matin, y compris avant les cours.</li>
+          <li><strong>Récupérations et mises à jour SAÉ (PM)</strong> : sur l’heure du dîner ou en après-midi.</li>
+        </ul>
+        <p><strong>La réservation des locaux ne change pas.</strong> Réservez d’abord votre local dans l’horaire des locaux. Ensuite, sélectionnez la ressource à votre nom dans la catégorie AM ou PM pour convoquer les élèves et consigner leurs présences.</p>`;
+      const actions = content.querySelector('.links');
+      if (actions) actions.before(notice);
+      else content.appendChild(notice);
+    }
+
     appendSearchTerms(procedure, 'search', [
       'réserver local réservation locaux local récupération',
       'convoquer élève convoquer élèves convocation convocations récupération mise à jour',
       'inscrire élèves type réservation récupération plage horaire local libre',
       'récupérations fixes technopédagogues Récupérations Découvertes Récupérations SAÉ',
-      'étude surveillée Raymond-Gervais P5 heure local AppSP Réservation'
+      'étude surveillée Raymond-Gervais P5 heure local AppSP Réservation',
+      'SAÉ SAE récupération matin récupérations matin convocation matin convocations matin avant les cours AM PM dîner diner après-midi convoquer élèves le matin catégories AM PM'
     ].join(' '));
   };
 
