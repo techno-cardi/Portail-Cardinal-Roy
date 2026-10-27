@@ -208,3 +208,42 @@ test('les nouveautés fichier pointent directement vers le fichier avec le bon l
   await expect(mfa.locator('.portal-update-action')).toHaveText('Accéder au fichier');
   await expect(mfa).toHaveAttribute('target', '_blank');
 });
+
+test('les convocations SAÉ AM et PM sont distinguées sans modifier la réservation de local', async ({ page }) => {
+  await openPortal(page);
+  const procedure = page.locator('#reservation');
+  const notice = procedure.locator('[data-sae-convocations-am-pm]');
+  await expect(notice).toHaveCount(1);
+  await expect(notice).toContainText('Récupérations et mises à jour SAÉ (AM)');
+  await expect(notice).toContainText('Récupérations et mises à jour SAÉ (PM)');
+  await expect(notice).toContainText('avant les cours');
+  await expect(notice).toContainText('heure du dîner');
+  await expect(notice).toContainText('La réservation des locaux ne change pas');
+  await expect(notice).toContainText('consigner leurs présences');
+  await expect(procedure.locator('a[href="' + RESERVATION_FILE + '"]')).toHaveCount(1);
+});
+
+for (const query of ['convocation SAÉ matin', 'récupération matin', 'SAÉ AM']) {
+  test('la recherche précise « ' + query + ' » ouvre directement la procédure', async ({ page }) => {
+    await openPortal(page);
+    const first = await search(page, query);
+    await expect(first).toHaveAttribute('data-direct-file-suggestion', 'reservation-procedure');
+    await expect(first).toHaveAttribute('href', RESERVATION_FILE);
+  });
+}
+
+test('la recherche générale convocation conserve la fiche sans imposer le fichier', async ({ page }) => {
+  await openPortal(page);
+  const first = await search(page, 'convocation');
+  await expect(first).toBeVisible();
+  await expect(first).not.toHaveAttribute('data-direct-file-suggestion', 'reservation-procedure');
+});
+
+test('la nouveauté SAÉ annonce la procédure actualisée et ouvre directement le fichier', async ({ page }) => {
+  await openPortal(page);
+  const update = page.locator('#portal-updates [data-update-id="reservation-recuperation-2026-09-21"]');
+  await expect(update).toContainText('Convocations SAÉ le matin');
+  await expect(update).toContainText('La réservation du local ne change pas');
+  await expect(update).toHaveAttribute('href', RESERVATION_FILE);
+  await expect(update.locator('.portal-update-action')).toHaveText('Accéder au fichier');
+});
