@@ -42,13 +42,13 @@
     },
     {
       "id": "reservation-recuperation-2026-09-21",
-      "title": "Nouvelle procédure de réservation et de récupération",
-      "description": "Réserver un local et convoquer un élève en récupération, en mise à jour ou pour un autre motif.",
-      "published_at": "2026-09-21",
+      "title": "Convocations SAÉ le matin : procédure mise à jour",
+      "description": "La procédure de convocation a été actualisée : catégorie SAÉ (AM) pour les récupérations et mises à jour du matin, y compris avant les cours; catégorie SAÉ (PM) sur l’heure du dîner ou en après-midi. La réservation du local ne change pas.",
+      "published_at": "2026-10-27",
       "expires_at": "2027-06-30",
       "target": "#reservation",
       "target_type": "file",
-      "kind": "nouveau"
+      "kind": "maj"
     },
     {
       "id": "double-authentification-2026-09-21",
