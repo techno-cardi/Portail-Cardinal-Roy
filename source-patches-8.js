@@ -173,7 +173,6 @@
     'dates-importantes-2026-2027': ['assets/portal/dates.png', 'Calendrier des dates importantes'],
     'etude-surveillee': ['assets/portal/etude-surveillee.png', 'Étude surveillée et reprise d’évaluation'],
     'sos-groupe': ['assets/portal/aide-eleve.png', 'Soutien à un élève ou à un groupe'],
-    'aide-eleve-services-appui': ['assets/portal/aide-eleve.png', 'Aide et services d’appui pour un élève'],
     'commotion-cerebrale': ['assets/portal/commotion.png', 'Commotion cérébrale'],
     'sortie-educative': ['assets/portal/sortie.png', 'Sortie ou activité éducative'],
     'evaluation-bulletin-planification': ['assets/portal/evaluation.png', 'Évaluation, bulletin et planification'],
