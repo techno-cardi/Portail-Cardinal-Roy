@@ -1,8 +1,18 @@
 {
-  "generated_at": "2026-10-30T09:40:21.609586-04:00",
+  "generated_at": "2026-10-30T10:47:15.994241-04:00",
   "default_lifetime_days": 28,
   "max_visible": 3,
   "items": [
+    {
+      "id": "mon-classroom-appsp-2026-10-30",
+      "title": "Mon Classroom (AppSP) : synchronisation des élèves",
+      "description": "Associer ses groupes AppSP aux cours Google Classroom, inviter les nouveaux élèves et retirer ceux qui ont changé de groupe grâce à la synchronisation quotidienne.",
+      "published_at": "2026-10-30",
+      "expires_at": "2027-06-30",
+      "target": "https://docs.google.com/document/d/1ku9DqAvjSPxT8YkO24dQvw6GihcYWrnkD3a52Xixfog/edit?usp=drivesdk",
+      "target_type": "file",
+      "kind": "nouveau"
+    },
     {
       "id": "absences-prevues-sae-2026-10-30",
       "title": "Horaire des absences prévues des élèves du SAÉ",
