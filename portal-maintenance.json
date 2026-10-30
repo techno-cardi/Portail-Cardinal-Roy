@@ -282,6 +282,33 @@
           "absences sport études prévues"
         ]
       ]
+    },
+    "mon-classroom-procedure": {
+      "resource_id": "mon-classroom-appsp",
+      "url": "https://docs.google.com/document/d/1ku9DqAvjSPxT8YkO24dQvw6GihcYWrnkD3a52Xixfog/edit?usp=drivesdk",
+      "title": "Mon Classroom - AppSP : procédurier de synchronisation",
+      "action_label": "Accéder au fichier",
+      "source_file": "mon-classroom-resource.js",
+      "search_required_groups": [
+        [
+          "procédure",
+          "procedure",
+          "procédurier",
+          "procedurier",
+          "guide",
+          "tutoriel",
+          "marche à suivre",
+          "marche a suivre"
+        ],
+        [
+          "mon classroom",
+          "appsp classroom",
+          "synchroniser classroom",
+          "synchronisation classroom",
+          "synchronisation des élèves classroom",
+          "synchro classroom"
+        ]
+      ]
     }
   },
   "annual_resource_ids": [
