@@ -248,7 +248,7 @@ test('la nouveauté SAÉ annonce la procédure actualisée et ouvre directement 
   await expect(update.locator('.portal-update-action')).toHaveText('Accéder au fichier');
 });
 
-for (const query of ['référence à la direction', 'reference direction', 'procédurier référence', 'procédure mes suivis', 'référer un élève', 'demande ortho']) {
+for (const query of ['référence à la direction', 'reference direction', 'procédurier référence', 'procédure mes suivis', 'référer un élève', 'demande de référence', 'demande ortho']) {
   test('La référence AppSP ouvre directement le procédurier pour « ' + query + ' »', async ({ page }) => {
     await openPortal(page);
     const first = await search(page, query);
@@ -276,6 +276,8 @@ test('La nouvelle rubrique remplace entièrement l’ancienne demande papier', a
   await expect(card).toContainText('Envoyer');
   await expect(card.locator('a[href="' + REFERENCE_FILE + '"]')).toHaveCount(1);
   await expect(page.locator('#aide-eleve-services-appui')).toHaveCount(0);
+  await expect(card).not.toContainText('Utilisez le formulaire officiel');
+  await expect(card.locator('a')).not.toHaveAttribute('href', 'https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link');
   await expect(page.locator('a[href="https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link"]')).toHaveCount(0);
 });
 
