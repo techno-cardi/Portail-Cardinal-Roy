@@ -409,6 +409,21 @@ kbd{
   scroll-margin-top:16px;
   border-bottom:1px solid var(--line-soft);
 }
+/* Ressource externe : même style que les autres procédures, mais lien direct. */
+.procedure-direct-row{
+  position:relative;display:grid;grid-template-columns:minmax(0,1fr) 40px;
+  gap:12px;align-items:center;min-height:72px;padding:10px 52px 10px 0;
+}
+.procedure-direct-link{
+  display:grid;grid-template-columns:48px minmax(0,1fr);gap:12px;
+  align-items:center;min-width:0;color:inherit;text-decoration:none;
+}
+.procedure-direct-link:hover .procedure-title,
+.procedure-direct-link:focus-visible .procedure-title{color:var(--cardi-burgundy)}
+.procedure-direct-arrow{
+  position:absolute;right:2px;top:50%;transform:translateY(-50%);
+  color:#8b7e80;font-size:1.35rem;
+}
 .procedure summary{
   position:relative;
   list-style:none;
@@ -590,6 +605,8 @@ kbd{
   .category-heading{position:static;margin-bottom:14px}
   .category-heading p{max-width:none}
   .procedure summary{grid-template-columns:42px minmax(0,1fr) 36px;gap:9px;padding-right:42px}
+  .procedure-direct-row{grid-template-columns:minmax(0,1fr) 36px;gap:9px;padding-right:42px}
+  .procedure-direct-link{grid-template-columns:42px minmax(0,1fr);gap:9px}
   .procedure-visual{width:38px;height:38px;border-radius:8px}
   .procedure-title{font-size:1rem}
   .procedure-content{padding:0 0 24px 50px;font-size:.94rem}
