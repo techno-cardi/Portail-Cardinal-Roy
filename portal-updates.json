@@ -1,8 +1,18 @@
 {
-  "generated_at": "2026-10-30T10:47:15.994241-04:00",
+  "generated_at": "2026-10-30T10:52:19.245003-04:00",
   "default_lifetime_days": 28,
   "max_visible": 3,
   "items": [
+    {
+      "id": "reference-direction-appsp-2026-10-30",
+      "title": "Référence à la direction : nouvelle procédure dans AppSP",
+      "description": "La référence officielle à la direction se fait maintenant dans Mes suivis (AppSP). Consulter le procédurier illustré pour rechercher l’élève, préciser les besoins et envoyer la demande.",
+      "published_at": "2026-10-30",
+      "expires_at": "2027-06-30",
+      "target": "https://docs.google.com/document/d/1-T7WkQseiRqyScmFJiSiv8tcfQ83Ln054-xJBzoME30/edit?usp=sharing",
+      "target_type": "file",
+      "kind": "nouveau"
+    },
     {
       "id": "mon-classroom-appsp-2026-10-30",
       "title": "Mon Classroom (AppSP) : synchronisation des élèves",
@@ -50,16 +60,6 @@
       "published_at": "2026-10-06",
       "expires_at": "2027-06-30",
       "target": "https://docs.google.com/spreadsheets/d/1WkRtBb3EIMnHIO8_XYen7lrQzPeEK20Q/edit?usp=drivesdk&ouid=109187652422234365096&rtpof=true&sd=true",
-      "target_type": "file",
-      "kind": "nouveau"
-    },
-    {
-      "id": "services-appui-eleve-2026-09-23",
-      "title": "Nouveau formulaire de demande de services d’appui",
-      "description": "Faire une demande à la direction pour obtenir ou identifier des services d’appui pour un élève.",
-      "published_at": "2026-09-23",
-      "expires_at": "2027-06-30",
-      "target": "https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link",
       "target_type": "file",
       "kind": "nouveau"
     },
