@@ -152,3 +152,38 @@
     transitNote.innerHTML = '<strong>Deux plateformes, deux rôles :</strong> <strong>Mes suivis</strong> transmet le rapport d’expulsion au personnel du Transit et conserve l’heure de sortie. <strong>Mozaïk-Portail</strong> est la base des avis SOI, utilisée pour leur comptabilisation et les suivis des intervenants. Le rapport dans Mes suivis ne remplace pas l’avis SOI.';
   }
 })();
+
+/* Calendrier prévisionnel des absences des élèves du sport-études (SAÉ). */
+(() => {
+  'use strict';
+  const root = document.getElementById('legacy-source');
+  if (!root || root.querySelector('#horaire-absences-prevues-sae')) return;
+  const FOLDER_URL = 'https://drive.google.com/drive/folders/12gSHd025A4f7cFedyJpqqN2syhzFY96o';
+  const card = document.createElement('section');
+  card.className = 'card searchable';
+  card.id = 'horaire-absences-prevues-sae';
+  card.dataset.title = 'Horaire des absences prévues (SAÉ)';
+  card.dataset.icon = '📅';
+  card.dataset.directHref = FOLDER_URL;
+  card.dataset.keywords = [
+    'horaire absences prévues SAÉ SAE sport-études sport etudes sports études',
+    'absences planifiées absences à venir absences futures prévisions absence',
+    'calendrier absences par discipline planification absences des élèves sport-études',
+    'discipline sportive compétition entraînement entrainement anticiper cours travaux évaluations'
+  ].join(' ');
+  card.innerHTML = `
+    <div class="card-head">
+      <div class="card-icon" aria-hidden="true">📅</div>
+      <div>
+        <h3>Horaire des absences prévues (SAÉ)</h3>
+        <div class="card-sub">Sport-études : consulter à l’avance les absences par discipline</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <p>Consultez le dossier des absences planifiées des élèves du sport-études, par discipline, pour anticiper les cours, les travaux et les évaluations.</p>
+      <div class="links">
+        <a class="btn primary" href="${FOLDER_URL}" target="_blank" rel="noopener noreferrer">Accéder au dossier des absences prévues</a>
+      </div>
+    </div>`;
+  root.appendChild(card);
+})();
