@@ -254,6 +254,34 @@
           "quitter etude surveillee"
         ]
       ]
+    },
+    "horaire-absences-prevues-sae": {
+      "resource_id": "horaire-absences-prevues-sae",
+      "url": "https://drive.google.com/drive/folders/12gSHd025A4f7cFedyJpqqN2syhzFY96o",
+      "title": "Horaire des absences prévues (SAÉ) - dossier par discipline",
+      "action_label": "Accéder au fichier",
+      "source_file": "source-patches-9.js",
+      "search_required_groups": [
+        [
+          "absences prévues",
+          "absence prévue",
+          "absences planifiées",
+          "absence planifiée",
+          "absences à venir",
+          "absence à venir",
+          "horaire des absences",
+          "horaire absences",
+          "horaire absence",
+          "calendrier des absences",
+          "calendrier absences",
+          "planification des absences",
+          "planifier les absences",
+          "prévision des absences",
+          "absences par discipline",
+          "absence par discipline",
+          "absences sport études prévues"
+        ]
+      ]
     }
   },
   "annual_resource_ids": [
