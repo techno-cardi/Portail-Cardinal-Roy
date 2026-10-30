@@ -1,6 +1,16 @@
 {
   "items": [
     {
+      "id": "mon-classroom-appsp-2026-10-30",
+      "title": "Mon Classroom (AppSP) : synchronisation des élèves",
+      "description": "Associer ses groupes AppSP aux cours Google Classroom, inviter les nouveaux élèves et retirer ceux qui ont changé de groupe grâce à la synchronisation quotidienne.",
+      "published_at": "2026-10-30",
+      "expires_at": "2027-06-30",
+      "target": "#mon-classroom-appsp",
+      "target_type": "file",
+      "kind": "nouveau"
+    },
+    {
       "id": "absences-prevues-sae-2026-10-30",
       "title": "Horaire des absences prévues des élèves du SAÉ",
       "description": "Consulter à l’avance les absences planifiées par discipline sportive afin d’anticiper les cours, les travaux et les évaluations.",
