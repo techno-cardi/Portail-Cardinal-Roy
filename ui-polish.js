@@ -368,7 +368,7 @@
     favoriteLinks.innerHTML = [...favorites]
       .map(id => itemById.get(id))
       .filter(Boolean)
-      .map(item => `<a href="#${item.id}">${visualFor(item,'favorite-visual')}<span>${escapeHtml(item.title)}</span><span aria-hidden="true">→</span></a>`)
+      .map(item => `<a href="${escapeHtml(item.directUrl || `#${item.id}`)}"${item.directUrl ? ' target="_blank" rel="noopener noreferrer"' : ''}>${visualFor(item,'favorite-visual')}<span>${escapeHtml(item.title)}</span><span aria-hidden="true">${item.directUrl ? '↗' : '→'}</span></a>`)
       .join('');
     syncFavoriteButtons();
   };
