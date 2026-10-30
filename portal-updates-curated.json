@@ -1,6 +1,16 @@
 {
   "items": [
     {
+      "id": "absences-prevues-sae-2026-10-30",
+      "title": "Horaire des absences prévues des élèves du SAÉ",
+      "description": "Consulter à l’avance les absences planifiées par discipline sportive afin d’anticiper les cours, les travaux et les évaluations.",
+      "published_at": "2026-10-30",
+      "expires_at": "2027-06-30",
+      "target": "#horaire-absences-prevues-sae",
+      "target_type": "file",
+      "kind": "nouveau"
+    },
+    {
       "id": "expulsion-avis-soi-2026-10-26",
       "title": "Expulsion d’un élève : l’étape SOI essentielle",
       "description": "Après le rapport dans Mes suivis et l’envoi au Transit, inscrire dans Mozaïk-Portail l’avis « Ne respecte pas les règles de conduite (école ou classe) » pour comptabiliser la sortie et assurer les suivis.",
