@@ -1,0 +1,134 @@
+/* Décoration autonome du 30 et 31 octobre 2026, activée uniquement par halloween-2026.js. */
+.cardi-halloween body::before {
+  background:linear-gradient(90deg,#7f1427 0%,#f09a2b 48%,#7f1427 100%);
+}
+.cardi-halloween .site-header {
+  background:linear-gradient(120deg,#fffdfa 0%,#fff8ed 75%,#fff3e2 100%);
+}
+.cardi-halloween .masthead {
+  position:relative;
+  padding-right:200px;
+}
+.halloween-greeting {
+  display:inline-flex;
+  gap:7px;
+  align-items:center;
+  margin-top:10px;
+  padding:3px 12px;
+  border:1px solid #e8b775;
+  border-radius:999px;
+  background:#fff3dd;
+  color:#754016;
+  font-size:.8rem;
+  font-weight:700;
+  line-height:1.4;
+}
+.halloween-greeting span { font-size:1.05rem; }
+.halloween-masthead-art {
+  position:absolute;
+  top:50%;
+  right:8px;
+  width:174px;
+  height:122px;
+  transform:translateY(-50%);
+  pointer-events:none;
+  user-select:none;
+}
+.halloween-masthead-art span { position:absolute; display:block; line-height:1; }
+.halloween-moon { right:22px; top:5px; font-size:3.6rem; opacity:.8; }
+.halloween-witch { right:59px; top:12px; z-index:1; font-size:3.5rem; animation:halloween-witch-float 5s ease-in-out infinite; }
+.halloween-bat { right:0; top:51px; font-size:1.85rem; animation:halloween-bat-drift 7s ease-in-out infinite; }
+.halloween-pumpkins { right:35px; bottom:0; font-size:1.85rem; letter-spacing:4px; }
+.cardi-halloween .search-stage {
+  background:linear-gradient(115deg,#5b1531 0%,#64223f 53%,#442044 100%);
+  border-bottom-color:#e99635;
+}
+.cardi-halloween .search-stage-inner { position:relative; z-index:1; }
+.cardi-halloween .search-intro p { color:#ffe9da; }
+.cardi-halloween .search-shell:focus-within {
+  border-color:#ffca84;
+  box-shadow:0 0 0 4px rgba(255,216,162,.25),0 12px 34px rgba(46,5,16,.25);
+}
+.cardi-halloween .section-nav { border-bottom:1px solid #e9b77b; }
+.halloween-web {
+  position:absolute;
+  top:0;
+  width:182px;
+  height:182px;
+  opacity:.55;
+  pointer-events:none;
+  user-select:none;
+}
+.halloween-web svg { display:block; width:100%; height:100%; }
+.halloween-web--left { left:0; }
+.halloween-web--right { right:0; transform:scaleX(-1); }
+.halloween-spider {
+  position:absolute;
+  top:100px;
+  right:54px;
+  font-size:1.75rem;
+  line-height:1;
+  pointer-events:none;
+  user-select:none;
+  animation:halloween-spider-sway 5.5s ease-in-out infinite;
+}
+.halloween-spider::before {
+  content:"";
+  position:absolute;
+  bottom:92%;
+  left:50%;
+  height:62px;
+  border-left:1px solid rgba(255,226,200,.74);
+}
+.halloween-stage-pumpkin {
+  position:absolute;
+  left:24px;
+  bottom:10px;
+  font-size:1.9rem;
+  line-height:1;
+  pointer-events:none;
+  user-select:none;
+  transform:rotate(-8deg);
+}
+.cardi-halloween .footer-row > span:first-child::after {
+  content:" 🎃";
+}
+@keyframes halloween-witch-float {
+  0%,100% { transform:translateY(0) rotate(-5deg); }
+  50% { transform:translateY(-7px) rotate(3deg); }
+}
+@keyframes halloween-bat-drift {
+  0%,100% { transform:translate(0,0) rotate(-7deg); }
+  50% { transform:translate(-8px,-5px) rotate(8deg); }
+}
+@keyframes halloween-spider-sway {
+  0%,100% { transform:rotate(-6deg); }
+  50% { transform:rotate(6deg); }
+}
+@media(max-width:980px) {
+  .cardi-halloween .masthead { padding-right:160px; }
+  .halloween-masthead-art { width:140px; right:0; }
+  .halloween-moon { font-size:3rem; }
+  .halloween-witch { right:47px; font-size:3rem; }
+  .halloween-bat { font-size:1.5rem; }
+  .halloween-pumpkins { right:24px; font-size:1.5rem; }
+  .halloween-web { width:135px; height:135px; }
+}
+@media(max-width:720px) {
+  .cardi-halloween .masthead { padding-right:0; }
+  .halloween-masthead-art,.halloween-spider,.halloween-stage-pumpkin { display:none; }
+  .halloween-web { width:100px; height:100px; opacity:.3; }
+  .halloween-greeting { margin-top:7px; font-size:.73rem; padding:2px 9px; }
+}
+@media(max-width:430px) {
+  .halloween-greeting { font-size:.7rem; }
+  .halloween-web { width:78px; height:78px; opacity:.22; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .halloween-witch,.halloween-bat,.halloween-spider { animation:none; }
+}
+@media print {
+  .halloween-greeting,.halloween-masthead-art,.halloween-web,.halloween-spider,.halloween-stage-pumpkin { display:none!important; }
+  .cardi-halloween .site-header { background:#fff; }
+  .cardi-halloween .masthead { padding-right:0; }
+}
