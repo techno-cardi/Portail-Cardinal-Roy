@@ -1,8 +1,18 @@
 {
-  "generated_at": "2026-10-27T14:29:20.672767-04:00",
+  "generated_at": "2026-10-30T09:40:21.609586-04:00",
   "default_lifetime_days": 28,
   "max_visible": 3,
   "items": [
+    {
+      "id": "absences-prevues-sae-2026-10-30",
+      "title": "Horaire des absences prévues des élèves du SAÉ",
+      "description": "Consulter à l’avance les absences planifiées par discipline sportive afin d’anticiper les cours, les travaux et les évaluations.",
+      "published_at": "2026-10-30",
+      "expires_at": "2027-06-30",
+      "target": "https://drive.google.com/drive/folders/12gSHd025A4f7cFedyJpqqN2syhzFY96o",
+      "target_type": "file",
+      "kind": "nouveau"
+    },
     {
       "id": "reservation-recuperation-2026-09-21",
       "title": "Convocations SAÉ le matin : procédure mise à jour",
