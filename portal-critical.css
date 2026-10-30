@@ -1,1 +1,33 @@
-/* test */
+/* Halo discret, commun à la recherche et aux liens avec ancre (#). */
+.procedure.portal-search-pulse,
+.subresource-search-target.portal-search-pulse,
+.category-heading.portal-search-pulse{
+  position:relative!important;
+  z-index:4!important;
+  border-radius:14px!important;
+  overflow:visible!important;
+  animation:cardiSearchGlowCritical 2.5s ease-in-out both!important;
+  will-change:box-shadow;
+}
+.category-heading.portal-search-pulse{
+  padding:10px 12px!important;
+  margin:-10px -12px!important;
+}
+/* Deux pulsations légères, sans changement brutal du fond ni de la bordure. */
+@keyframes cardiSearchGlowCritical{
+  0%,100%{box-shadow:0 0 0 0 rgba(127,20,39,0),0 0 0 rgba(91,14,27,0)}
+  18%{box-shadow:0 0 0 4px rgba(127,20,39,.23),0 7px 22px rgba(91,14,27,.13)}
+  36%{box-shadow:0 0 0 7px rgba(127,20,39,.055),0 4px 15px rgba(91,14,27,.06)}
+  57%{box-shadow:0 0 0 4px rgba(127,20,39,.19),0 6px 20px rgba(91,14,27,.11)}
+  79%{box-shadow:0 0 0 5px rgba(127,20,39,.045),0 3px 12px rgba(91,14,27,.04)}
+}
+@media(prefers-reduced-motion:reduce){
+  .procedure.portal-search-pulse,
+  .subresource-search-target.portal-search-pulse,
+  .category-heading.portal-search-pulse{
+    animation:none!important;
+    outline:3px solid rgba(127,20,39,.45)!important;
+    outline-offset:3px!important;
+    border-radius:14px!important;
+  }
+}
