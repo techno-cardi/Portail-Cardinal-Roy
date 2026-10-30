@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 
 const RESERVATION_FILE = 'https://drive.google.com/file/d/1Ea0rcbyqvFjmXzc_yuNREdgk8Pq4LEQW/view?usp=drivesdk';
 const MFA_FILE = 'https://drive.google.com/file/d/1G4QFoa_jyItVPd1OTZkCGGabk9h2gIa6/view?usp=drivesdk';
-const SERVICES_APPUI_FILE = 'https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link';
+const REFERENCE_FILE = 'https://docs.google.com/document/d/1-T7WkQseiRqyScmFJiSiv8tcfQ83Ln054-xJBzoME30/edit?usp=sharing';
 const PARENTS_MEETING_FOLDER = 'https://drive.google.com/drive/folders/12H3rEFMgOWAfFQaaiJcAXK2egsyHvQZD';
 const OCTOBER_PED_DAY_FILE = 'https://drive.google.com/file/d/1zyMK5pY5kGBVr1qbrBGyNWrJRpuTGHDs/view?usp=drivesdk';
 const ETUDE_DEPART_FILE = 'https://docs.google.com/spreadsheets/d/1WkRtBb3EIMnHIO8_XYen7lrQzPeEK20Q/edit?usp=drivesdk&ouid=109187652422234365096&rtpof=true&sd=true';
@@ -42,16 +42,16 @@ test('une demande de services d’appui ouvre directement le formulaire', async 
   await openPortal(page);
   const first = await search(page, 'demande psychoéducation');
   await expect(first).toBeVisible();
-  await expect(first).toHaveAttribute('data-direct-file-suggestion', 'services-appui-identification');
-  await expect(first).toHaveAttribute('href', SERVICES_APPUI_FILE);
+  await expect(first).toHaveAttribute('data-direct-file-suggestion', 'reference-direction-appsp');
+  await expect(first).toHaveAttribute('href', REFERENCE_FILE);
   await expect(first).toContainText('Accéder au fichier');
 });
 
-test('la fiche de services d’appui contient le lien direct vers le formulaire', async ({ page }) => {
+test('la fiche Référence à la direction contient le lien direct vers le procédurier', async ({ page }) => {
   await openPortal(page);
-  const link = page.locator('#aide-eleve-services-appui a').filter({ hasText: 'Accéder au fichier' });
+  const link = page.locator('#reference-direction a').filter({ hasText: 'Accéder au fichier' });
   await expect(link).toHaveCount(1);
-  await expect(link).toHaveAttribute('href', SERVICES_APPUI_FILE);
+  await expect(link).toHaveAttribute('href', REFERENCE_FILE);
   await expect(link).toHaveAttribute('target', '_blank');
 });
 
@@ -97,29 +97,29 @@ test('la Nouveauté Étude surveillée ouvre directement le tableur mis à jour'
   await expect(update.locator('.portal-update-action')).toHaveText('Accéder au fichier');
 });
 
-test('la fiche de services d’appui est classée dans Suivre un élève', async ({ page }) => {
+test('la fiche Référence à la direction est classée dans Suivre un élève', async ({ page }) => {
   await openPortal(page);
   const section = page.locator('#section-suivi');
-  await expect(section.locator('#aide-eleve-services-appui')).toHaveCount(1);
-  await expect(section.locator('#aide-eleve-services-appui')).toContainText('Aide et services d’appui pour un élève');
+  await expect(section.locator('#reference-direction')).toHaveCount(1);
+  await expect(section.locator('#reference-direction')).toContainText('Référence à la direction');
 });
 
 for (const query of ['ortho', 'orthopédagogue', 'orthopédagogie', 'psychoéducation', 'orientation']) {
-  test(`la recherche générale « ${query} » trouve la fiche de services d’appui`, async ({ page }) => {
+  test(`la recherche générale « ${query} » trouve la fiche Référence à la direction`, async ({ page }) => {
     await openPortal(page);
     await search(page, query);
-    const result = page.locator('#search-suggestions .suggestion[data-search-open="aide-eleve-services-appui"]');
+    const result = page.locator('#search-suggestions .suggestion[data-search-open="reference-direction"]');
     await expect(result).toBeVisible();
   });
 }
 
 for (const query of ['demande ortho', 'demande orthopédagogue', 'demande psychoéducation', 'demande orientation']) {
-  test(`la recherche précise « ${query} » ouvre directement le formulaire`, async ({ page }) => {
+  test(`la recherche précise « ${query} » ouvre directement le nouveau procédurier`, async ({ page }) => {
     await openPortal(page);
     const first = await search(page, query);
     await expect(first).toBeVisible();
-    await expect(first).toHaveAttribute('data-direct-file-suggestion', 'services-appui-identification');
-    await expect(first).toHaveAttribute('href', SERVICES_APPUI_FILE);
+    await expect(first).toHaveAttribute('data-direct-file-suggestion', 'reference-direction-appsp');
+    await expect(first).toHaveAttribute('href', REFERENCE_FILE);
   });
 }
 
@@ -245,5 +245,45 @@ test('la nouveauté SAÉ annonce la procédure actualisée et ouvre directement 
   await expect(update).toContainText('Convocations SAÉ le matin');
   await expect(update).toContainText('La réservation du local ne change pas');
   await expect(update).toHaveAttribute('href', RESERVATION_FILE);
+  await expect(update.locator('.portal-update-action')).toHaveText('Accéder au fichier');
+});
+
+for (const query of ['référence à la direction', 'reference direction', 'procédurier référence', 'procédure mes suivis', 'référer un élève', 'demande ortho']) {
+  test('La référence AppSP ouvre directement le procédurier pour « ' + query + ' »', async ({ page }) => {
+    await openPortal(page);
+    const first = await search(page, query);
+    await expect(first).toHaveAttribute('data-direct-file-suggestion', 'reference-direction-appsp');
+    await expect(first).toHaveAttribute('href', REFERENCE_FILE);
+    await expect(first).toContainText('Accéder au fichier');
+  });
+}
+
+for (const query of ['référence', 'direction', 'orthopédagogue', 'services complémentaires']) {
+  test('La requête générale « ' + query + ' » ne force pas le document', async ({ page }) => {
+    await openPortal(page);
+    await search(page, query);
+    await expect(page.locator('#search-suggestions [data-direct-file-suggestion="reference-direction-appsp"]')).toHaveCount(0);
+  });
+}
+
+test('La nouvelle rubrique remplace entièrement l’ancienne demande papier', async ({ page }) => {
+  await openPortal(page);
+  const suivi = page.locator('#section-suivi');
+  const card = suivi.locator('#reference-direction');
+  await expect(card).toHaveCount(1);
+  await expect(card).toContainText('Référence à la direction');
+  await expect(card).toContainText('Mes suivis');
+  await expect(card).toContainText('Envoyer');
+  await expect(card.locator('a[href="' + REFERENCE_FILE + '"]')).toHaveCount(1);
+  await expect(page.locator('#aide-eleve-services-appui')).toHaveCount(0);
+  await expect(page.locator('a[href="https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link"]')).toHaveCount(0);
+});
+
+test('La nouvelle carte Nouveautés pointe directement au procédurier AppSP', async ({ page }) => {
+  await openPortal(page);
+  const update = page.locator('#portal-updates [data-update-id="reference-direction-appsp-2026-10-30"]');
+  await expect(update).toHaveCount(1);
+  await expect(update).toHaveAttribute('href', REFERENCE_FILE);
+  await expect(update).toHaveAttribute('target', '_blank');
   await expect(update.locator('.portal-update-action')).toHaveText('Accéder au fichier');
 });

@@ -1,6 +1,16 @@
 {
   "items": [
     {
+      "id": "reference-direction-appsp-2026-10-30",
+      "title": "Référence à la direction : nouvelle procédure dans AppSP",
+      "description": "La référence officielle à la direction se fait maintenant dans Mes suivis (AppSP). Consulter le procédurier illustré pour rechercher l’élève, préciser les besoins et envoyer la demande.",
+      "published_at": "2026-10-30",
+      "expires_at": "2027-06-30",
+      "target": "#reference-direction",
+      "target_type": "file",
+      "kind": "nouveau"
+    },
+    {
       "id": "mon-classroom-appsp-2026-10-30",
       "title": "Mon Classroom (AppSP) : synchronisation des élèves",
       "description": "Associer ses groupes AppSP aux cours Google Classroom, inviter les nouveaux élèves et retirer ceux qui ont changé de groupe grâce à la synchronisation quotidienne.",
@@ -19,6 +29,16 @@
       "target": "#horaire-absences-prevues-sae",
       "target_type": "file",
       "kind": "nouveau"
+    },
+    {
+      "id": "reservation-recuperation-2026-09-21",
+      "title": "Convocations SAÉ le matin : procédure mise à jour",
+      "description": "La procédure de convocation a été actualisée : catégorie SAÉ (AM) pour les récupérations et mises à jour du matin, y compris avant les cours; catégorie SAÉ (PM) sur l’heure du dîner ou en après-midi. La réservation du local ne change pas.",
+      "published_at": "2026-10-27",
+      "expires_at": "2027-06-30",
+      "target": "#reservation",
+      "target_type": "file",
+      "kind": "maj"
     },
     {
       "id": "expulsion-avis-soi-2026-10-26",
@@ -49,26 +69,6 @@
       "target": "#pedagogique-2026-10-05",
       "target_type": "file",
       "kind": "nouveau"
-    },
-    {
-      "id": "services-appui-eleve-2026-09-23",
-      "title": "Nouveau formulaire de demande de services d’appui",
-      "description": "Faire une demande à la direction pour obtenir ou identifier des services d’appui pour un élève.",
-      "published_at": "2026-09-23",
-      "expires_at": "2027-06-30",
-      "target": "#aide-eleve-services-appui",
-      "target_type": "file",
-      "kind": "nouveau"
-    },
-    {
-      "id": "reservation-recuperation-2026-09-21",
-      "title": "Convocations SAÉ le matin : procédure mise à jour",
-      "description": "La procédure de convocation a été actualisée : catégorie SAÉ (AM) pour les récupérations et mises à jour du matin, y compris avant les cours; catégorie SAÉ (PM) sur l’heure du dîner ou en après-midi. La réservation du local ne change pas.",
-      "published_at": "2026-10-27",
-      "expires_at": "2027-06-30",
-      "target": "#reservation",
-      "target_type": "file",
-      "kind": "maj"
     },
     {
       "id": "double-authentification-2026-09-21",

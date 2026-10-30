@@ -111,53 +111,6 @@
         ]
       ]
     },
-    "services-appui-identification": {
-      "resource_id": "aide-eleve-services-appui",
-      "url": "https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link",
-      "title": "Formulaire - accès aux services d’appui et identification",
-      "action_label": "Accéder au fichier",
-      "source_file": "source-patches-9.js",
-      "search_required_groups": [
-        [
-          "formulaire",
-          "demande",
-          "accès",
-          "acces"
-        ],
-        [
-          "services d appui",
-          "services appui",
-          "services complémentaires",
-          "services complementaires",
-          "orthopédagogie",
-          "orthopedagogie",
-          "orthopédagogue",
-          "orthopedagogue",
-          "psychoéducation",
-          "psychoeducation",
-          "psychoéducateur",
-          "psychoeducateur",
-          "orientation",
-          "conseiller orientation",
-          "psychologue",
-          "psychologie",
-          "orthophoniste",
-          "orthophonie",
-          "tes",
-          "plan d intervention",
-          "ehdaa",
-          "hdaa",
-          "ortho",
-          "psycho",
-          "psycho éducateur",
-          "psycho educateur",
-          "orientation scolaire",
-          "conseiller en orientation",
-          "conseillère en orientation",
-          "conseillere en orientation"
-        ]
-      ]
-    },
     "rencontre-parents-2026-09-29": {
       "resource_id": "rencontre-parents-2026-09-29",
       "url": "https://drive.google.com/drive/folders/12H3rEFMgOWAfFQaaiJcAXK2egsyHvQZD",
@@ -307,6 +260,51 @@
           "synchronisation classroom",
           "synchronisation des élèves classroom",
           "synchro classroom"
+        ]
+      ]
+    },
+    "reference-direction-appsp": {
+      "resource_id": "reference-direction",
+      "url": "https://docs.google.com/document/d/1-T7WkQseiRqyScmFJiSiv8tcfQ83Ln054-xJBzoME30/edit?usp=sharing",
+      "title": "Référence à la direction - procédurier AppSP (Mes suivis)",
+      "action_label": "Accéder au fichier",
+      "source_file": "source-patches-9.js",
+      "search_required_groups": [
+        [
+          "référence à la direction",
+          "reference a la direction",
+          "référence direction",
+          "reference direction",
+          "référer à la direction",
+          "referer a la direction",
+          "référer un élève",
+          "referer un eleve",
+          "demande de référence",
+          "demande de reference",
+          "faire une référence",
+          "faire une reference",
+          "mes suivis référence",
+          "mes suivis reference",
+          "procédurier référence",
+          "procedurier reference",
+          "procédure référence",
+          "procedure reference",
+          "guide référence",
+          "guide reference",
+          "procédurier direction",
+          "procedure direction",
+          "procédure mes suivis",
+          "procedure mes suivis",
+          "demande ortho",
+          "demande orthopédagogue",
+          "demande orthopedagogue",
+          "demande psychoéducation",
+          "demande psychoeducation",
+          "demande psychologue",
+          "demande orientation",
+          "demande orthophoniste",
+          "demande services d appui",
+          "demande services complémentaires"
         ]
       ]
     }

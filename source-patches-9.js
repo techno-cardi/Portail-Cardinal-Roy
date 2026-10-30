@@ -48,74 +48,51 @@
   if (!body.querySelector('[data-evaluation-drive-folders]')) body.insertAdjacentHTML('beforeend', DRIVE_BLOCK);
 })();
 
-/* Formulaire officiel pour demander des services d'appui ou une identification pour un élève. */
+/* Référence officielle à la direction dans Mes suivis (AppSP). */
 (() => {
   'use strict';
 
   const root = document.getElementById('legacy-source');
-  if (!root) return;
+  if (!root || root.querySelector('#reference-direction')) return;
 
-  const FORM_URL = 'https://drive.google.com/file/d/17R4NSbb1JJInv61vJobHIZvBvNOPOH0H/view?usp=drive_link';
-  const extraKeywords = [
-    'formulaire demande services demande de services demande appui demande aide accès services acces services services appui services d appui services complémentaires services complementaires',
-    'demande ortho ortho aide ortho service ortho référence reference référer referer demande à la direction demande a la direction formulaire direction',
-    'soutien élève soutien eleve aide élève aide eleve élève à risque eleve a risque difficulté adaptation difficulte adaptation difficulté apprentissage difficulte apprentissage EHDAA HDAA identification',
-    'orthopédagogie orthopedagogie orthopédagogue orthopedagogue orthopédagogique orthopedagogique ortho',
-    'psychoéducation psychoeducation psychoéducateur psychoeducateur psychoéducatrice psychoeducatrice psycho éducateur psycho educateur psycho educatrice',
-    'orientation orientation scolaire conseiller orientation conseillère orientation conseillere orientation conseiller en orientation conseillère en orientation co c.o.',
-    'psychologie psychologue orthophonie orthophoniste orthophoniste ortho TES technicien éducation spécialisée technicien education specialisee éducateur spécialisé educateur specialise',
-    'plan intervention plan d intervention PI services externes CLSC équipe régionale soutien equipe regionale soutien classe spécialisée classe specialisee',
-    'lecture écriture ecriture mathématique mathematique langage comportement attention concentration difficultés difficultes besoins élève besoins eleve'
+  const PROCEDURE_URL = 'https://docs.google.com/document/d/1-T7WkQseiRqyScmFJiSiv8tcfQ83Ln054-xJBzoME30/edit?usp=sharing';
+  const card = document.createElement('section');
+  card.className = 'card searchable';
+  card.id = 'reference-direction';
+  card.dataset.title = 'Référence à la direction';
+  card.dataset.icon = '📝';
+  card.dataset.keywords = [
+    'référence à la direction reference a la direction référence direction reference direction référer un élève referer un eleve signalement à la direction demande officielle',
+    'AppSP App SP Mes suivis mes interventions dossier élève fiche élève suivi élève transmettre une référence envoyer une référence',
+    'procédure procédurier guide tutoriel marche à suivre comment faire une référence demande de référence nouvelle procédure référence',
+    'difficultés apprentissage problème apprentissage problèmes scolaires difficultés scolaires manque de motivation démotivation difficulté comportement lecture écriture mathématique langage attention concentration',
+    'services d appui services complémentaires soutien élève élève à risque orthopédagogie orthopédagogue ortho psychoéducation psychoéducateur psychoéducatrice psychologue psychologie orthophonie orthophoniste',
+    'TES technicien éducation spécialisée conseiller orientation conseillère orientation orientation scolaire plan intervention PI matériel adapté francisation enseignant ressource'
   ].join(' ');
 
-  let card = root.querySelector('#aide-eleve-services-appui');
-  if (!card) {
-    card = document.createElement('section');
-    card.className = 'card searchable';
-    card.id = 'aide-eleve-services-appui';
-    card.dataset.title = 'Aide et services d’appui pour un élève';
-    card.dataset.icon = '🧩';
-    card.innerHTML = `
-      <div class="card-head">
-        <img class="app-logo" src="assets/portal/aide-eleve.png" alt="Aide et services d’appui pour un élève">
-        <div>
-          <h3>Aide et services d’appui pour un élève</h3>
-          <div class="card-sub">Demande à la direction pour des services complémentaires ou une identification</div>
-        </div>
+  card.innerHTML = `
+    <div class="card-head">
+      <div>
+        <h3>Référence à la direction</h3>
+        <div class="card-sub">Demander officiellement un suivi ou des services d’appui pour un élève dans AppSP</div>
       </div>
-      <div class="card-body">
-        <p>Utilisez le formulaire officiel pour demander à la direction des services d’appui ou une identification lorsqu’un élève présente des besoins ou des difficultés.</p>
-        <div class="callout" data-services-appui-formulaire="true">
-          <strong>Services et besoins visés</strong>
-          <p>Orthopédagogie, psychoéducation, psychologie, orthophonie, TES, orientation ou autre service complémentaire selon les besoins de l’élève.</p>
-          <div class="links">
-            <a class="btn primary" href="${FORM_URL}" target="_blank" rel="noopener noreferrer">Accéder au fichier</a>
-          </div>
-        </div>
-      </div>`;
-    root.appendChild(card);
-  }
-
-  card.dataset.keywords = `${card.dataset.keywords || ''} ${extraKeywords}`.replace(/\s+/g, ' ').trim();
-
-  const body = card.querySelector('.card-body') || card;
-  let block = body.querySelector('[data-services-appui-formulaire]');
-  if (!block) {
-    block = document.createElement('div');
-    block.className = 'callout';
-    block.dataset.servicesAppuiFormulaire = 'true';
-    body.appendChild(block);
-  }
-
-  const existingLink = [...block.querySelectorAll('a[href]')].find(link =>
-    (link.getAttribute('href') || '').includes('17R4NSbb1JJInv61vJobHIZvBvNOPOH0H')
-  );
-  if (!existingLink) {
-    block.insertAdjacentHTML('beforeend', `
+    </div>
+    <div class="card-body">
+      <p>La <strong>référence à la direction</strong> est une démarche officielle pour signaler des difficultés observées chez un élève et demander l’évaluation de ses besoins ou le soutien d’un intervenant, notamment en cas de difficultés d’apprentissage, de motivation, de langage ou de comportement. La référence ne constitue pas un diagnostic et ne garantit pas l’attribution d’un service.</p>
+      <p>Il est important de décrire précisément les faits, les interventions déjà effectuées et leurs résultats afin d’aider la direction et les professionnels concernés à déterminer la suite appropriée.</p>
+      <ol class="steps">
+        <li>Dans <strong>AppSP</strong>, ouvrez <strong>Mes suivis</strong>.</li>
+        <li>Recherchez le <strong>nom de l’élève</strong> dans <strong>Mes interventions</strong>, puis sélectionnez sa fiche. Vous pouvez aussi chercher un élève qui ne fait pas partie de vos groupes.</li>
+        <li>Cliquez sur <strong>Référence à la direction</strong>.</li>
+        <li>Remplissez les informations demandées : motif de la demande, services d’appui souhaités, description de la problématique, interventions déjà tentées et suivis pertinents.</li>
+        <li>Vérifiez votre déclaration, puis cliquez sur <strong>Envoyer</strong>.</li>
+      </ol>
       <div class="links">
-        <a class="btn primary" href="${FORM_URL}" target="_blank" rel="noopener noreferrer">Accéder au fichier</a>
-      </div>`);
-  }
+        <a class="btn primary" href="${PROCEDURE_URL}" target="_blank" rel="noopener noreferrer">Accéder au fichier</a>
+        <a class="btn" href="https://appsp.ca/lancement/cardinal-roy/" target="_blank" rel="noopener noreferrer">Ouvrir AppSP</a>
+      </div>
+    </div>`;
+  root.appendChild(card);
 })();
 
 /* Expulsion : le rapport au Transit et l'avis SOI sont deux saisies distinctes. */
