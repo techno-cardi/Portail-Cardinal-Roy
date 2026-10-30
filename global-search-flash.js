@@ -449,8 +449,16 @@
   });
 
   if (location.hash) {
-    const id = decodeURIComponent(location.hash.slice(1));
+    let id = location.hash.slice(1);
+    try { id = decodeURIComponent(id); } catch {}
     const entry = internalEntries.find(candidate => candidate.id === id);
-    if (entry) window.setTimeout(() => openInternal(entry),120);
+    // La fiche complète est déjà ouverte par ui-polish, qui connaît le
+    // contrôleur. Rejouer son animation depuis ici la ferait clignoter deux fois.
+    if (entry && !(entry.node.classList.contains('procedure') &&
+        typeof window.PORTAL_SCROLL_AND_FLASH === 'function')) {
+      window.setTimeout(() => openInternal(entry),120);
+    } else if (!entry && document.getElementById(id)?.classList.contains('category-section')) {
+      window.setTimeout(() => window.PORTAL_NAVIGATE_HASH?.(),120);
+    }
   }
 })();

@@ -15,14 +15,14 @@
 <link rel="stylesheet" href="guide-updates.css?v=20260915-2215">
 <link rel="stylesheet" href="halloween-2026.css?v=20261030-1">
 <script src="halloween-2026.js?v=20261030-1" defer></script>
-<link rel="stylesheet" href="portal-critical.css?v=83f9ed03c2bb">
+<link rel="stylesheet" href="portal-critical.css?v=20261030-hash-halo-v2">
 </head>
 <body>
 <div id="legacy-source" hidden aria-hidden="true"></div>
 <div id="app"></div>
 <noscript><main class="page"><h1>Portail Cardinal-Roy</h1><p>JavaScript doit être activé pour consulter ce guide.</p></main></noscript>
 <script>
-const PORTAL_BUILD='20261027-sae-convocations-am-pm';
+const PORTAL_BUILD='20261030-hash-halo-v2';
 const files=['body-part-00.txt','body-part-01.txt','body-part-02.txt','body-part-03.txt','body-part-04.txt','body-part-05.txt'];
 const versioned=src=>`${src}${src.includes('?')?'&':'?'}v=${PORTAL_BUILD}`;
 const decodeUtf8Base64=b64=>{
@@ -49,6 +49,8 @@ Promise.all(files.map(f=>fetch(versioned(f)).then(r=>{if(!r.ok) throw new Error(
     await loadScript('source-patches-7.js');
     await loadScript('source-patches-8.js');
     await loadScript('source-patches-9.js');
+    // Le contrôleur doit être prêt avant les navigations initiales de ui-polish.
+    await loadScript('portal-flash-controller.js');
     await loadScript('ui-polish.js');
     await loadScript('portal-updates.js');
     await loadScript('after-ui.js');
@@ -56,7 +58,6 @@ Promise.all(files.map(f=>fetch(versioned(f)).then(r=>{if(!r.ok) throw new Error(
     await loadScript('portal-integrity.js');
     await loadScript('depannage-resource.js');
     await loadScript('ped-day-2026-09-18.js');
-    await loadScript('portal-flash-controller.js');
     await loadScript('global-search-flash.js');
     await loadScript('portal-analytics-bootstrap.js');
     await loadScript('direct-file-navigation.js');

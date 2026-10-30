@@ -53,19 +53,32 @@
     const pulseTarget = visualTarget(target);
     const navigation = ++navigationSequence;
     let finished = false;
+    let scrolled = false;
+    let settleTimer = 0;
+    let idleTimer = 0;
     let fallback = 0;
 
     const finish = () => {
       if (finished) return;
       finished = true;
-      window.removeEventListener('scrollend', finish);
-      if (fallback) window.clearTimeout(fallback);
+      window.removeEventListener('scroll', onScroll);
+      window.clearTimeout(settleTimer);
+      window.clearTimeout(idleTimer);
+      window.clearTimeout(fallback);
       if (navigation === navigationSequence) restartFlash(pulseTarget);
     };
+    const onScroll = () => {
+      scrolled = true;
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(finish, 180);
+    };
 
-    if ('onscrollend' in window) window.addEventListener('scrollend', finish, { once:true });
-    target.scrollIntoView({ behavior:'smooth', block });
-    fallback = window.setTimeout(finish, 850);
+    window.addEventListener('scroll', onScroll, { passive:true });
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({ behavior:reduceMotion ? 'auto' : 'smooth', block });
+    // Si la fiche est déjà visible, ne pas attendre un événement scrollend absent.
+    idleTimer = window.setTimeout(() => { if (!scrolled) finish(); }, 180);
+    fallback = window.setTimeout(finish, 1600);
   };
 
   const resolveHashTarget = hash => {
@@ -85,7 +98,23 @@
     }, delay);
   };
 
-  window.addEventListener('hashchange', () => flashCurrentHashAfterNavigation(120));
+  const navigateCurrentHash = () => {
+    const target = resolveHashTarget(location.hash);
+    if (!target) return false;
+    const procedure = target.closest('details.procedure');
+    if (procedure) procedure.open = true;
+    if (target.matches('details.procedure')) target.open = true;
+    scrollAndFlash(target, target.classList.contains('subresource-search-target') ? 'center' : 'start');
+    return true;
+  };
+
+  window.addEventListener('hashchange', () => {
+    if (hashTimer) window.clearTimeout(hashTimer);
+    hashTimer = window.setTimeout(() => {
+      hashTimer = 0;
+      navigateCurrentHash();
+    }, 80);
+  });
 
   document.addEventListener('click', event => {
     if (event.target.closest('#back-to-top')) {
@@ -99,6 +128,7 @@
   window.PORTAL_FLASH_TARGET = restartFlash;
   window.PORTAL_SCROLL_AND_FLASH = scrollAndFlash;
   window.PORTAL_FLASH_HASH = flashCurrentHashAfterNavigation;
+  window.PORTAL_NAVIGATE_HASH = navigateCurrentHash;
   window.PORTAL_CLEAR_FLASH = clearAll;
   window.PORTAL_FLASH_CLASS = ACTIVE_CLASS;
 })();
