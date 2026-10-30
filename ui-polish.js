@@ -68,6 +68,7 @@
     const subtitle = stripLeadingEmoji(node.querySelector('.card-sub')?.textContent || '');
     const id = node.id || `procedure-${index + 1}`;
     const keywords = node.dataset.keywords || '';
+    const directUrl = node.dataset.directHref || '';
     const originalIcon = node.dataset.icon || '';
     const logoNode = node.querySelector('.card-head img, .app-logo');
     const logoSrc = logoNode?.src || logoNode?.getAttribute('src') || '';
@@ -104,6 +105,7 @@
       title,
       subtitle,
       keywords,
+      directUrl,
       originalIcon,
       logoSrc,
       logoAlt,
@@ -123,7 +125,7 @@
   const exactCategoryById = new Map([
     ['connexion-appsp','commencer'], ['chrome','commencer'],
     ['sortie','classe'], ['presences','classe'], ['avis','classe'], ['planclasse','classe'],
-    ['tourtable','suivi'], ['pi','suivi'], ['notes','suivi'], ['courriels','suivi'], ['aide-eleve-services-appui','suivi'],
+    ['tourtable','suivi'], ['pi','suivi'], ['notes','suivi'], ['courriels','suivi'], ['aide-eleve-services-appui','suivi'], ['horaire-absences-prevues-sae','suivi'],
     ['reservation','organisation'], ['chromebook','organisation'], ['monhoraire','organisation'],
     ['drive','outils']
   ]);
@@ -290,6 +292,26 @@
   const categoryHost = document.getElementById('category-sections');
 
   const renderProcedure = item => {
+    // Une ressource de type dossier s'ouvre directement, sans accordéon intermédiaire.
+    if (item.directUrl) {
+      const container = document.createElement('div');
+      container.className = 'procedure procedure-direct';
+      container.id = item.id;
+      container.dataset.search = item.haystack;
+      container.innerHTML = `
+        <div class="procedure-direct-row">
+          <a class="procedure-direct-link" href="${escapeHtml(item.directUrl)}" target="_blank" rel="noopener noreferrer">
+            ${visualFor(item,'procedure-visual')}
+            <span class="procedure-labels">
+              <span class="procedure-title">${escapeHtml(item.title)}</span>
+              ${item.subtitle ? `<span class="procedure-subtitle">${escapeHtml(item.subtitle)}</span>` : ''}
+            </span>
+            <span class="procedure-direct-arrow" aria-hidden="true">↗</span>
+          </a>
+          <button type="button" class="favorite-button" data-favorite-id="${escapeHtml(item.id)}" aria-label="Ajouter ${escapeHtml(item.title)} aux favoris" aria-pressed="false" title="Ajouter aux favoris">☆</button>
+        </div>`;
+      return container;
+    }
     const details = document.createElement('details');
     details.className = 'procedure';
     details.id = item.id;
