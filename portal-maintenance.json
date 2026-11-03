@@ -210,29 +210,34 @@
     },
     "horaire-absences-prevues-sae": {
       "resource_id": "horaire-absences-prevues-sae",
-      "url": "https://drive.google.com/drive/folders/12gSHd025A4f7cFedyJpqqN2syhzFY96o",
-      "title": "Horaire des absences prévues (SAÉ) - dossier par discipline",
+      "url": "https://docs.google.com/spreadsheets/d/1kVPNXBV3fH3qpEXyR3rKR-DR4LyaMYXSL_hlKjiKrao/edit?gid=2122588584#gid=2122588584",
+      "title": "Absences et départs prévus des élèves SAÉ",
       "action_label": "Accéder au fichier",
       "source_file": "source-patches-9.js",
       "search_required_groups": [
         [
           "absences prévues",
           "absence prévue",
+          "absences prolongées",
+          "absence prolongée",
           "absences planifiées",
-          "absence planifiée",
           "absences à venir",
-          "absence à venir",
           "horaire des absences",
           "horaire absences",
-          "horaire absence",
           "calendrier des absences",
           "calendrier absences",
-          "planification des absences",
-          "planifier les absences",
-          "prévision des absences",
           "absences par discipline",
-          "absence par discipline",
-          "absences sport études prévues"
+          "formulaire absences saé",
+          "déclaration absences saé",
+          "déclaration d absence saÉ",
+          "départs prévus",
+          "départ anticipé saÉ",
+          "match soccer",
+          "matchs soccer",
+          "horaire soccer",
+          "calendrier soccer",
+          "absence soccer",
+          "départ soccer"
         ]
       ]
     },
@@ -305,6 +310,28 @@
           "demande orthophoniste",
           "demande services d appui",
           "demande services complémentaires"
+        ]
+      ]
+    },
+    "calendrier-matchs-hockey-royal": {
+      "resource_id": "calendrier-matchs-hockey-royal",
+      "url": "https://docs.google.com/spreadsheets/d/14s5Ge8TOAKL6dfLihqG_sDBxjb0-zkR6vkGjwAWeY1I/edit?gid=0#gid=0",
+      "title": "Calendrier des matchs de hockey - Le Royal",
+      "action_label": "Accéder au fichier",
+      "source_file": "source-patches-9.js",
+      "search_required_groups": [
+        [
+          "hockey",
+          "le royal",
+          "royal hockey",
+          "matchs hockey",
+          "match hockey",
+          "horaire hockey",
+          "calendrier hockey",
+          "calendrier des matchs de hockey",
+          "horaire des matchs de hockey",
+          "concentration hockey",
+          "matchs du royal"
         ]
       ]
     }

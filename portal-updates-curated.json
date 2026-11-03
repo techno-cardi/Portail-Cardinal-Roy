@@ -21,14 +21,24 @@
       "kind": "nouveau"
     },
     {
+      "id": "calendrier-matchs-hockey-royal-2026-11-02",
+      "title": "Hockey : calendrier des matchs du Royal",
+      "description": "Le calendrier des matchs des élèves de la concentration hockey est maintenant accessible pour éviter les conflits avec les reprises d’évaluation, les récupérations et les mises à jour.",
+      "published_at": "2026-11-02",
+      "expires_at": "2027-06-30",
+      "target": "#calendrier-matchs-hockey-royal",
+      "target_type": "file",
+      "kind": "nouveau"
+    },
+    {
       "id": "absences-prevues-sae-2026-10-30",
-      "title": "Horaire des absences prévues des élèves du SAÉ",
-      "description": "Consulter à l’avance les absences planifiées par discipline sportive afin d’anticiper les cours, les travaux et les évaluations.",
-      "published_at": "2026-10-30",
+      "title": "Absences SAÉ : déclarations et départs prévus",
+      "description": "Consultez directement les absences prolongées, les départs prévus et les matchs de soccer déclarés pour planifier les évaluations, les reprises et les récupérations.",
+      "published_at": "2026-11-02",
       "expires_at": "2027-06-30",
       "target": "#horaire-absences-prevues-sae",
       "target_type": "file",
-      "kind": "nouveau"
+      "kind": "maj"
     },
     {
       "id": "reservation-recuperation-2026-09-21",

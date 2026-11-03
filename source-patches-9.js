@@ -130,36 +130,78 @@
   }
 })();
 
-/* Calendrier prévisionnel des absences des élèves du sport-études (SAÉ). */
+/* Consultation des absences et départs déclarés des élèves SAÉ. */
 (() => {
   'use strict';
   const root = document.getElementById('legacy-source');
   if (!root || root.querySelector('#horaire-absences-prevues-sae')) return;
-  const FOLDER_URL = 'https://drive.google.com/drive/folders/12gSHd025A4f7cFedyJpqqN2syhzFY96o';
+  const ABSENCES_URL = 'https://docs.google.com/spreadsheets/d/1kVPNXBV3fH3qpEXyR3rKR-DR4LyaMYXSL_hlKjiKrao/edit?gid=2122588584#gid=2122588584';
   const card = document.createElement('section');
   card.className = 'card searchable';
-  card.id = 'horaire-absences-prevues-sae';
-  card.dataset.title = 'Horaire des absences prévues (SAÉ)';
+  card.id = 'horaire-absences-prevues-sae'; // Identifiant permanent: anciens favoris et ancres préservés.
+  card.dataset.title = 'Absences et départs prévus des élèves SAÉ';
   card.dataset.icon = '📅';
-  card.dataset.directHref = FOLDER_URL;
+  card.dataset.directHref = ABSENCES_URL;
   card.dataset.keywords = [
-    'horaire absences prévues SAÉ SAE sport-études sport etudes sports études',
-    'absences planifiées absences à venir absences futures prévisions absence',
-    'calendrier absences par discipline planification absences des élèves sport-études',
-    'discipline sportive compétition entraînement entrainement anticiper cours travaux évaluations'
+    'SAÉ SAE sport-études sport etudes secteur sportif horaires absences prévues',
+    'absence élève absences élèves absences prolongées départ prévu départ anticipé départs prévus',
+    'horaire des absences calendrier des absences déclaration absence déclarations absences formulaire de réponse',
+    'formulaire SAÉ formulaire absences déclaration absences SAÉ enseignants feuille réponses',
+    'match soccer matchs soccer horaire soccer calendrier soccer départ soccer absence soccer',
+    'football soccer match tournoi compétition tournoi sportif camp entraînement voyage sportif',
+    'absence planifiée absences planifiées absences à venir absence future absences futures',
+    'planification scolaire reprise examen reprise évaluation récupération mise à jour rattrapage',
+    'élèves absents disponibilités élèves absences par discipline sport-études'
   ].join(' ');
   card.innerHTML = `
     <div class="card-head">
       <div class="card-icon" aria-hidden="true">📅</div>
       <div>
-        <h3>Horaire des absences prévues (SAÉ)</h3>
-        <div class="card-sub">Sport-études : consulter à l’avance les absences par discipline</div>
+        <h3>Absences et départs prévus des élèves SAÉ</h3>
+        <div class="card-sub">Déclarations d’absences prolongées, départs et matchs de soccer</div>
       </div>
     </div>
     <div class="card-body">
-      <p>Consultez le dossier des absences planifiées des élèves du sport-études, par discipline, pour anticiper les cours, les travaux et les évaluations.</p>
+      <p>Consultez les absences prolongées, les départs prévus et les matchs déclarés des élèves SAÉ, notamment en soccer, pour planifier les évaluations, les reprises et les récupérations. Les matchs de soccer ne sont pas tous connus à l’avance : vérifiez régulièrement les déclarations.</p>
       <div class="links">
-        <a class="btn primary" href="${FOLDER_URL}" target="_blank" rel="noopener noreferrer">Accéder au dossier des absences prévues</a>
+        <a class="btn primary" href="${ABSENCES_URL}" target="_blank" rel="noopener noreferrer">Accéder au fichier</a>
+      </div>
+    </div>`;
+  root.appendChild(card);
+})();
+
+/* Horaire des matchs des élèves de la concentration hockey - Le Royal. */
+(() => {
+  'use strict';
+  const root = document.getElementById('legacy-source');
+  if (!root || root.querySelector('#calendrier-matchs-hockey-royal')) return;
+  const HOCKEY_URL = 'https://docs.google.com/spreadsheets/d/14s5Ge8TOAKL6dfLihqG_sDBxjb0-zkR6vkGjwAWeY1I/edit?gid=0#gid=0';
+  const card = document.createElement('section');
+  card.className = 'card searchable';
+  card.id = 'calendrier-matchs-hockey-royal';
+  card.dataset.title = 'Calendrier des matchs de hockey - Le Royal';
+  card.dataset.icon = '🏒';
+  card.dataset.directHref = HOCKEY_URL;
+  card.dataset.keywords = [
+    'hockey Le Royal Royal Hockey Cardinal-Roy concentration hockey sport-études hockey SAÉ SAE hockey',
+    'équipe hockey joueurs de hockey match matchs partie parties rencontres sportives compétition',
+    'tournoi hockey calendrier hockey horaire hockey calendrier des matchs horaire des matchs',
+    'matchs à venir partie de hockey absence hockey élèves hockey calendrier sportif horaire sportif',
+    'disponibilité joueurs reprises examens évaluation récupération convocation mise à jour',
+    'conflit horaire planification reprises élèves absents lors des matchs'
+  ].join(' ');
+  card.innerHTML = `
+    <div class="card-head">
+      <div class="card-icon" aria-hidden="true">🏒</div>
+      <div>
+        <h3>Calendrier des matchs de hockey - Le Royal</h3>
+        <div class="card-sub">Horaire des matchs des élèves de la concentration hockey</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <p>Consultez l’horaire des matchs du Royal avant de fixer une reprise d’évaluation, une récupération ou une mise à jour pour éviter les conflits avec les rencontres sportives.</p>
+      <div class="links">
+        <a class="btn primary" href="${HOCKEY_URL}" target="_blank" rel="noopener noreferrer">Accéder au fichier</a>
       </div>
     </div>`;
   root.appendChild(card);
