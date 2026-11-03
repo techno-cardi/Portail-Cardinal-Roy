@@ -86,7 +86,8 @@
     if (!raw) return null;
     let id = raw;
     try { id = decodeURIComponent(raw); } catch {}
-    return visualTarget(document.getElementById(id));
+    // Conserver l'ancien lien vers Récupération après la fusion.
+    return visualTarget(document.getElementById(id === 'recuperation' ? 'reservation' : id));
   };
 
   const flashCurrentHashAfterNavigation = (delay = 120) => {

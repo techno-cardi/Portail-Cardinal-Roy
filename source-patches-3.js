@@ -141,7 +141,7 @@
     const reservation = quick.querySelector('a[href="#reservation"]');
     const reservationLabel = reservation?.querySelector('.quick-label');
     if (reservationLabel) {
-      reservationLabel.textContent = 'Réservation - Chromebook, convocations, reprises d’examen et ressources';
+      reservationLabel.textContent = 'Réservation - Locaux, récupérations, convocations et reprises';
     }
 
     if (!quick.querySelector('a[href="#encadrement-sae"]')) {

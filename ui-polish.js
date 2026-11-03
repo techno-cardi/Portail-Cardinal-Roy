@@ -211,12 +211,22 @@
     : `<span class="${className} emoji-visual" aria-hidden="true">${item.originalIcon || fallbackEmoji(item.id,item.title)}</span>`;
 
   let favorites;
+  let recoveredFavorite = false;
   try {
-    favorites = new Set(JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]'));
+    const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
+    favorites = new Set(saved.map(id => {
+      if (id === 'recuperation') {
+        recoveredFavorite = true;
+        return 'reservation';
+      }
+      return id;
+    }));
   } catch {
     favorites = new Set();
   }
   const saveFavorites = () => localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
+  // Transférer les anciennes étoiles « Récupération » vers la fiche unique.
+  if (recoveredFavorite) saveFavorites();
 
   app.innerHTML = `
     <header class="site-header">
@@ -422,10 +432,11 @@
   };
 
   const openTarget = id => {
-    const target = document.getElementById(id);
+    const targetId = id === 'recuperation' ? 'reservation' : id;
+    const target = document.getElementById(targetId);
     if (!target?.classList.contains('procedure')) return;
     target.open = true;
-    history.replaceState(null, '', `#${id}`);
+    history.replaceState(null, '', `#${targetId}`);
     requestAnimationFrame(() => {
       if (typeof window.PORTAL_SCROLL_AND_FLASH === 'function') window.PORTAL_SCROLL_AND_FLASH(target, 'start');
       else target.scrollIntoView({ behavior:'smooth', block:'start' });
@@ -451,7 +462,7 @@
     const anchor = event.target.closest('a[href^="#"]');
     if (!anchor) return;
     const id = decodeURIComponent(anchor.getAttribute('href').slice(1));
-    const target = document.getElementById(id);
+    const target = document.getElementById(id === 'recuperation' ? 'reservation' : id);
     if (target?.classList.contains('procedure')) {
       event.preventDefault();
       openTarget(id);

@@ -206,3 +206,51 @@
     </div>`;
   root.appendChild(card);
 })();
+
+
+/* Réservation et récupération : une seule fiche, sans double chemin de navigation. */
+(() => {
+  'use strict';
+  const root = document.getElementById('legacy-source');
+  const card = root?.querySelector('#reservation');
+  const formerRecovery = root?.querySelector('#recuperation');
+  if (!card || !formerRecovery) return;
+
+  const title = 'Réservation - Locaux, récupérations, convocations et reprises';
+  card.dataset.title = title;
+  card.dataset.keywords = [
+    card.dataset.keywords || '',
+    formerRecovery.dataset.keywords || '',
+    'Récupération - réserver un local et gérer les élèves',
+    'réserver un local réservation local disponible disponibilité locaux jour-cycle jour cycle',
+    'inscrire les élèves présences récupération reprise évaluation examen étude surveillée',
+    'convocation élèves SAÉ AM PM matin avant les cours dîner après-midi mise à jour',
+    'retour étude surveillée 15 h 30 reconduire les élèves fin de récupération',
+    'réservation Chromebook chariots matériel ressources reprise évaluation durée matériel autorisé'
+  ].join(' ').replace(/\s+/g, ' ').trim();
+
+  const heading = card.querySelector('.card-head h3');
+  if (heading) heading.textContent = title;
+  const subtitle = card.querySelector('.card-head .card-sub');
+  if (subtitle) subtitle.textContent = 'Réserver un local, convoquer les élèves et organiser les reprises';
+
+  const body = card.querySelector('.card-body');
+  const steps = body?.querySelector('ol.steps');
+  if (!steps) return;
+
+  const intro = document.createElement('p');
+  intro.textContent = 'Utilisez Réservation dans AppSP pour réserver un local ou du matériel, convoquer les élèves à une récupération ou à une mise à jour et organiser les reprises d’évaluation.';
+  intro.dataset.reservationMergeIntro = 'true';
+  body.insertBefore(intro, steps);
+
+  steps.innerHTML = `
+    <li><strong>Réservez le local ou la ressource.</strong> Vérifiez la disponibilité des locaux selon le jour-cycle, puis réservez le local dans l’horaire des locaux d’AppSP. La même application permet de réserver du matériel, dont les Chromebooks.</li>
+    <li><strong>Choisissez la catégorie de convocation.</strong> Pour une récupération ou une mise à jour SAÉ, sélectionnez la catégorie AM (matin, y compris avant les cours) ou PM (dîner ou après-midi), puis la ressource à votre nom.</li>
+    <li><strong>Inscrivez les élèves.</strong> Choisissez la journée et les élèves concernés. Pour une reprise d’examen à l’étude surveillée, précisez la durée et le matériel autorisé dans les champs demandés.</li>
+    <li><strong>Envoyez la convocation</strong> et consignez les présences selon la procédure prévue. Les personnes concernées reçoivent les renseignements transmis par le système.</li>
+    <li><strong>À la fin de la récupération</strong>, si les cours ne sont pas terminés (15 h 30), reconduisez les élèves à l’étude surveillée.</li>`;
+
+  // L'ancien identifiant reste reconnu par la navigation et les favoris, mais
+  // la fiche n'est plus indexée ou affichée une deuxième fois.
+  formerRecovery.remove();
+})();
