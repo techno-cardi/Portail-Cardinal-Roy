@@ -147,6 +147,19 @@
   const groupById = new Map(groups.map(group => [group.id, group]));
   items.forEach(item => groupById.get(categoryFor(item))?.items.push(item));
 
+  // Classement alphabétique propre à chaque catégorie, selon l'ordre français.
+  const categoryCollator = new Intl.Collator('fr-CA', {
+    usage: 'sort',
+    sensitivity: 'base',
+    ignorePunctuation: true,
+    numeric: true
+  });
+  const compareTitles = (titleA, titleB) => categoryCollator.compare(titleA, titleB);
+  groups.forEach(group => group.items.sort((a, b) =>
+    compareTitles(a.title, b.title) || compareTitles(a.id, b.id)
+  ));
+
+
   const appsp = items.find(item => item.id === 'connexion-appsp' || normalize(item.title).includes('appsp'));
   if (appsp) {
     const first = appsp.body.querySelector('p');
@@ -344,6 +357,34 @@
     group.items.forEach(item => list.appendChild(renderProcedure(item)));
     categoryHost.appendChild(section);
   });
+
+
+  // Les modules chargés ensuite peuvent ajouter ou déplacer des fiches :
+  // maintenir le même ordre dans les catégories supplémentaires.
+  const sortRenderedCategories = () => {
+    categoryHost.querySelectorAll('.category-section > .procedure-list').forEach(list => {
+      const procedures = [...list.children].filter(node => node.classList.contains('procedure'));
+      if (procedures.length < 2) return;
+      const titleOf = node => node.querySelector('.procedure-title')?.textContent?.trim() || '';
+      const sorted = [...procedures].sort((a, b) =>
+        compareTitles(titleOf(a), titleOf(b)) || compareTitles(a.id, b.id)
+      );
+      // Ne déplacer que les fiches hors ordre afin de préserver au maximum
+      // leur état, leurs écouteurs, le focus et les animations.
+      for (let index = 0; index < sorted.length; index += 1) {
+        const currentAtIndex = [...list.children].filter(node => node.classList.contains('procedure'))[index];
+        if (currentAtIndex !== sorted[index]) list.insertBefore(sorted[index], currentAtIndex || null);
+      }
+    });
+  };
+  sortRenderedCategories();
+  const categorySortObserver = new MutationObserver(mutations => {
+    if (!mutations.some(mutation =>
+      mutation.target === categoryHost || mutation.target.classList?.contains('procedure-list')
+    )) return;
+    sortRenderedCategories();
+  });
+  categorySortObserver.observe(categoryHost, {childList: true, subtree: true});
 
   const favoritesArea = document.getElementById('favorites-area');
   const favoriteLinks = document.getElementById('favorite-links');

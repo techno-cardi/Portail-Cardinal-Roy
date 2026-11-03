@@ -95,7 +95,7 @@
   const card = document.createElement('section');
   card.className = 'card searchable';
   card.id = 'intervention-retards';
-  card.dataset.title = 'Intervenir lorsqu’un élève arrive en retard';
+  card.dataset.title = 'Retards - Comment intervenir auprès d’un élève';
   card.dataset.icon = '⏰';
   card.dataset.keywords = [
     'retard retards en retard retardataire retardataires ponctualité ponctualite ponctuel ponctuelle arriver arrivée arrivee',
@@ -109,7 +109,7 @@
     <div class="card-head">
       <div class="card-icon" aria-hidden="true">⏰</div>
       <div>
-        <h3>Intervenir lorsqu’un élève arrive en retard</h3>
+        <h3>Retards - Comment intervenir auprès d’un élève</h3>
         <div class="card-sub">Infographie — interventions immédiates et positives</div>
       </div>
     </div>
@@ -312,4 +312,15 @@
   script.src = 'daily-thought.js?v=20260907-finalfix';
   script.dataset.dailyThought = 'true';
   document.body.appendChild(script);
+})();
+
+
+/* Libellé du plan d'intervention : placer le sujet avant l'action pour le classement alphabétique. */
+(() => {
+  const card = document.getElementById('legacy-source')?.querySelector('#pi');
+  if (!card) return;
+  const title = 'Plan d’intervention - Consulter un plan dans AppSP';
+  card.dataset.title = title;
+  const heading = card.querySelector('.card-head h3');
+  if (heading) heading.textContent = title;
 })();
