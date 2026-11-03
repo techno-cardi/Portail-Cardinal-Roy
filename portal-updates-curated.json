@@ -33,7 +33,7 @@
     {
       "id": "absences-prevues-sae-2026-10-30",
       "title": "Absences SAÉ : déclarations et départs prévus",
-      "description": "Consultez directement les absences prolongées, les départs prévus et les matchs de soccer déclarés pour planifier les évaluations, les reprises et les récupérations.",
+      "description": "Consultez directement les absences prolongées et les départs prévus des élèves SAÉ pour planifier les évaluations, les reprises et les récupérations.",
       "published_at": "2026-11-02",
       "expires_at": "2027-06-30",
       "target": "#horaire-absences-prevues-sae",

@@ -158,11 +158,11 @@
       <div class="card-icon" aria-hidden="true">📅</div>
       <div>
         <h3>Absences et départs prévus des élèves SAÉ</h3>
-        <div class="card-sub">Déclarations d’absences prolongées, départs et matchs de soccer</div>
+        <div class="card-sub">Déclarations d’absences prolongées et de départs prévus</div>
       </div>
     </div>
     <div class="card-body">
-      <p>Consultez les absences prolongées, les départs prévus et les matchs déclarés des élèves SAÉ, notamment en soccer, pour planifier les évaluations, les reprises et les récupérations. Les matchs de soccer ne sont pas tous connus à l’avance : vérifiez régulièrement les déclarations.</p>
+      <p>Consultez les absences prolongées et les départs prévus des élèves SAÉ afin de planifier les évaluations, les reprises et les récupérations.</p>
       <div class="links">
         <a class="btn primary" href="${ABSENCES_URL}" target="_blank" rel="noopener noreferrer">Accéder au fichier</a>
       </div>
