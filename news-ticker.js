@@ -13,6 +13,8 @@
   const PED_DAY_EXPIRES_AT = Date.parse('2026-09-19T00:00:00-04:00');
   const PARENTS_MEETING_URL = 'https://drive.google.com/drive/folders/12H3rEFMgOWAfFQaaiJcAXK2egsyHvQZD';
   const PARENTS_MEETING_EXPIRES_AT = Date.parse('2026-09-30T00:00:00-04:00');
+  const NOVEMBER_PARENTS_MEETING_URL = 'https://drive.google.com/file/d/1108CAYXLxzLUERDqJ4IX41xTGMu4e67s/view?usp=drive_link';
+  const NOVEMBER_PARENTS_MEETING_EXPIRES_AT = Date.parse('2026-11-20T00:00:00-05:00');
   const OCTOBER_PED_DAY_URL = 'https://drive.google.com/file/d/1zyMK5pY5kGBVr1qbrBGyNWrJRpuTGHDs/view?usp=drivesdk';
   const OCTOBER_PED_DAY_EXPIRES_AT = Date.parse('2026-10-06T00:00:00-04:00');
 
@@ -144,6 +146,11 @@
   const isSeptemberParentsMeeting = item =>
     String(item?.start || '').startsWith('2026-09-29') && normalize(item?.title).includes('parents');
 
+  const isNovemberParentsMeeting = item =>
+    String(item?.start || '').startsWith('2026-11-19')
+    && normalize(item?.title).includes('rencontre')
+    && normalize(item?.title).includes('parents');
+
   const isOctoberPedDay = item =>
     normalize(item?.title) === 'pedagogique' && String(item?.start || '').startsWith('2026-10-05');
 
@@ -162,6 +169,14 @@
         title: 'Ouvrir le dossier de la rencontre de parents du 29 septembre',
         key: 'parents-meeting-2026-09-29',
         kind: 'parents-meeting'
+      };
+    }
+    if (isNovemberParentsMeeting(item) && Date.now() < NOVEMBER_PARENTS_MEETING_EXPIRES_AT) {
+      return {
+        url: NOVEMBER_PARENTS_MEETING_URL,
+        title: 'Ouvrir l’horaire des locaux pour les rencontres de parents du 19 novembre',
+        key: 'parents-meeting-2026-11-19',
+        kind: 'november-parents-meeting'
       };
     }
     if (isOctoberPedDay(item) && Date.now() < OCTOBER_PED_DAY_EXPIRES_AT) {
@@ -203,8 +218,8 @@
         delete track.dataset.pedDayUrl;
       }
 
-      if (action.kind === 'parents-meeting') {
-        track.dataset.parentsMeetingLink = '2026-09-29';
+      if (action.kind === 'parents-meeting' || action.kind === 'november-parents-meeting') {
+        track.dataset.parentsMeetingLink = action.kind === 'november-parents-meeting' ? '2026-11-19' : '2026-09-29';
         track.dataset.parentsMeetingUrl = action.url;
       } else {
         delete track.dataset.parentsMeetingLink;

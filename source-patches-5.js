@@ -219,6 +219,50 @@
     buttonText: 'Voir le calendrier scolaire 2026-2027'
   });
 
+
+  // Cette ressource temporaire est retirée automatiquement à la fin du 19 novembre.
+  const PARENTS_NOV_2026_EXPIRES_AT = Date.parse('2026-11-20T00:00:00-05:00');
+  if (Date.now() < PARENTS_NOV_2026_EXPIRES_AT) {
+    addSearchableCard({
+      id: 'rencontres-parents-2026-11-19',
+      title: 'Rencontres de parents - 19 novembre 2026',
+      subtitle: 'Horaires, rendez-vous, locaux et documents pour les enseignants',
+      keywords: [
+        'rencontres de parents rencontre parents parents enseignants parent enseignant',
+        'réunion parents entrevue parents rendez-vous prise rendez-vous rencontreparent AppSP',
+        '19 novembre 2026 novembre première étape bulletin suivi scolaire',
+        'plages horaires après-midi soirée 13 h 30 16 h 30 18 h 30 20 h 30 8 minutes',
+        'horaire locaux rencontre parents attribution locaux salles salle rencontre parents',
+        'lettre envoyée parents information parents documents rencontres'
+      ].join(' '),
+      icon: '👥',
+      body: `
+        <p>Les rencontres de parents-enseignants auront lieu le <strong>jeudi 19 novembre 2026</strong>, selon les plages horaires suivantes :</p>
+        <ul>
+          <li><strong>Après-midi :</strong> 13 h 30 à 16 h 30</li>
+          <li><strong>Soirée :</strong> 18 h 30 à 20 h 30</li>
+          <li><strong>Durée des rendez-vous :</strong> 8 minutes par plage</li>
+        </ul>
+        <p>La plateforme AppSP permet d’accéder aux rendez-vous des rencontres de parents.</p>
+        <div class="links">
+          <a class="btn primary" href="https://appsp.ca/rencontreparent" target="_blank" rel="noopener noreferrer">Plateforme de prise de rendez-vous (AppSP)</a>
+          <a class="btn" href="https://drive.google.com/file/d/1108CAYXLxzLUERDqJ4IX41xTGMu4e67s/view?usp=drive_link" target="_blank" rel="noopener noreferrer">Horaire des locaux pour les rencontres de parents</a>
+          <a class="btn" href="https://drive.google.com/file/d/1MJnmygE53_9TgL9k4SNggmHr_lifnVod/view?usp=drive_link" target="_blank" rel="noopener noreferrer">Lettre envoyée aux parents</a>
+        </div>`
+    });
+
+    // Un onglet resté ouvert se remet à jour à l'expiration, y compris après
+    // une suspension des minuteries en arrière-plan.
+    const refreshExpiredParentsMeeting = () => {
+      if (Date.now() >= PARENTS_NOV_2026_EXPIRES_AT) window.location.reload();
+    };
+    const remaining = PARENTS_NOV_2026_EXPIRES_AT - Date.now();
+    window.setTimeout(refreshExpiredParentsMeeting, remaining);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) refreshExpiredParentsMeeting();
+    });
+  }
+
   // Remplace toutes les images distantes déjà présentes dans la source par leur
   // copie locale conservée dans /assets/vendor lorsqu'elle existe.
   localizeImages(root);
@@ -263,7 +307,7 @@
     };
 
     moveInto(forms, ['rfeef','perf-central','perf-local','declaration-evenements-risque']);
-    moveInto(schoolOrg, ['monhoraire','calendrier-scolaire-2026-2027','horaire-enseignants-2026-2027','horaire-locaux-2026-2027','plans-ecole']);
+    moveInto(schoolOrg, ['monhoraire','calendrier-scolaire-2026-2027','horaire-enseignants-2026-2027','horaire-locaux-2026-2027','plans-ecole','rencontres-parents-2026-11-19']);
 
     // Retire toute section devenue vide, puis remet l'ensemble dans un ordre logique.
     [...host.querySelectorAll('.category-section')].forEach(section => {

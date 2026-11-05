@@ -1,6 +1,16 @@
 {
   "items": [
     {
+      "id": "rencontres-parents-2026-11-05",
+      "title": "Rencontres de parents - Informations et rendez-vous",
+      "description": "Le 19 novembre, les rencontres auront lieu de 13 h 30 à 16 h 30 et de 18 h 30 à 20 h 30, avec des plages de 8 minutes. Consultez la plateforme de rendez-vous, l’horaire des locaux pour les rencontres et la lettre envoyée aux parents.",
+      "published_at": "2026-11-05",
+      "expires_at": "2026-11-19",
+      "target": "#rencontres-parents-2026-11-19",
+      "target_type": "section",
+      "kind": "nouveau"
+    },
+    {
       "id": "reference-direction-appsp-2026-10-30",
       "title": "Référence à la direction : nouvelle procédure dans AppSP",
       "description": "La référence officielle à la direction se fait maintenant dans Mes suivis (AppSP). Consulter le procédurier illustré pour rechercher l’élève, préciser les besoins et envoyer la demande.",
