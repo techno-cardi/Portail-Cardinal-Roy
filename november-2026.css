@@ -1,0 +1,120 @@
+/* Novembre 2026 - décor autonome, sans interaction avec les ressources du portail. */
+.cardi-november body::before {
+  background:linear-gradient(90deg,#7f1427 0%,#a75838 48%,#7f1427 100%);
+}
+.cardi-november .site-header {
+  background:linear-gradient(110deg,#fffdf9 0%,#fffdf9 65%,#fcf5ec 100%);
+}
+.cardi-november .search-stage {
+  background:linear-gradient(112deg,#711726 0%,#7f1427 54%,#722038 100%);
+}
+.cardi-november .masthead { position:relative; }
+.cardi-november .search-stage-inner { position:relative; z-index:1; }
+
+/* Illustrations SVG statiques, indépendantes de la mise en page. */
+.november-branch,
+.november-frost,
+.november-poppy,
+.november-ambient {
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.november-branch {
+  position:absolute;
+  right:0;
+  top:0;
+  width:225px;
+  height:118px;
+  opacity:.74;
+  overflow:hidden;
+}
+.november-branch svg,
+.november-frost svg,
+.november-poppy svg { display:block; width:100%; height:100%; }
+.november-frost {
+  position:absolute;
+  top:0;
+  right:0;
+  width:132px;
+  height:116px;
+  opacity:0;
+  transition:opacity .9s ease;
+}
+.cardi-november[data-november-phase="transition"] .november-frost { opacity:.22; }
+.cardi-november[data-november-phase="winter"] .november-frost { opacity:.46; }
+.cardi-november[data-november-phase="winter"] .november-branch { opacity:.46; }
+.november-poppy {
+  position:absolute;
+  right:174px;
+  top:15px;
+  width:44px;
+  height:50px;
+}
+
+/* Quelques éléments sur les bords de l'écran, jamais sur une zone cliquable. */
+.november-ambient {
+  position:fixed;
+  inset:0;
+  z-index:40;
+  overflow:hidden;
+  contain:layout style;
+  pointer-events:none!important;
+  isolation:isolate;
+}
+.november-particle {
+  position:absolute;
+  top:-42px;
+  left:var(--november-x);
+  width:var(--november-size);
+  height:var(--november-size);
+  color:var(--november-color);
+  opacity:0;
+  animation:november-fall var(--november-duration) linear var(--november-delay) infinite;
+  will-change:transform,opacity;
+  pointer-events:none!important;
+}
+.november-particle svg { width:100%; height:100%; display:block; }
+.november-particle--snow { opacity:0; }
+.cardi-november.november-paused .november-particle {
+  animation-play-state:paused;
+}
+@keyframes november-fall {
+  0% { opacity:0; transform:translate3d(0,-4vh,0) rotate(-18deg); }
+  8% { opacity:.65; }
+  24% { transform:translate3d(15px,26vh,0) rotate(50deg); }
+  50% { transform:translate3d(-9px,58vh,0) rotate(145deg); }
+  76% { opacity:.64; transform:translate3d(23px,88vh,0) rotate(230deg); }
+  100% { opacity:0; transform:translate3d(var(--november-drift),117vh,0) rotate(330deg); }
+}
+@keyframes november-snow {
+  0% { opacity:0; transform:translate3d(0,-4vh,0) rotate(0); }
+  10% { opacity:.6; }
+  70% { opacity:.6; }
+  100% { opacity:0; transform:translate3d(var(--november-drift),118vh,0) rotate(90deg); }
+}
+.november-particle--snow { animation-name:november-snow; }
+
+@media (max-width:980px) {
+  .november-branch { width:165px; height:103px; opacity:.56; }
+  .november-frost { width:96px; height:92px; }
+  .november-poppy { right:125px; top:11px; width:35px; }
+}
+@media (max-width:720px) {
+  .november-branch { width:76px; height:64px; opacity:.38; }
+  .november-frost { width:64px; height:72px; }
+  .november-poppy { right:60px; top:8px; width:28px; }
+  .november-particle { opacity:0; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .november-particle { display:none!important; animation:none!important; }
+  .november-frost { transition:none; }
+}
+@media (forced-colors:active) {
+  .november-branch,.november-frost,.november-poppy,.november-ambient { display:none!important; }
+}
+@media print {
+  .november-branch,.november-frost,.november-poppy,.november-ambient { display:none!important; }
+  .cardi-november .site-header { background:#fff; }
+  .cardi-november .search-stage { background:#7f1427; }
+}
