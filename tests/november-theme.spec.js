@@ -52,3 +52,13 @@ test('mode mouvements réduits : illustrations fixes seulement', async ({ page }
   await expect(page.locator('[data-november-decor="branch"]')).toHaveCount(1);
   await expect(page.locator('.november-particle')).toHaveCount(0);
 });
+
+test('ouverture le 31 octobre : le thème apparaît au passage à novembre sans rechargement', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-11-01T03:59:50Z') });
+  await page.goto('/');
+  await expect(page.locator('#guide-search')).toBeVisible();
+  await expect(page.locator('html')).not.toHaveClass(/cardi-november/);
+  await page.clock.fastForward(11000);
+  await expect(page.locator('html')).toHaveClass(/cardi-november/);
+  await expect(page.locator('[data-november-decor="layer"]')).toHaveCount(1);
+});
