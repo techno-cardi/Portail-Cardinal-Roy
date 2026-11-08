@@ -4,8 +4,10 @@
 
   var ROOT_CLASS = 'cardi-november';
   var MARKER = 'data-november-decor';
+  var START = Date.parse('2026-11-01T00:00:00-04:00');
   var END = Date.parse('2026-12-01T00:00:00-05:00');
   var CHANGE_TIMES = [
+    '2026-11-01T00:00:00-04:00',
     '2026-11-11T00:00:00-05:00',
     '2026-11-12T00:00:00-05:00',
     '2026-11-15T00:00:00-05:00',
@@ -156,7 +158,10 @@
   function sync() {
     if (stopped) return;
     var date = dateAtSchool();
-    if (!isActive(date)) { cleanUp(); return; }
+    if (!isActive(date)) {
+      if (Date.now() < START) { nextWake(); return; }
+      cleanUp(); return;
+    }
 
     document.documentElement.classList.add(ROOT_CLASS);
     document.documentElement.classList.toggle('november-paused',document.hidden);
@@ -173,7 +178,7 @@
     observePortal(date);
     nextWake();
   }
-  if (!isActive(dateAtSchool())) return;
+  if (Date.now() >= END) return;
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded',sync,{once:true});
   } else {
