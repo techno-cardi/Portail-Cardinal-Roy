@@ -138,3 +138,140 @@
   .cardi-november .site-header { background:#fff; }
   .cardi-november .search-stage { background:#7f1427; }
 }
+
+
+/* Version 2 : un vrai décor d'automne, constitué surtout de SVG fixes. */
+.cardi-november .site-header {
+  background:linear-gradient(113deg,#fffaf2 0%,#fffdf9 50%,#faf0e8 100%);
+}
+.cardi-november .search-stage {
+  background:
+    radial-gradient(circle at 11% 23%,rgba(236,161,99,.12),transparent 34%),
+    radial-gradient(circle at 91% 72%,rgba(237,175,107,.10),transparent 31%),
+    linear-gradient(110deg,#681521 0%,#7f1427 51%,#662138 100%);
+  /* Ne pas mettre overflow:hidden ici : les suggestions doivent déborder. */
+}
+.cardi-november .masthead { padding-inline:8px; }
+.november-branch {
+  width:252px;
+  height:137px;
+  opacity:.88;
+}
+.november-branch--left {
+  left:-15px;
+  right:auto;
+  top:-28px;
+  width:120px;
+  height:84px;
+  opacity:.55;
+  transform:scaleX(-1);
+}
+.november-frost {
+  width:154px;
+  height:126px;
+  opacity:.12;
+}
+.november-frost--left { left:0; right:auto; transform:scaleX(-1); }
+.november-garland,
+.november-stage-pile,
+.november-ground-pile,
+.november-card-leaf { pointer-events:none!important; user-select:none; }
+.november-garland svg,
+.november-stage-pile svg,
+.november-ground-pile svg,
+.november-card-leaf svg { display:block; width:100%; height:100%; }
+.november-garland {
+  position:absolute;
+  left:50%;
+  top:2px;
+  transform:translateX(-50%);
+  width:min(570px,78%);
+  height:54px;
+  opacity:.56;
+}
+.november-stage-pile {
+  position:absolute;
+  bottom:3px;
+  left:15px;
+  width:142px;
+  height:65px;
+  opacity:.9;
+}
+.november-stage-pile--right { left:auto; right:15px; transform:scaleX(-1); }
+.november-ground-pile {
+  position:fixed;
+  bottom:-7px;
+  left:-20px;
+  width:122px;
+  height:62px;
+  opacity:.64;
+  z-index:35;
+}
+.november-ground-pile--right { left:auto; right:-20px; transform:scaleX(-1); }
+.november-card-leaf {
+  position:absolute;
+  top:6px;
+  right:30px;
+  width:21px;
+  height:25px;
+  opacity:.72;
+  transform:rotate(-16deg);
+}
+.november-particle--gust {
+  animation-name:november-gust!important;
+}
+@keyframes november-gust {
+  0%,76% {opacity:0;transform:translate3d(-50vw,18vh,0) rotate(-30deg);}
+  79% {opacity:.72;}
+  90% {opacity:.75;transform:translate3d(17vw,24vh,0) rotate(120deg);}
+  100% {opacity:0;transform:translate3d(110vw,32vh,0) rotate(280deg);}
+}
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) {
+  .cardi-november .procedure summary:hover::before,
+  .cardi-november .procedure-direct-row:hover::before { content:none; animation:none; }
+  .cardi-november .procedure summary:hover > .november-card-leaf,
+  .cardi-november .procedure-direct-row:hover > .november-card-leaf {
+    animation:november-leaf-lift 1.45s ease-out both;
+  }
+}
+@keyframes november-leaf-lift {
+  0% {opacity:.72;transform:translate3d(0,0,0) rotate(-16deg);}
+  35% {opacity:.88;}
+  100% {opacity:0;transform:translate3d(28px,-26px,0) rotate(83deg);}
+}
+.cardi-november[data-november-phase="transition"] .november-frost { opacity:.25; }
+.cardi-november[data-november-phase="winter"] .november-frost { opacity:.48; }
+.cardi-november[data-november-phase="winter"] .november-garland {opacity:.36;}
+.cardi-november[data-november-phase="winter"] .november-stage-pile {opacity:.6;}
+.cardi-november[data-november-phase="winter"] .november-ground-pile {opacity:.44;}
+@media (max-width:980px) {
+  .november-branch {width:170px;height:102px;opacity:.65;}
+  .november-branch--left {width:74px;height:55px;opacity:.44;}
+  .november-garland {width:min(380px,72%);height:44px;opacity:.48;}
+  .november-stage-pile {width:94px;height:48px;opacity:.75;}
+  .november-ground-pile {width:84px;height:48px;}
+  .november-frost {width:100px;height:100px;}
+}
+@media (max-width:720px) {
+  .november-branch {width:85px;height:63px;opacity:.45;}
+  .november-branch--left {display:none;}
+  .november-garland {top:1px;width:min(235px,66%);height:28px;opacity:.38;}
+  .november-stage-pile {width:55px;height:30px;bottom:6px;left:3px;}
+  .november-stage-pile--right {left:auto;right:3px;}
+  .november-ground-pile {width:65px;height:40px;opacity:.4;}
+  .november-frost {width:66px;height:75px;}
+  .november-card-leaf {width:16px;height:20px;right:28px;opacity:.55;}
+}
+@media (max-width:430px) {
+  .november-branch--left {display:none;}
+}
+@media (prefers-reduced-motion:reduce) {
+  .november-card-leaf {animation:none!important;}
+  .november-frost {transition:none;}
+}
+@media (forced-colors:active) {
+  .november-branch--left,.november-garland,.november-stage-pile,.november-ground-pile,.november-card-leaf {display:none!important;}
+}
+@media print {
+  .november-branch--left,.november-garland,.november-stage-pile,.november-ground-pile,.november-card-leaf {display:none!important;}
+}
