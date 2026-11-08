@@ -8,10 +8,21 @@ test('novembre : décor indépendant, sans titre et sans blocage de la recherche
   await expect(page.locator('html')).toHaveClass(/cardi-november/);
   await expect(page.locator('html')).toHaveAttribute('data-november-phase','autumn');
   await expect(page.locator('[data-november-decor="branch"]')).toHaveCount(1);
+  await expect(page.locator('[data-november-decor="branch-left"]')).toHaveCount(1);
+  await expect(page.locator('[data-november-decor="garland"]')).toHaveCount(1);
+  await expect(page.locator('[data-november-decor="pile-left"]')).toHaveCount(1);
+  await expect(page.locator('[data-november-decor="pile-right"]')).toHaveCount(1);
+  await expect(page.locator('[data-november-decor="ground-left"]')).toHaveCount(1);
+  await expect(page.locator('[data-november-decor="ground-right"]')).toHaveCount(1);
+  await expect(page.locator('.november-particle--leaf svg path').first()).toHaveAttribute('d', /^M32 3 C34/);
+  expect(await page.locator('.november-card-leaf svg').count()).toBeGreaterThan(0);
   await expect(page.locator('[data-november-decor="layer"]')).toHaveCount(1);
   await expect(page.locator('[data-november-decor="poppy"]')).toHaveCount(0);
   await page.locator('#guide-search').fill('plan de classe');
   await expect(page.locator('#search-suggestions .suggestion').first()).toBeVisible();
+  const first = page.locator('#search-suggestions .suggestion').first();
+  await first.click();
+  await expect(page).toHaveURL(/#.+$/);
 });
 
 test('jour du Souvenir : coquelicot statique visible seulement le 11 novembre', async ({ page }) => {
@@ -28,10 +39,10 @@ test('fin novembre : givre et flocons, sans multiplication des éléments', asyn
   await expect(page.locator('#guide-search')).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-november-phase','winter');
   const count = await page.locator('.november-particle').count();
-  expect(count).toBeLessThanOrEqual(8);
+  expect(count).toBeLessThanOrEqual(10);
   expect(count).toBeGreaterThanOrEqual(1);
   await page.setViewportSize({width:390,height:844});
-  await expect.poll(async () => page.locator('.november-particle').count()).toBe(4);
+  await expect.poll(async () => page.locator('.november-particle').count()).toBe(5);
 });
 
 test('le décor disparaît le 1er décembre, même sans rechargement', async ({ page }) => {
