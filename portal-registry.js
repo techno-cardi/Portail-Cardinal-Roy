@@ -30,7 +30,8 @@
     'c2atom': ['billet informatique','ticket informatique','bug informatique','bogue','ordi brise','ordinateur brise','probleme informatique','support ti'],
     'plandetravail': ['eleve absent longtemps','absence longue','absence prolongee','travail pour eleve absent','quoi envoyer eleve absent'],
     'reservation': ['reserver chromebook','reserver local','convoquer eleve','convocation','reprise examen','recuperation'],
-    'etude-surveillee': ['reprendre examen','reprise evaluation','eleve absent examen','faire reprendre examen'],
+    'etude-surveillee': ['etude surveillee','accueil temporaire','depart apres recuperation','autorisation de quitter'],
+    'reprise-examen': ['reprendre examen','reprise evaluation','eleve absent examen','faire reprendre examen','examen manque','deposer examen','pas de reprise vendredi'],
     'mise-a-jour-recuperation': ['rattraper matiere','eleve a manque matiere','mise a jour ou recuperation','reprendre notion'],
     'sortie-educative': ['sortie scolaire','sortie educative','activite speciale','organiser sortie','permission sortie'],
     'commotion-cerebrale': ['coup a la tete','choc tete','mal de tete apres choc','commotion','concussion'],
@@ -72,7 +73,8 @@
     { re: /horaire.*locaux|occupation.*locaux/, id: 'horaire-locaux-2026-2027', boost: 220 },
     { re: /horaire.*(prof|enseign)/, id: 'horaire-enseignants-2026-2027', boost: 220 },
     { re: /calendrier.*scolaire|journee.*pedago|semaine.*relache/, id: 'calendrier-scolaire-2026-2027', boost: 215 },
-    { re: /reprise.*(examen|evaluation)|reprendre.*(examen|evaluation)/, id: 'etude-surveillee', boost: 190 }
+    { re: /(?:reprise|reprendre|refaire).*(?:examen|evaluation|epreuve)|(?:examen|evaluation|epreuve).*reprise/, id: 'reprise-examen', boost: 230 },
+    { re: /etude surveillee|autorisation.*quitter|depart.*etude/, id: 'etude-surveillee', boost: 190 }
   ];
 
   const FRESHNESS_OVERRIDES = {
