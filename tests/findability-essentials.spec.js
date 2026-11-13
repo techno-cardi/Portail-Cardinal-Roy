@@ -113,6 +113,34 @@ test('Scolago garde seulement la connexion et le guide utiles', async ({ page })
   expect(errors).toEqual([]);
 });
 
+
+test('la procédure complète des reprises est dans Organiser et respecte l’aide-mémoire', async ({ page }) => {
+  const errors = await openPortal(page);
+  const reprise = page.locator('#section-organisation #reprise-examen');
+  await expect(reprise).toHaveCount(1);
+  await expect(reprise).toContainText('Aucune reprise d’examen le vendredi à l’étude surveillée.');
+  await expect(reprise).toContainText('du lundi au jeudi seulement');
+  await expect(reprise).toContainText('au moins 48 h à l’avance');
+  await expect(reprise).toContainText('Raymond-Gervais');
+  for (const local of ['2-314','2020','2090','2-110']) {
+    await expect(reprise).toContainText(local);
+  }
+  await expect(reprise.locator('a[href="https://drive.google.com/file/d/1gswC2iTHiajkrTE_QNANAFRCiQMxUtdW/view"]')).toHaveCount(1);
+  await expect(reprise.locator('a[href="https://appsp.ca/reservation/"]')).toHaveCount(1);
+  await expect(reprise).not.toContainText('lunch');
+  await expect(page.locator('#etude-surveillee')).toContainText('aucune reprise d’examen le vendredi');
+  await expect(page.locator('#reservation a[href="#reprise-examen"]')).toHaveCount(1);
+  expect(errors).toEqual([]);
+});
+
+test('reprise et examen, même seuls, trouvent la nouvelle procédure', async ({ page }) => {
+  const errors = await openPortal(page);
+  for (const query of ['reprise', 'examen', 'reprise examen', 'reprendre evaluation']) {
+    await expectFirstSuggestion(page, query, /Reprise d.examen - Procédure et aide-mémoire/i);
+  }
+  expect(errors).toEqual([]);
+});
+
 test('les catégories restent cohérentes', async ({ page }) => {
   const errors = await openPortal(page);
   await expect(page.locator('#section-organisation .category-heading h2')).toContainText('Réservations et logistique');
