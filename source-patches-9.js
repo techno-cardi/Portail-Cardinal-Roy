@@ -254,3 +254,92 @@
   // la fiche n'est plus indexée ou affichée une deuxième fois.
   formerRecovery.remove();
 })();
+
+/* Reprise d'examen : horaires, réservation, préparation et dépôt au même endroit. */
+(() => {
+  'use strict';
+  const root = document.getElementById('legacy-source');
+  if (!root || root.querySelector('#reprise-examen')) return;
+
+  const card = document.createElement('section');
+  card.className = 'card searchable';
+  card.id = 'reprise-examen';
+  card.dataset.title = 'Reprise d’examen - Procédure et aide-mémoire';
+  card.dataset.icon = '📋';
+  card.dataset.keywords = [
+    'reprise reprises examen examens évaluation évaluations evaluation evaluations épreuve épreuves epreuve epreuves',
+    'absence absent absente absences justification justifiée motivée rattrapage refaire reprendre',
+    'reprise examen reprise évaluation reprendre examen examen manqué examen à refaire épreuve manquée',
+    'inscription réservation convocation AppSP parent délai 48 heures 48 h étude surveillée surveillance',
+    'horaire horaires local locaux salle Raymond-Gervais SAÉ SAE matin AM après-midi PM Découvertes',
+    'vendredi pas de reprise vendredi aucune reprise vendredi lundi mardi mercredi jeudi',
+    'coupon AppSP durée matériel autorisé mesures adaptatives impression préparation consignes',
+    'dépôt deposer déposer boîte plastique chemise suspendue local 2090 local 2-110 local 2-314 local 2020'
+  ].join(' ');
+  card.innerHTML = `
+    <div class="card-head">
+      <div class="card-icon" aria-hidden="true">📋</div>
+      <div>
+        <h3>Reprise d’examen - Procédure et aide-mémoire</h3>
+        <div class="card-sub">Horaires, réservation dans AppSP, préparation et dépôt des évaluations</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <p>Pour organiser une <strong>reprise d’examen</strong>, vérifiez d’abord l’admissibilité de l’élève, puis suivez les étapes de réservation et de dépôt ci-dessous.</p>
+      <div class="callout warn">
+        <strong>Deux règles essentielles :</strong>
+        <ul>
+          <li>Inscrire l’élève dans <strong>AppSP au moins 48 h à l’avance</strong> pour que la convocation soit transmise automatiquement à l’élève et à son parent.</li>
+          <li><strong>Aucune reprise d’examen le vendredi à l’étude surveillée.</strong></li>
+        </ul>
+      </div>
+
+      <h4>Où et quand ont lieu les reprises?</h4>
+      <ul>
+        <li><strong>SAÉ - Matin :</strong> de <strong>8 h 15 à 10 h 40</strong>, salle <strong>Raymond-Gervais</strong>.</li>
+        <li><strong>SAÉ - Après-midi :</strong> de <strong>13 h 30 à 15 h 30</strong>, au <strong>local 2-314</strong>, <strong>du lundi au jeudi seulement</strong> (pas de reprise le vendredi).</li>
+        <li><strong>Secteur Découvertes :</strong> de <strong>11 h 20 à 12 h 40</strong>, au <strong>local 2020</strong>, selon le calendrier.</li>
+      </ul>
+
+      <h4>Les 6 étapes pour l’enseignant</h4>
+      <ol class="steps">
+        <li><strong>Valider l’absence.</strong> Vérifier que l’élève a une absence motivée et une justification valable permettant la reprise.</li>
+        <li><strong>Informer l’élève.</strong> Confirmer la date, l’heure et le local de la reprise.</li>
+        <li><strong>Réserver dans AppSP.</strong> Inscrire l’élève à la date choisie <strong>au moins 48 h à l’avance</strong>. L’élève et son parent recevront automatiquement la convocation.</li>
+        <li><strong>Préciser les modalités.</strong> Inscrire dans AppSP la <strong>durée de l’épreuve</strong>, le <strong>nom de l’enseignant</strong>, le <strong>matériel autorisé</strong> et les <strong>mesures adaptatives</strong> de l’élève.</li>
+        <li><strong>Préparer l’examen.</strong> Imprimer le <strong>coupon AppSP</strong> et le brocher avec la copie de l’examen.</li>
+        <li><strong>Déposer l’examen.</strong> Placer l’examen et son coupon dans la <strong>chemise suspendue identifiée au nom de l’enseignant</strong>, dans la boîte prévue.</li>
+      </ol>
+
+      <h4>Où déposer l’examen préparé?</h4>
+      <div class="two-col">
+        <div class="callout"><strong>Secteur Découvertes</strong><p>Boîte plastique au <strong>local 2090</strong>.</p></div>
+        <div class="callout"><strong>Sport-Arts-Études</strong><p>Boîte plastique au <strong>local 2-110</strong>.</p></div>
+      </div>
+      <p><strong>Avant le dépôt :</strong> joindre le coupon AppSP imprimé, l’examen et les consignes complètes.</p>
+      <div class="links">
+        <a class="btn primary" href="https://drive.google.com/file/d/1gswC2iTHiajkrTE_QNANAFRCiQMxUtdW/view" target="_blank" rel="noopener noreferrer">Consulter l’aide-mémoire officiel (PDF)</a>
+        <a class="btn" href="https://appsp.ca/reservation/" target="_blank" rel="noopener noreferrer">Accéder à Réservation dans AppSP</a>
+      </div>
+    </div>`;
+  root.appendChild(card);
+
+  // Les fiches existantes restent complémentaires sans dupliquer la procédure.
+  for (const id of ['reservation', 'etude-surveillee']) {
+    const links = root.querySelector('#' + id + ' .card-body .links');
+    if (links && !links.querySelector('a[href="#reprise-examen"]')) {
+      links.insertAdjacentHTML('beforeend', '<a class="btn" href="#reprise-examen">Reprise d’examen - Procédure complète</a>');
+    }
+  }
+
+  const study = root.querySelector('#etude-surveillee .card-body');
+  if (study && !study.querySelector('[data-no-reprise-friday]')) {
+    const links = study.querySelector('.links');
+    const notice = document.createElement('div');
+    notice.className = 'callout warn';
+    notice.dataset.noRepriseFriday = 'true';
+    notice.innerHTML = '<strong>Important :</strong> aucune reprise d’examen le vendredi à l’étude surveillée.';
+    if (links) study.insertBefore(notice, links);
+    else study.appendChild(notice);
+  }
+})();
