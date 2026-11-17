@@ -1,6 +1,16 @@
 {
   "items": [
     {
+      "id": "horaire-pedagogiques-2026-11-19-20",
+      "title": "Horaire des journées pédagogiques - 19 et 20 novembre",
+      "description": "Accédez directement à l’horaire des journées pédagogiques du jeudi 19 novembre et du vendredi 20 novembre (télétravail).",
+      "published_at": "2026-11-17",
+      "expires_at": "2026-11-20",
+      "target": "#journees-pedagogiques-2026-11-19-20",
+      "target_type": "file",
+      "kind": "nouveau"
+    },
+    {
       "id": "reprise-examen-2026-11-13",
       "title": "Reprise d’examen - Procédure et aide-mémoire",
       "description": "Nouvelle fiche pour organiser les reprises d’évaluation : horaires et locaux des secteurs SAÉ et Découvertes, réservation dans AppSP au moins 48 h à l’avance, préparation et dépôt des examens. Aucune reprise le vendredi à l’étude surveillée.",

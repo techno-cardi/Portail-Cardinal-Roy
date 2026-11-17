@@ -37,6 +37,35 @@
     "file_action_label": "Accéder au fichier"
   },
   "direct_files": {
+    "pedagogiques-2026-11-19-20": {
+      "resource_id": "journees-pedagogiques-2026-11-19-20",
+      "url": "https://drive.google.com/file/d/1j3SULKwLt8EiBvHtsSo9XuAyB6m9puQ2/view",
+      "title": "Horaire des journées pédagogiques - 19 et 20 novembre 2026",
+      "action_label": "Accéder au fichier",
+      "source_file": "ped-days-2026-11-19-20.js",
+      "starts_at": "2026-11-17T00:00:00-05:00",
+      "expires_at": "2026-11-20T23:59:00-05:00",
+      "search_required_groups": [
+        [
+          "pédago",
+          "pedago",
+          "péda",
+          "peda",
+          "pédagogique",
+          "pedagogique",
+          "pédagogie",
+          "pedagogie",
+          "journée pédagogique",
+          "journee pedagogique",
+          "journées pédagogiques",
+          "journees pedagogiques",
+          "horaire pédago",
+          "horaire pedagogique",
+          "19 novembre pédagogique",
+          "20 novembre pédagogique"
+        ]
+      ]
+    },
     "reservation-procedure": {
       "resource_id": "reservation",
       "url": "https://drive.google.com/file/d/1Ea0rcbyqvFjmXzc_yuNREdgk8Pq4LEQW/view?usp=drivesdk",

@@ -49,6 +49,11 @@
   };
 
   const isActiveEntry = entry => {
+    const startsAt = String(entry?.starts_at || '').trim();
+    if (startsAt) {
+      const timestamp = Date.parse(startsAt);
+      if (Number.isNaN(timestamp) || Date.now() < timestamp) return false;
+    }
     const expiresAt = String(entry?.expires_at || '').trim();
     if (!expiresAt) return true;
     const timestamp = Date.parse(expiresAt);

@@ -17,6 +17,8 @@
   const NOVEMBER_PARENTS_MEETING_EXPIRES_AT = Date.parse('2026-11-20T00:00:00-05:00');
   const OCTOBER_PED_DAY_URL = 'https://drive.google.com/file/d/1zyMK5pY5kGBVr1qbrBGyNWrJRpuTGHDs/view?usp=drivesdk';
   const OCTOBER_PED_DAY_EXPIRES_AT = Date.parse('2026-10-06T00:00:00-04:00');
+  const NOVEMBER_PED_DAYS_URL = 'https://drive.google.com/file/d/1j3SULKwLt8EiBvHtsSo9XuAyB6m9puQ2/view';
+  const NOVEMBER_PED_DAYS_EXPIRES_AT = Date.parse('2026-11-20T23:59:00-05:00');
 
   if (!document.getElementById('school-news-ticker-style')) {
     const style = document.createElement('style');
@@ -154,7 +156,23 @@
   const isOctoberPedDay = item =>
     normalize(item?.title) === 'pedagogique' && String(item?.start || '').startsWith('2026-10-05');
 
+  const novemberPedDayDate = item => {
+    const day = String(item?.start || '').slice(0, 10);
+    const title = normalize(item?.title);
+    return (day === '2026-11-19' || day === '2026-11-20') && title.startsWith('pedagogique')
+      ? day : '';
+  };
+
   const actionFor = item => {
+    const novemberDay = novemberPedDayDate(item);
+    if (novemberDay && Date.now() < NOVEMBER_PED_DAYS_EXPIRES_AT) {
+      return {
+        url: NOVEMBER_PED_DAYS_URL,
+        title: 'Ouvrir l’horaire des journées pédagogiques des 19 et 20 novembre',
+        key: 'ped-day-' + novemberDay,
+        kind: 'november-ped-days'
+      };
+    }
     if (isSeptemberPedDay(item) && Date.now() < PED_DAY_EXPIRES_AT) {
       return {
         url: PED_DAY_URL,
@@ -233,6 +251,13 @@
         delete track.dataset.octoberPedDayLink;
         delete track.dataset.octoberPedDayUrl;
       }
+      if (action.kind === 'november-ped-days') {
+        track.dataset.novemberPedDayLink = novemberPedDayDate(item);
+        track.dataset.novemberPedDayUrl = action.url;
+      } else {
+        delete track.dataset.novemberPedDayLink;
+        delete track.dataset.novemberPedDayUrl;
+      }
     } else {
       track.removeAttribute('href');
       track.removeAttribute('target');
@@ -245,6 +270,8 @@
       delete track.dataset.parentsMeetingUrl;
       delete track.dataset.octoberPedDayLink;
       delete track.dataset.octoberPedDayUrl;
+      delete track.dataset.novemberPedDayLink;
+      delete track.dataset.novemberPedDayUrl;
     }
   };
 
