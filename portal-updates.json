@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-21T12:34:30.592408-05:00",
+  "generated_at": "2026-11-24T15:39:58.874679-05:00",
   "default_lifetime_days": 28,
   "max_visible": 3,
   "items": [
@@ -61,16 +61,6 @@
       "expires_at": "2027-06-30",
       "target": "https://drive.google.com/file/d/1Ea0rcbyqvFjmXzc_yuNREdgk8Pq4LEQW/view?usp=drivesdk",
       "target_type": "file",
-      "kind": "maj"
-    },
-    {
-      "id": "expulsion-avis-soi-2026-10-26",
-      "title": "Expulsion d’un élève : l’étape SOI essentielle",
-      "description": "Après le rapport dans Mes suivis et l’envoi au Transit, inscrire dans Mozaïk-Portail l’avis « Ne respecte pas les règles de conduite (école ou classe) » pour comptabiliser la sortie et assurer les suivis.",
-      "published_at": "2026-10-26",
-      "expires_at": "2026-11-23",
-      "target": "#sortie",
-      "target_type": "section",
       "kind": "maj"
     },
     {
