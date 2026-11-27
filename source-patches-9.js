@@ -343,3 +343,34 @@
     else study.appendChild(notice);
   }
 })();
+
+/* Le Nid : ressource permanente consultable dans la recherche générale. */
+(() => {
+  'use strict';
+  const root = document.getElementById('legacy-source');
+  if (!root || root.querySelector('#le-nid')) return;
+  const url = 'https://sway.cloud.microsoft/Aeeclkz1Vl4Hm3jx';
+  const card = document.createElement('section');
+  card.className = 'card searchable';
+  card.id = 'le-nid';
+  card.dataset.title = 'Le Nid - Communications au personnel';
+  card.dataset.icon = '🐦';
+  card.dataset.directHref = url;
+  card.dataset.keywords = [
+    'nid le nid consulter le nid ouvrir le nid accéder au nid lire le nid',
+    'cardinal cardinal rouge oiseau 🐦 nouvelles nouveautés actualités actualites informations infolettre',
+    'communication communications personnel enseignants enseignantes profs équipe ecole école Cardinal-Roy',
+    'sway microsoft sway bulletin messages annonces rappels hebdomadaire semaine liens'
+  ].join(' ');
+  card.innerHTML = `
+    <div class="card-head">
+      <div class="card-icon" aria-hidden="true">🐦</div>
+      <div><h3>Le Nid - Communications au personnel</h3>
+      <div class="card-sub">Consulter les nouvelles, annonces et rappels destinés au personnel</div></div>
+    </div>
+    <div class="card-body">
+      <p>Accédez au <strong>Nid</strong>, l’espace de communications destiné au personnel de l’école.</p>
+      <div class="links"><a class="btn primary" href="${url}" target="_blank" rel="noopener noreferrer">Consulter Le Nid 🐦</a></div>
+    </div>`;
+  root.appendChild(card);
+})();
