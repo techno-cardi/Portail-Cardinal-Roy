@@ -175,9 +175,16 @@
     externalUrl:DRIVE_URL,
     dataQuickResource:'drive-commun'
   };
-  const preferredQuickIds = ['sortie','avis','reservation','chromebook','courriels','planclasse'];
-  const quickItems = [items.find(item => item.id === 'sortie'), driveQuickItem]
-    .concat(preferredQuickIds.slice(1).map(id => items.find(item => item.id === id)))
+  const leNidQuickItem = {
+    id:'le-nid-quick',
+    title:'Consulter Le Nid 🐦',
+    subtitle:'Communications et informations du personnel',
+    originalIcon:'🐦',
+    externalUrl:'https://sway.cloud.microsoft/Aeeclkz1Vl4Hm3jx'
+  };
+  const preferredQuickIds = ['sortie','reservation','chromebook','courriels','planclasse'];
+  const quickItems = [leNidQuickItem, driveQuickItem]
+    .concat(preferredQuickIds.map(id => items.find(item => item.id === id)))
     .filter(Boolean);
   const launchItem = {
     id:'page-lancement-cardinal-roy',
