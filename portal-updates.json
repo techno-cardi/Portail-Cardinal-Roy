@@ -1,18 +1,8 @@
 {
-  "generated_at": "2026-11-27T12:00:00-05:00",
+  "generated_at": "2026-11-27T10:40:57.575380-05:00",
   "default_lifetime_days": 28,
   "max_visible": 3,
   "items": [
-    {
-      "id": "le-nid-2026-11-27",
-      "title": "🐦 Le Nid est maintenant dans les accès rapides",
-      "description": "Consultez directement Le Nid pour retrouver les communications, annonces et rappels destinés au personnel de Cardinal-Roy.",
-      "published_at": "2026-11-27",
-      "expires_at": "2026-12-25",
-      "target": "https://sway.cloud.microsoft/Aeeclkz1Vl4Hm3jx",
-      "target_type": "file",
-      "kind": "nouveau"
-    },
     {
       "id": "reprise-examen-2026-11-13",
       "title": "Reprise d’examen - Procédure et aide-mémoire",
