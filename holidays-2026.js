@@ -63,9 +63,10 @@
     <g fill="#fff" opacity=".86"><circle cx="164" cy="40" r="2.2"/><circle cx="252" cy="47" r="1.8"/><circle cx="19" cy="45" r="2"/><circle cx="276" cy="122" r="1.6"/></g>
   </svg>`;
 
-  const garlandBulbs = [45,115,185,255,325,395,465,535,605,675,745,815,885]
+  const garlandBulbs = [45,115,185,255,675,745,815,885]
     .map((x,i) => {
-      const y = 9 + 17 * Math.sin((x / 930) * Math.PI);
+      const fraction = x < 325 ? x / 320 : (930 - x) / 320;
+      const y = 9 + 17 * Math.sin(fraction * Math.PI);
       const color = ['#ffe2a3','#b6e5c2','#fc8d8b','#acd9f2'][i % 4];
       return `<g class="holiday-string-light" style="--holiday-delay:-${(i % 4) * .65}s">
         <path d="M${x} ${y.toFixed(1)}v7" stroke="#25483f" stroke-width="2"/>
@@ -75,7 +76,7 @@
     }).join('');
 
   const garlandSvg = `<svg viewBox="0 0 930 50" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" role="presentation" focusable="false">
-    <path d="M0 0Q465 51 930 0" stroke="#284b3d" fill="none" stroke-width="2.5"/>${garlandBulbs}
+    <path d="M0 0Q160 44 320 0M610 0Q770 44 930 0" stroke="#284b3d" fill="none" stroke-width="2.5"/>${garlandBulbs}
   </svg>`;
 
   function append(parent, name, className, markup) {
