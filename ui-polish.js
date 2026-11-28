@@ -292,7 +292,7 @@
           </div>
           <div class="quick-links">
             ${quickItems.map(item => item.externalUrl
-              ? `<a href="${escapeHtml(item.externalUrl)}" target="_blank" rel="noopener noreferrer"${item.dataQuickResource ? ` data-quick-resource="${escapeHtml(item.dataQuickResource)}"` : ''}>${visualFor(item,'quick-visual')}<span class="quick-label">${escapeHtml(item.title)}</span><span aria-hidden="true">↗</span></a>`
+              ? `<a href="${escapeHtml(item.externalUrl)}" target="_blank" rel="noopener noreferrer"${item.dataQuickResource ? ` data-quick-resource="${escapeHtml(item.dataQuickResource)}"` : ''}>${visualFor(item,'quick-visual')}<span class="quick-label">${escapeHtml(item.title)}</span><span aria-hidden="true">→</span></a>`
               : `<a href="#${item.id}">${visualFor(item,'quick-visual')}<span class="quick-label">${escapeHtml(item.title)}</span><span aria-hidden="true">→</span></a>`
             ).join('')}
           </div>
