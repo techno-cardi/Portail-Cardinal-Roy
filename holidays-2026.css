@@ -59,13 +59,34 @@ html.cardi-holiday {
   background:#fff;
   box-shadow:0 4px 14px rgba(43,68,53,.07);
 }
+.cardi-holiday .quick-links a {position:relative}
+.cardi-holiday .quick-links a::after {
+  content:"✦";
+  position:absolute;
+  right:34px;
+  top:5px;
+  font-size:12px;
+  color:#bd9a59;
+  opacity:0;
+  transform:scale(.65);
+  transition:opacity .24s ease,transform .24s ease;
+  pointer-events:none;
+}
+.cardi-holiday .quick-links a:hover::after,
+.cardi-holiday .quick-links a:focus-visible::after {opacity:.95;transform:scale(1)}
 .cardi-holiday .quick-links a>span:last-child {color:#8f2135}
 .cardi-holiday .portal-update-item {border-color:#dce2dd}
+.cardi-holiday .procedure summary:hover .procedure-visual,
+.cardi-holiday .procedure-direct-row:hover .procedure-visual {
+  box-shadow:0 0 0 2px rgba(206,177,106,.4);
+}
 
 /* Tous les éléments décoratifs sont non interactifs. */
 .holiday-scene,
 .holiday-lightline,
-.holiday-flurries {
+.holiday-flurries,
+.holiday-sprig,
+.holiday-edge-snow {
   pointer-events:none!important;
   -webkit-user-select:none;
   user-select:none;
@@ -80,6 +101,12 @@ html.cardi-holiday {
   opacity:1;
 }
 .holiday-scene svg {display:block;width:100%;height:100%;overflow:visible}
+.holiday-gifts {transform-origin:90px 165px;transition:transform .35s ease}
+.holiday-gift-spark {transition:opacity .25s ease}
+@media(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) {
+  .cardi-holiday .masthead:hover .holiday-gifts {transform:translateY(-3px) rotate(-1deg)}
+  .cardi-holiday .masthead:hover .holiday-gift-spark {opacity:.95}
+}
 .holiday-tree-light {animation:holiday-glow 3.4s ease-in-out infinite;animation-delay:var(--holiday-delay)}
 .holiday-tree-light circle:first-child {animation:holiday-halo 3.4s ease-in-out infinite;animation-delay:var(--holiday-delay)}
 @keyframes holiday-glow {0%,100%{opacity:.94}45%{opacity:.46}75%{opacity:1}}
@@ -131,9 +158,56 @@ html.cardi-holiday {
   100% {opacity:0;transform:translate3d(-3px,290px,0)}
 }
 
+/* Deux rameaux d'épinette enneigés encadrent les sections sans les couvrir. */
+.cardi-holiday .quick-main,
+.cardi-holiday .directory {position:relative}
+.holiday-sprig {
+  position:absolute;
+  right:0;
+  top:-21px;
+  width:177px;
+  height:75px;
+  opacity:.86;
+  z-index:0;
+}
+.holiday-sprig svg {display:block;width:100%;height:100%}
+.holiday-sprig--secondary {
+  right:0;
+  top:0;
+  width:193px;
+  transform:scaleX(-1);
+  opacity:.61;
+}
+
+/* Huit flocons au maximum, cantonnés aux marges extérieures. */
+.holiday-edge-snow {
+  position:fixed;
+  inset:0;
+  overflow:hidden;
+  z-index:5;
+}
+.holiday-edge-snowflake {
+  position:absolute;
+  left:var(--edge-x);
+  top:-28px;
+  font-size:14px;
+  line-height:1;
+  color:#7d9da3;
+  opacity:0;
+  animation:holiday-edge-drift var(--edge-time) linear var(--edge-delay) infinite;
+}
+.holiday-edge-snowflake:nth-child(2n) {font-size:10px;color:#a6bac0}
+@keyframes holiday-edge-drift {
+  0% {opacity:0;transform:translate3d(0,-20px,0) rotate(0deg)}
+  12% {opacity:.48}
+  70% {opacity:.43}
+  100% {opacity:0;transform:translate3d(15px,105vh,0) rotate(110deg)}
+}
+
 .cardi-holiday.holiday-paused .holiday-tree-light,
 .cardi-holiday.holiday-paused .holiday-string-light,
-.cardi-holiday.holiday-paused .holiday-snowflake {animation-play-state:paused}
+.cardi-holiday.holiday-paused .holiday-snowflake,
+.cardi-holiday.holiday-paused .holiday-edge-snowflake {animation-play-state:paused}
 
 @media(max-width:1000px) {
   .holiday-scene {width:218px;height:139px}
@@ -147,23 +221,29 @@ html.cardi-holiday {
   .cardi-holiday .search-stage-inner {padding-top:43px}
   .holiday-lightline {height:34px;opacity:.72}
   .holiday-snowflake:nth-child(n+6){display:none}
+  .holiday-sprig {width:105px;height:49px;top:-8px;opacity:.53}
+  .holiday-sprig--secondary {display:none}
+  .holiday-edge-snow {display:none}
 }
 @media(max-width:430px) {
   .cardi-holiday .masthead {min-height:126px;padding-bottom:48px}
   .holiday-scene {width:110px;height:76px}
   .cardi-holiday .masthead-copy h1 {font-size:1.55rem}
+  .holiday-sprig {display:none}
 }
 @media(prefers-reduced-motion:reduce) {
   .holiday-tree-light,
   .holiday-tree-light circle:first-child,
   .holiday-string-light {animation:none!important;opacity:1}
   .holiday-snowflake {animation:none!important;display:none!important}
+  .holiday-edge-snowflake {animation:none!important;display:none!important}
+  .holiday-gifts,.holiday-gift-spark,.cardi-holiday .quick-links a::after {transition:none!important}
 }
 @media(forced-colors:active) {
-  .holiday-scene,.holiday-lightline,.holiday-flurries {display:none!important}
+  .holiday-scene,.holiday-lightline,.holiday-flurries,.holiday-sprig,.holiday-edge-snow {display:none!important}
 }
 @media print {
-  .holiday-scene,.holiday-lightline,.holiday-flurries {display:none!important}
+  .holiday-scene,.holiday-lightline,.holiday-flurries,.holiday-sprig,.holiday-edge-snow {display:none!important}
   .cardi-holiday body {background:#fff}
   .cardi-holiday .site-header {background:#fff}
   .cardi-holiday .search-stage {background:#7f1427}
