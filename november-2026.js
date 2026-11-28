@@ -1,6 +1,8 @@
 /* Skin saisonnier autonome du 1er au 30 novembre 2026, fuseau de Québec. */
 (function () {
   'use strict';
+  /* L'aperçu de Noël doit remplacer visuellement le décor de novembre. */
+  if (/(?:\?|&)theme=noel(?:&|$)/.test(window.location.search || '')) return;
 
   var ROOT_CLASS = 'cardi-november';
   var MARKER = 'data-november-decor';
