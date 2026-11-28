@@ -25,6 +25,8 @@ function launchTheme(timestamp, hasPortal = true, search = '') {
   }
   const masthead = makeNode('masthead');
   const stage = makeNode('search-stage');
+  const quickMain = makeNode('quick-main');
+  const directory = makeNode('directory');
   const body = makeNode('body');
   const document = {
     readyState: 'complete', hidden: false, body,
@@ -34,7 +36,7 @@ function launchTheme(timestamp, hasPortal = true, search = '') {
       contains: n => classes.has(n),
       toggle: (n, force) => force ? classes.add(n) : classes.delete(n)
     } },
-    querySelector: selector => hasPortal && ({ '.masthead': masthead, '.search-stage': stage, '#app': body })[selector],
+    querySelector: selector => hasPortal && ({ '.masthead': masthead, '.search-stage': stage, '.quick-main': quickMain, '.directory': directory, '#app': body })[selector],
     querySelectorAll: () => [...nodes.values()],
     createElement: makeNode,
     addEventListener: (name, cb) => handlers.set(name, cb)
@@ -58,7 +60,7 @@ function launchTheme(timestamp, hasPortal = true, search = '') {
     console
   };
   vm.runInNewContext(fs.readFileSync(sourceFile, 'utf8'), context, { filename: sourceFile });
-  return { nodes, classes, timers, handlers, triggerObserver: () => observerCallback?.(), masthead, stage };
+  return { nodes, classes, timers, handlers, triggerObserver: () => observerCallback?.(), masthead, stage, quickMain, directory };
 }
 
 test('holiday decor waits for December 1 in Toronto', () => {
@@ -86,6 +88,27 @@ test('holiday decor adds illuminated tree, snowman and garland during the season
   assert.ok(page.timers.some(t => t.delay > 0));
 });
 
+test('holiday scene includes a red cardinal on a snowy branch', () => {
+  const page = launchTheme(Date.parse('2026-12-24T12:00:00-05:00'));
+  const illustration = page.nodes.get('scene').innerHTML;
+  assert.match(illustration, /class="holiday-cardinal"/);
+  assert.match(illustration, /class="holiday-cardinal-branch"/);
+  assert.match(illustration, /class="holiday-gift-spark"/);
+});
+
+test('seasonal pine boughs and edge snow appear once, and are decorative only', () => {
+  const page = launchTheme(Date.parse('2026-12-24T12:00:00-05:00'));
+  for (const name of ['sprig','sprig-secondary','edge-snow']) {
+    assert.ok(page.nodes.has(name), `${name} missing`);
+    assert.equal(page.nodes.get(name).attributes['aria-hidden'], 'true');
+  }
+  assert.match(page.nodes.get('sprig').innerHTML, /holiday-pine-needle/);
+  assert.equal((page.nodes.get('edge-snow').innerHTML.match(/holiday-edge-snowflake/g) || []).length, 8);
+  const originalCount = page.nodes.size;
+  page.handlers.get('pageshow')();
+  assert.equal(page.nodes.size, originalCount);
+});
+
 test('holiday decor expires on January 7 and remains absent thereafter', () => {
   const page = launchTheme(Date.parse('2027-01-07T00:00:00-05:00'));
   assert.equal(page.classes.has('cardi-holiday'), false);
@@ -96,4 +119,13 @@ test('holiday decorations never appear in forced reduced motion as falling snow'
   const css = fs.readFileSync(path.join(__dirname, '..', 'holidays-2026.css'), 'utf8');
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /\.holiday-snowflake\s*\{[^}]*animation:\s*none/s);
+  assert.match(css, /\.holiday-edge-snowflake\s*\{[^}]*animation:\s*none/s);
+});
+
+test('new layers do not intercept clicks and the gifts have a hover response', () => {
+  const css = fs.readFileSync(path.join(__dirname, '..', 'holidays-2026.css'), 'utf8');
+  assert.match(css, /\.holiday-sprig[\s\S]*?pointer-events:\s*none/);
+  assert.match(css, /\.holiday-edge-snow[\s\S]*?pointer-events:\s*none/);
+  assert.match(css, /\.masthead:hover\s+\.holiday-gifts/);
+  assert.match(css, /\.quick-links\s+a:hover::after/);
 });
