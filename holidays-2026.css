@@ -24,9 +24,14 @@ html.cardi-holiday {
 }
 .cardi-holiday .school-mark,
 .cardi-holiday .masthead-copy { position:relative; z-index:1; }
-.cardi-holiday .masthead-copy { padding-right:250px; }
+.cardi-holiday .masthead-copy { padding-right:0; }
 .cardi-holiday .masthead-copy h1 { color:#3b292c; }
 .cardi-holiday .masthead-copy p { color:#52685e; }
+.cardi-holiday .masthead .techno-contact {
+  position:relative;
+  z-index:2;
+  margin-right:275px;
+}
 .cardi-holiday .search-stage {
   background:
     radial-gradient(circle at 8% 38%,rgba(249,207,155,.13),transparent 24%),
@@ -132,12 +137,12 @@ html.cardi-holiday {
 
 @media(max-width:1000px) {
   .holiday-scene {width:218px;height:139px}
-  .cardi-holiday .masthead-copy {padding-right:195px}
+  .cardi-holiday .masthead .techno-contact {margin-right:210px}
   .cardi-holiday .masthead {min-height:145px}
 }
 @media(max-width:720px) {
   .cardi-holiday .masthead {min-height:130px;padding-bottom:48px;align-items:flex-start}
-  .cardi-holiday .masthead-copy {padding-right:0}
+  .cardi-holiday .masthead .techno-contact {width:auto;max-width:calc(100% - 132px);margin:0 132px 0 0}
   .holiday-scene {width:132px;height:88px;right:0;bottom:-3px}
   .cardi-holiday .search-stage-inner {padding-top:43px}
   .holiday-lightline {height:34px;opacity:.72}
